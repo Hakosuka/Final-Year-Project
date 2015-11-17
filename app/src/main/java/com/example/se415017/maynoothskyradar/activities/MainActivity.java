@@ -1,38 +1,91 @@
 package com.example.se415017.maynoothskyradar.activities;
 
+import android.content.Context;
+import android.net.Uri;
+import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
+import com.example.se415017.maynoothskyradar.helpers.NetHelper;
+
+import org.w3c.dom.Text;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
+/**
+ * @author Ciaran Cumiskey se415017 #12342236
+ * @version 11 November 2015
+ * Parsing the GPS data supplied by Joe in his email.
+ */
 public class MainActivity extends AppCompatActivity {
 
     @Bind(R.id.button_gps_activation)
     Button GpsActivationButton;
 
+    //These are the GPS coordinates of the server
+    @Bind(R.id.gps_latitude)
+    TextView GpsLat;
+    @Bind(R.id.gps_longitude)
+    TextView GpsLon;
+
     @OnClick(R.id.button_gps_activation)
     public void activateGPS(View view){
-
+        Log.d("activateGPS", "Button pressed");
+        for(int i = 0; i < dummyData.length; i++){
+            decodeNMEA(dummyData[i]);
+        }
     }
+
+    boolean netStatus = false;
+    String[] dummyData = {
+            "$GPGGA,103102.557,5323.0900,N,00636.1283,W,1,08,1.0,49.1,M,56.5,M,,0000*7E",
+            "$GPGSA,A,3,01,11,08,19,28,32,03,18,,,,,1.7,1.0,1.3*37",
+            "$GPGSV,3,1,10,08,70,154,34,11,61,270,26,01,47,260,48,22,40,062,*7E",
+            "$GPGSV,3,2,10,19,40,297,46,32,39,184,32,28,28,314,43,03,11,205,41*7C",
+            "$GPGSV,3,3,10,18,07,044,35,30,03,276,42*75",
+            "$GPRMC,103102.557,A,5323.0900,N,00636.1283,W,000.0,308.8,101115,,,A*79",
+            "$GPVTG,308.8,T,,M,000.0,N,000.0,K,A*0E"
+    }; // using the data supplied in Joe's email from 10 November
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        NetHelper netHelper = new NetHelper(getApplicationContext());
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        /** I will need the wi-fi to be constantly connected so that I can track planes while the
+         *  phone is asleep.
+         */
+        WifiManager.WifiLock wifiLock = ((WifiManager)getSystemService(Context.WIFI_SERVICE))
+                .createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
+        wifiLock.acquire();
+
+        netStatus = netHelper.checkIfServerIsUp();
 
         /**FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -64,5 +117,106 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void decodeNMEA(String sentence){
+        String tag = "Decoding NMEA";
+        if(sentence.startsWith("$GPRMC")) {
+            String[] rmcValues = sentence.split(",");
+            //TODO: Maybe try to change these doubles back into strings for
+            double nmeaLatitude = Double.parseDouble(rmcValues[3]);
+            double nmeaLatMin = nmeaLatitude % 100; //get minutes from latitude value
+            nmeaLatitude/=100;
+            if(rmcValues[4].charAt(0)=='S'){
+                nmeaLatitude = -nmeaLatitude;
+            }
+            double nmeaLongitude = Double.parseDouble(rmcValues[5]);
+            double nmeaLonMin = nmeaLongitude % 100; //get minutes from longitude value
+            nmeaLongitude/=100;
+            if(rmcValues[6].charAt(0)=='W'){
+                nmeaLongitude = -nmeaLongitude;
+            }
+
+            Log.d(tag + ": lat", Double.toString(nmeaLatitude));
+            GpsLat.setText("Latitude: " + Double.toString(nmeaLatitude));
+            Log.d(tag + ": lon", Double.toString(nmeaLongitude));
+            GpsLon.setText("Longitude: " + Double.toString(nmeaLongitude));
+        }
+    }
+
+    /**
+     * Version: 17 November 2015
+     *
+     * This is supposed to read the SBS-1 data from Dr. Brown's server
+     */
+    public class sbsReaderTask extends AsyncTask <String, Void, String[]> {
+        private String tag = "sbsReaderTask";
+
+        // I will be using this to check if previously detected aircraft are still detectable
+        public boolean checkIfPlaneIsAvailable(String planeHexCode){
+            boolean planeIsAvailable = false;
+            return planeIsAvailable;
+        }
+
+        @Override
+        protected String[] doInBackground(String... params){
+            HttpURLConnection urlConnection = null;
+            BufferedReader bufferedReader = null;
+
+            String[] serverResponse = null;
+            // try to constuct a URL for accessing the server
+            try {
+                //TODO: sbsrv1 is currently an "unknown protocol" - I need to fix that
+                final String DR_BROWN_SERVER = "sbsrv1.cs.nuim.ie";
+                final String DR_BROWN_PORT = "30003";
+                final String FULL_SERVER_URL = DR_BROWN_SERVER + ":" + DR_BROWN_PORT;
+
+                Uri builtUri = Uri.parse(FULL_SERVER_URL);
+                URL url = new URL(builtUri.toString());
+
+                // open connection to the server
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("GET");
+                urlConnection.connect();
+
+                InputStream inputStream = urlConnection.getInputStream();
+                StringBuffer buffer = new StringBuffer();
+                if(inputStream == null) {
+                    // do nothing except...
+                    Log.d(tag, "InputStream is null. Closing.");
+                    return null;
+                }
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+                String outputLine;
+                while((outputLine = bufferedReader.readLine()) != null){
+                    // Just adding a new line to be safe
+                    buffer.append(outputLine + "\n");
+                }
+                if(buffer.length()==0){
+                    // Buffer is null, don't bother parsing
+                    Log.d(tag, "Buffer is null. Closing.");
+                    return null;
+                }
+                String unsplitServerResponse = buffer.toString();
+                Log.d("Server response", unsplitServerResponse);
+                serverResponse = unsplitServerResponse.split(",");
+                return serverResponse;
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            } finally {
+                if (urlConnection != null){
+                    urlConnection.disconnect(); // don't want to fry Dr. Brown's server with too many requests
+                }
+                if (bufferedReader != null){
+                    try {
+                        bufferedReader.close();
+                    } catch (IOException e) {
+                        Log.e(tag, "Error closing stream: " + e.toString());
+                    }
+                }
+            }
+            return null;
+        }
     }
 }

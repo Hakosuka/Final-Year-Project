@@ -14,4 +14,17 @@
         android:id="@+id/button_gps_activation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/gps_latitude"
+        android:text="@string/lati"
+        android:layout_centerInParent="true"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/gps_longitude"
+        android:text="@string/longi"
+        android:layout_below="@id/gps_latitude"
+        android:layout_alignLeft="@id/gps_latitude"/>
 </RelativeLayout>

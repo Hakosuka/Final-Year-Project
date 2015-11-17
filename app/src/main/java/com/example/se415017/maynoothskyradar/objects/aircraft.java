@@ -3,7 +3,7 @@ package com.example.se415017.maynoothskyradar.objects;
 /**
  * Created by se415017 on 10/11/2015.
  */
-public class aircraft {
+public class aircraft extends Object {
     char[] icaoHexAddr;
     char[] flightNum;
     int altitude;
