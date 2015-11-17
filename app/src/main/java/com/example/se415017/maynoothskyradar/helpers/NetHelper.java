@@ -41,7 +41,7 @@ public class NetHelper {
     public boolean checkIfServerIsUp() {
         HttpURLConnection connection = null;
         try {
-            connection = (HttpURLConnection) new URL("sbsrv1.cs.nuim.ie:30003").openConnection();
+            connection = (HttpURLConnection) new URL("http://sbsrv1.cs.nuim.ie:30003").openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
             connection.setRequestMethod("HEAD");

@@ -179,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
                 final String DR_BROWN_PORT = "30003";
                 final String FULL_SERVER_URL = DR_BROWN_SERVER + ":" + DR_BROWN_PORT;*/
                 Log.d(tag, "About to try parsing a URI");
-                Uri builtUri = Uri.parse("sbsrv1.cs.nuim.ie:30003");
+                Uri builtUri = Uri.parse("http://sbsrv1.cs.nuim.ie:30003");
                 Log.d("Built URI", builtUri.toString());
                 URL url = new URL(builtUri.toString());
 
