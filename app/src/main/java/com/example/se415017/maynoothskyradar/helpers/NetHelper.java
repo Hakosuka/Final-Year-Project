@@ -29,6 +29,7 @@ public class NetHelper {
     }
     public boolean isConnected() {
         netInfo = connMgr.getActiveNetworkInfo();
+        Log.d("Connected to", netInfo.toString());
         if (netInfo != null && netInfo.isConnectedOrConnecting()) {
             return true;
         }

@@ -1,5 +1,6 @@
 package com.example.se415017.maynoothskyradar.activities;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     boolean netStatus = false;
+    boolean serverStatus = false;
     String[] dummyData = {
             "$GPGGA,103102.557,5323.0900,N,00636.1283,W,1,08,1.0,49.1,M,56.5,M,,0000*7E",
             "$GPGSA,A,3,01,11,08,19,28,32,03,18,,,,,1.7,1.0,1.3*37",
@@ -85,16 +87,22 @@ public class MainActivity extends AppCompatActivity {
                 .createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
         wifiLock.acquire();
 
-        netStatus = netHelper.checkIfServerIsUp();
+        netStatus = netHelper.isConnected();
+        if(netStatus) {
+            serverStatus = netHelper.checkIfServerIsUp();
 
-        /**FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+            if (serverStatus) {
+                new sbsReaderTask().execute();
+            } else {
+                AlertDialog.Builder adb = new AlertDialog.Builder(getApplicationContext());
+                adb.setTitle("Server status");
+                adb.setMessage("Server unavailable. Please try later.");
             }
-        });*/
+        } else {
+            AlertDialog.Builder adb = new AlertDialog.Builder(getApplicationContext());
+            adb.setTitle("Connectivity status");
+            adb.setMessage("Your device is not connected to the Internet. Please activate your mobile data or connect to wi-fi.");
+        }
     }
 
     @Override
@@ -167,11 +175,12 @@ public class MainActivity extends AppCompatActivity {
             // try to constuct a URL for accessing the server
             try {
                 //TODO: sbsrv1 is currently an "unknown protocol" - I need to fix that
-                final String DR_BROWN_SERVER = "sbsrv1.cs.nuim.ie";
+                /*final String DR_BROWN_SERVER = "sbsrv1.cs.nuim.ie";
                 final String DR_BROWN_PORT = "30003";
-                final String FULL_SERVER_URL = DR_BROWN_SERVER + ":" + DR_BROWN_PORT;
-
-                Uri builtUri = Uri.parse(FULL_SERVER_URL);
+                final String FULL_SERVER_URL = DR_BROWN_SERVER + ":" + DR_BROWN_PORT;*/
+                Log.d(tag, "About to try parsing a URI");
+                Uri builtUri = Uri.parse("sbsrv1.cs.nuim.ie:30003");
+                Log.d("Built URI", builtUri.toString());
                 URL url = new URL(builtUri.toString());
 
                 // open connection to the server
@@ -203,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
                 serverResponse = unsplitServerResponse.split(",");
                 return serverResponse;
             } catch (IOException ioe) {
-                ioe.printStackTrace();
+                Log.e(tag, ioe.toString());
             } finally {
                 if (urlConnection != null){
                     urlConnection.disconnect(); // don't want to fry Dr. Brown's server with too many requests
