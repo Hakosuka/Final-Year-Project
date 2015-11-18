@@ -12,8 +12,9 @@
     <string name="track">Track:</string>
     <string name="rCode">Radar:</string>
     <string name="squawk">Squawk:</string>
-	<string name="stdep">STD:</string>
-	<string name="starr">STA:</string>
-	<string name="atdep">ATD:</string>
-	<string name="etarr">ETA:</string>
+    <string name="stdep">STD:</string>
+    <string name="starr">STA:</string>
+    <string name="atdep">ATD:</string>
+    <string name="etarr">ETA:</string>
+    <string name="title_activity_base">BaseActivity</string>
 </resources>

@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -27,7 +28,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -42,14 +46,22 @@ import butterknife.OnClick;
  */
 public class MainActivity extends AppCompatActivity {
 
+    private String strUrl = "http://sbsrv1.cs.nuim.ie";
+    private int serverPort = 30003;
+
     @Bind(R.id.button_gps_activation)
     Button GpsActivationButton;
+    @Bind(R.id.check_server_button)
+    Button CheckServerButton;
 
     //These are the GPS coordinates of the server
     @Bind(R.id.gps_latitude)
     TextView GpsLat;
     @Bind(R.id.gps_longitude)
     TextView GpsLon;
+
+    @Bind(R.id.server_status)
+    TextView ServerStat;
 
     @OnClick(R.id.button_gps_activation)
     public void activateGPS(View view){
@@ -59,8 +71,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @OnClick(R.id.check_server_button)
+    public void checkServerHandler(View view, String strUrl){
+        Log.d("checkServer", "Button pressed");
+        NetHelper netHelper = new NetHelper(getApplicationContext());
+        if(netHelper.isConnected()) {
+            ServerStat.setText("Server is available");
+        }
+        else {
+            AlertDialog.Builder adb = new AlertDialog.Builder();
+            adb.
+        }
+    }
+
     boolean netStatus = false;
-    boolean serverStatus = false;
+    Boolean serverStatus = false;
     String[] dummyData = {
             "$GPGGA,103102.557,5323.0900,N,00636.1283,W,1,08,1.0,49.1,M,56.5,M,,0000*7E",
             "$GPGSA,A,3,01,11,08,19,28,32,03,18,,,,,1.7,1.0,1.3*37",
@@ -89,14 +114,14 @@ public class MainActivity extends AppCompatActivity {
 
         netStatus = netHelper.isConnected();
         if(netStatus) {
-            serverStatus = netHelper.checkIfServerIsUp();
+            serverStatus = new checkServerTask().execute("http://sbsrv1.cs.nuim.ie:30003");
 
             if (serverStatus) {
                 new sbsReaderTask().execute();
             } else {
                 AlertDialog.Builder adb = new AlertDialog.Builder(getApplicationContext());
-                adb.setTitle("Server status");
-                adb.setMessage("Server unavailable. Please try later.");
+                adb.setTitle("Server status")
+                        .setMessage("Server unavailable. Please try later.");
             }
         } else {
             AlertDialog.Builder adb = new AlertDialog.Builder(getApplicationContext());
@@ -151,26 +176,32 @@ public class MainActivity extends AppCompatActivity {
             GpsLon.setText("Longitude: " + Double.toString(nmeaLongitude));
         }
     }
-
-    /**
-     * Version: 17 November 2015
-     *
-     * This is supposed to read the SBS-1 data from Dr. Brown's server
-     */
-    public class sbsReaderTask extends AsyncTask <String, Void, String[]> {
-        private String tag = "sbsReaderTask";
-
-        // I will be using this to check if previously detected aircraft are still detectable
-        public boolean checkIfPlaneIsAvailable(String planeHexCode){
-            boolean planeIsAvailable = false;
-            return planeIsAvailable;
+    class checkServerTask extends AsyncTask <String, Void, Boolean>{
+        @Override
+        protected Boolean doInBackground(String... strUrl){
+            Boolean serverStatus = false;
+            try { URL url = new URL(strUrl[0]); }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+            return serverStatus;
         }
+
+        @Override
+        protected void onPostExecute()
+    }
+    /**
+     * Version: 17 November 2015: This is supposed to read the SBS-1 data from Dr. Brown's server
+     * Version: 18 November 2015: I'm getting a NetworkOnMainThread exception, I need to fix that
+     */
+    class sbsReaderTask extends AsyncTask <String, Void, String[]> {
+        private String tag = "sbsReaderTask";
 
         @Override
         protected String[] doInBackground(String... params){
             HttpURLConnection urlConnection = null;
             BufferedReader bufferedReader = null;
-
+            Socket socket = new Socket();
             String[] serverResponse = null;
             // try to constuct a URL for accessing the server
             try {

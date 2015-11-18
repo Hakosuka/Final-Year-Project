@@ -37,25 +37,26 @@ public class NetHelper {
             return false;
         }
     }
-
-    public boolean checkIfServerIsUp() {
-        HttpURLConnection connection = null;
+    public Boolean serverIsUp() {
+        HttpURLConnection urlConnection = null;
         try {
-            connection = (HttpURLConnection) new URL("http://sbsrv1.cs.nuim.ie:30003").openConnection();
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-            connection.setRequestMethod("HEAD");
-            int responseCode = connection.getResponseCode();
-            return (responseCode >= 200 && responseCode <= 399);
+            URL url = new URL("http://sbsrv1.cs.nuim.ie:30003");
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setReadTimeout(5000);
+            urlConnection.setConnectTimeout(5000);
+            urlConnection.setRequestMethod("GET");
+            urlConnection.connect();
+            int response = urlConnection.getResponseCode();
+            return (response >= 200 && response <= 399);
         } catch (IOException e) {
-            Log.e("Checking for server", e.toString());
+            e.printStackTrace();
             return false;
         } finally {
-            if (connection != null) {
-                connection.disconnect();
+            if(urlConnection != null){
+                urlConnection.disconnect();
             }
         }
-
     }
-
 }
+
+
