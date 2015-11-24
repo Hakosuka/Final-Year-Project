@@ -2,11 +2,14 @@ package com.example.se415017.maynoothskyradar.activities;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -18,6 +21,8 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
 
@@ -72,15 +77,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.check_server_button)
-    public void checkServerHandler(View view, String strUrl){
+    public void checkServerHandler(View view){
         Log.d("checkServer", "Button pressed");
         NetHelper netHelper = new NetHelper(getApplicationContext());
         if(netHelper.isConnected()) {
+            Log.d("checkServer", "Connection available");
             ServerStat.setText("Server is available");
         }
         else {
-            AlertDialog.Builder adb = new AlertDialog.Builder();
-            adb.
+            Log.d("checkServer", "No connection available");
+            new MaterialDialog.Builder(this).title("No Internet connection available")
+                    .content("Please activate your mobile data or connect to wi-fi.")
+                    .cancelable(false)
+                    .positiveText("Open settings")
+                    .onPositive(new MaterialDialog.SingleButtonCallback() {
+                        @Override
+                        public void onClick(MaterialDialog dialog, DialogAction which) {
+                            Intent settingsIntent = new Intent(Settings.ACTION_SETTINGS);
+                            startActivity(settingsIntent);
+                        }
+                    });
+
         }
     }
 
@@ -113,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         wifiLock.acquire();
 
         netStatus = netHelper.isConnected();
-        if(netStatus) {
+        /*if(netStatus) {
             serverStatus = new checkServerTask().execute("http://sbsrv1.cs.nuim.ie:30003");
 
             if (serverStatus) {
@@ -127,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
             AlertDialog.Builder adb = new AlertDialog.Builder(getApplicationContext());
             adb.setTitle("Connectivity status");
             adb.setMessage("Your device is not connected to the Internet. Please activate your mobile data or connect to wi-fi.");
-        }
+        }*/
     }
 
     @Override
@@ -187,8 +204,10 @@ public class MainActivity extends AppCompatActivity {
             return serverStatus;
         }
 
-        @Override
-        protected void onPostExecute()
+        /*@Override
+        protected void onPostExecute(){
+
+        }*/
     }
     /**
      * Version: 17 November 2015: This is supposed to read the SBS-1 data from Dr. Brown's server

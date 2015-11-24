@@ -29,11 +29,13 @@ public class NetHelper {
     }
     public boolean isConnected() {
         netInfo = connMgr.getActiveNetworkInfo();
-        Log.d("Connected to", netInfo.toString());
+
         if (netInfo != null && netInfo.isConnectedOrConnecting()) {
+            Log.d("Connected to", netInfo.toString()); //NullPointerException
             return true;
         }
         else {
+            Log.d("netInfo = ", "No available network info");
             return false;
         }
     }
