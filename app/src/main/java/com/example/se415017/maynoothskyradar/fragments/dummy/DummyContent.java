@@ -54,19 +54,38 @@ public class DummyContent {
      * A dummy item representing a piece of content.
      */
     public static class DummyItem {
-        public final String id;
-        public final String content;
-        public final String details;
-
-        public DummyItem(String id, String content, String details) {
-            this.id = id;
-            this.content = content;
-            this.details = details;
+        char[] icaoHexAddr;
+        char[] flightNum;
+        int altitude;
+        int speed;
+        int track;
+        int odd_cprlat;
+        int odd_cprlon;
+        int even_cprlat;
+        int even_cprlon;
+        double lat, lon;
+        public DummyItem(char[] icaoHexAddr, char[] flightNum, int altitude, int speed, int track, int even_cprlat, int even_cprlon, int odd_cprlat, int odd_cprlon) {
+            this.icaoHexAddr = icaoHexAddr;
+            this.flightNum = flightNum;
+            this.altitude = altitude;
+            this.speed = speed;
+            this.track = track;
+            this.odd_cprlat = odd_cprlat;
+            this.odd_cprlon = odd_cprlon;
+            this.even_cprlat = even_cprlat;
+            this.even_cprlon = even_cprlon;
         }
 
         @Override
         public String toString() {
-            return content;
+            return icaoHexAddr + " " + flightNum + " " +
+                    Integer.toString(altitude) + " " +
+                    Integer.toString(speed) + " " +
+                    Integer.toString(track) + " " +
+                    Integer.toString(odd_cprlat) + " " +
+                    Integer.toString(odd_cprlon) + " " +
+                    Integer.toString(even_cprlat) + " " +
+                    Integer.toString(even_cprlon);
         }
     }
 }

@@ -50,7 +50,7 @@ import butterknife.OnClick;
  * Parsing the GPS data supplied by Joe in his email.
  */
 public class MainActivity extends AppCompatActivity {
-
+    //TODO: move all of the UI stuff out of the Activity and into Fragments
     private String strUrl = "http://sbsrv1.cs.nuim.ie";
     private int serverPort = 30003;
 
