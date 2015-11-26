@@ -37,6 +37,8 @@ dependencies {
     compile 'info.android15.nucleus:nucleus-support-v7:2.0.3'
     compile 'com.android.support:support-v4:23.1.1'
     compile 'com.android.support:recyclerview-v7:23.1.1'
+    compile 'frankiesardo:icepick:3.1.0'
+    provided 'frankiesardo:icepick-processor:3.1.0'
 }
 
 repositories {

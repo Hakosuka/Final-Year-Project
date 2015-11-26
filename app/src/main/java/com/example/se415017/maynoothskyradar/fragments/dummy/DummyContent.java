@@ -34,11 +34,13 @@ public class DummyContent {
 
     private static void addItem(DummyItem item) {
         ITEMS.add(item);
-        ITEM_MAP.put(item.id, item);
+        ITEM_MAP.put(item.icaoHexAddr, item);
     }
 
     private static DummyItem createDummyItem(int position) {
-        return new DummyItem(String.valueOf(position), "Item " + position, makeDetails(position));
+        return new DummyItem("AAAA" + Integer.toString(position),
+                "EI" + String.valueOf(position),
+                30000, 300, "50");
     }
 
     private static String makeDetails(int position) {
@@ -51,41 +53,37 @@ public class DummyContent {
     }
 
     /**
-     * A dummy item representing a piece of content.
+     * The dummy data is in SBS-1 (BaseStation) format
      */
     public static class DummyItem {
-        char[] icaoHexAddr;
-        char[] flightNum;
+        // TODO: replace all of this stuff (from dump1090) with SBS-1 data
+        boolean isAirbourne = true; // Let's just assume in the dummy data that all detected planes are airbourne
+        String icaoHexAddr;
+        String flightNum;
         int altitude;
         int speed;
-        int track;
-        int odd_cprlat;
-        int odd_cprlon;
-        int even_cprlat;
-        int even_cprlon;
-        double lat, lon;
-        public DummyItem(char[] icaoHexAddr, char[] flightNum, int altitude, int speed, int track, int even_cprlat, int even_cprlon, int odd_cprlat, int odd_cprlon) {
+        String track;
+        public DummyItem(String icaoHexAddr, String flightNum, int altitude, int speed, String track) {
             this.icaoHexAddr = icaoHexAddr;
             this.flightNum = flightNum;
             this.altitude = altitude;
             this.speed = speed;
             this.track = track;
-            this.odd_cprlat = odd_cprlat;
-            this.odd_cprlon = odd_cprlon;
-            this.even_cprlat = even_cprlat;
-            this.even_cprlon = even_cprlon;
         }
 
         @Override
         public String toString() {
-            return icaoHexAddr + " " + flightNum + " " +
-                    Integer.toString(altitude) + " " +
-                    Integer.toString(speed) + " " +
-                    Integer.toString(track) + " " +
-                    Integer.toString(odd_cprlat) + " " +
-                    Integer.toString(odd_cprlon) + " " +
-                    Integer.toString(even_cprlat) + " " +
-                    Integer.toString(even_cprlon);
+            if(isAirbourne)
+                return "Y, " + icaoHexAddr + ", " + flightNum + ", " +
+                    Integer.toString(altitude) + ", " +
+                    Integer.toString(speed) + ", " +
+                    track;
+            else {
+                return "N, " + icaoHexAddr + ", " + flightNum + ", " +
+                        Integer.toString(altitude) + ", " +
+                        Integer.toString(speed) + ", " +
+                        track;
+            }
         }
     }
 }

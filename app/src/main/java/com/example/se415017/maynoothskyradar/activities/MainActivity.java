@@ -169,6 +169,11 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * This method parses lines of NMEA data to check if they contain latitude
+     * and longitude data.
+     * @param sentence - a line of NMEA data
+     */
     public void decodeNMEA(String sentence){
         String tag = "Decoding NMEA";
         if(sentence.startsWith("$GPRMC")) {
