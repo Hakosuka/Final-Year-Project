@@ -1,17 +1,22 @@
 package com.example.se415017.maynoothskyradar.activities;
 
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -25,6 +30,8 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
+import com.example.se415017.maynoothskyradar.services.SocketService;
+import com.google.android.gms.maps.model.LatLng;
 
 import org.w3c.dom.Text;
 
@@ -49,10 +56,16 @@ import butterknife.OnClick;
  * @version 11 November 2015
  * Parsing the GPS data supplied by Joe in his email.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends FragmentActivity {
     //TODO: move all of the UI stuff out of the Activity and into Fragments
     private String strUrl = "http://sbsrv1.cs.nuim.ie";
     private int serverPort = 30003;
+    public SocketService socketService;
+    static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
+    boolean socketServiceBound = false;
+    final String TAG = getClass().toString();
+
+    public static FragmentManager fragManager;
 
     @Bind(R.id.button_gps_activation)
     Button GpsActivationButton;
@@ -117,10 +130,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        fragManager = getSupportFragmentManager();
         ButterKnife.bind(this);
         NetHelper netHelper = new NetHelper(getApplicationContext());
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
         /** I will need the wi-fi to be constantly connected so that I can track planes while the
          *  phone is asleep.
@@ -130,28 +142,39 @@ public class MainActivity extends AppCompatActivity {
         wifiLock.acquire();
 
         netStatus = netHelper.isConnected();
-        /*if(netStatus) {
-            serverStatus = new checkServerTask().execute("http://sbsrv1.cs.nuim.ie:30003");
-
-            if (serverStatus) {
-                new sbsReaderTask().execute();
-            } else {
-                AlertDialog.Builder adb = new AlertDialog.Builder(getApplicationContext());
-                adb.setTitle("Server status")
-                        .setMessage("Server unavailable. Please try later.");
-            }
-        } else {
-            AlertDialog.Builder adb = new AlertDialog.Builder(getApplicationContext());
-            adb.setTitle("Connectivity status");
-            adb.setMessage("Your device is not connected to the Internet. Please activate your mobile data or connect to wi-fi.");
-        }*/
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        //Bind to SocketService
+        Intent sockIntent = new Intent(this, SocketService.class);
+        bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(socketServiceBound) {
+            unbindService(mConnection);
+            Log.d(TAG, "Socket service unbound from MainActivity");
+            socketServiceBound = false;
+        }
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
+    }
+
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+        if(socketServiceBound) {
+            unbindService(mConnection);
+            Log.d(TAG, "Socket service unbound from MainActivity");
+        }
     }
 
     @Override
@@ -165,10 +188,24 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
+    // Necessary callbacks for service binding
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service){
+            SocketService.LocalBinder binder = (SocketService.LocalBinder) service;
+            socketService = binder.getService();
+            socketServiceBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            socketServiceBound = false;
+        }
+    };
     /**
      * This method parses lines of NMEA data to check if they contain latitude
      * and longitude data.

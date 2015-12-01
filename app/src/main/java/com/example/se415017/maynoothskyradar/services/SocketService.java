@@ -22,7 +22,7 @@ public class SocketService extends Service {
     public static final String DR_BROWNS_SERVER = "http://sbsrv1.cs.nuim.ie";
     public static final int SERVER_PORT = 30003;
     Socket socket;
-    IBinder myBinder;
+    IBinder myBinder = new LocalBinder();
     InputStream inputStream;
     DataInputStream diStream;
     boolean socketConnected = false;
@@ -34,7 +34,6 @@ public class SocketService extends Service {
     public IBinder onBind(Intent intent) {
         // TODO: Return the communication channel to the service.
         //throw new UnsupportedOperationException("Not yet implemented");
-        myBinder = new LocalBinder();
         return myBinder;
     }
 

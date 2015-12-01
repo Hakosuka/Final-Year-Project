@@ -5,6 +5,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InterfaceAddress;
 import java.net.Socket;
 
 /**
@@ -35,7 +36,11 @@ public class Dump1090Decoder {
     public byte[] receive() throws IOException {
         //TODO: find some way of constantly streaming data
         in = socket.getInputStream();
-        buffer = in.;
+        int result = in.read();
+        for (int i = 0; i < 128; i++){
+            buffer[i] = Byte.parseByte(Integer.toBinaryString(result), 2);
+        }
+        return buffer;
     }
 
     /**

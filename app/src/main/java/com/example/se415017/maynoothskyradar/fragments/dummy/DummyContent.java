@@ -58,15 +58,17 @@ public class DummyContent {
     public static class DummyItem {
         // TODO: replace all of this stuff (from dump1090) with SBS-1 data
         boolean isAirbourne = true; // Let's just assume in the dummy data that all detected planes are airbourne
-        String icaoHexAddr;
+        public String icaoHexAddr;
         String flightNum;
-        int altitude;
+        int impAltitude; // imperial
+        double metAltitude; // metric
         int speed;
         String track;
         public DummyItem(String icaoHexAddr, String flightNum, int altitude, int speed, String track) {
             this.icaoHexAddr = icaoHexAddr;
             this.flightNum = flightNum;
-            this.altitude = altitude;
+            this.impAltitude = altitude;
+            metAltitude = ((double)altitude)*0.3048; // 1 ft = 30.48cm
             this.speed = speed;
             this.track = track;
         }
@@ -75,12 +77,14 @@ public class DummyContent {
         public String toString() {
             if(isAirbourne)
                 return "Y, " + icaoHexAddr + ", " + flightNum + ", " +
-                    Integer.toString(altitude) + ", " +
+                    Integer.toString(impAltitude) + "ft, " +
+                    Double.toString(metAltitude) + "m, " +
                     Integer.toString(speed) + ", " +
                     track;
             else {
                 return "N, " + icaoHexAddr + ", " + flightNum + ", " +
-                        Integer.toString(altitude) + ", " +
+                        Integer.toString(impAltitude) + "ft, " +
+                        Double.toString(metAltitude) + "m, " +
                         Integer.toString(speed) + ", " +
                         track;
             }
