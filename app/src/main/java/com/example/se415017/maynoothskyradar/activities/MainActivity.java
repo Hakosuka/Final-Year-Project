@@ -58,8 +58,10 @@ import butterknife.OnClick;
  */
 public class MainActivity extends FragmentActivity {
     //TODO: move all of the UI stuff out of the Activity and into Fragments
+    //TODO: fix "unable to unstantiate activity ComponentInfo" error
     private String strUrl = "http://sbsrv1.cs.nuim.ie";
     private int serverPort = 30003;
+    private String urlAndPort = "http://sbsrv1.cs.nuim.ie:30003";
     public SocketService socketService;
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
     boolean socketServiceBound = false;
@@ -83,13 +85,13 @@ public class MainActivity extends FragmentActivity {
 
     @OnClick(R.id.button_gps_activation)
     public void activateGPS(View view){
-        Log.d("activateGPS", "Button pressed");
+        Log.d(TAG, "activateGPS button pressed");
         for(int i = 0; i < dummyData.length; i++){
             decodeNMEA(dummyData[i]);
         }
     }
 
-    @OnClick(R.id.check_server_button)
+    /*@OnClick(R.id.check_server_button)
     public void checkServerHandler(View view){
         Log.d("checkServer", "Button pressed");
         NetHelper netHelper = new NetHelper(getApplicationContext());
@@ -112,7 +114,7 @@ public class MainActivity extends FragmentActivity {
                     });
 
         }
-    }
+    }*/
 
     boolean netStatus = false;
     Boolean serverStatus = false;
@@ -133,6 +135,8 @@ public class MainActivity extends FragmentActivity {
         fragManager = getSupportFragmentManager();
         ButterKnife.bind(this);
         NetHelper netHelper = new NetHelper(getApplicationContext());
+        Intent sockIntent = new Intent(this, SocketService.class);
+        bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
 
         /** I will need the wi-fi to be constantly connected so that I can track planes while the
          *  phone is asleep.
@@ -147,11 +151,17 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        //Bind to SocketService
-        Intent sockIntent = new Intent(this, SocketService.class);
-        bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(!socketServiceBound) {
+            Intent sockIntent = new Intent(this, SocketService.class);
+            bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
     @Override
     protected void onStop() {
         super.onStop();
@@ -199,6 +209,7 @@ public class MainActivity extends FragmentActivity {
             SocketService.LocalBinder binder = (SocketService.LocalBinder) service;
             socketService = binder.getService();
             socketServiceBound = true;
+            Log.d("MainActivity", "Socket service bound");
         }
 
         @Override
@@ -209,23 +220,23 @@ public class MainActivity extends FragmentActivity {
     /**
      * This method parses lines of NMEA data to check if they contain latitude
      * and longitude data.
-     * @param sentence - a line of NMEA data
+     * param sentence - a line of NMEA data
      */
-    public void decodeNMEA(String sentence){
+    public void decodeNMEA(String sentence) {
         String tag = "Decoding NMEA";
-        if(sentence.startsWith("$GPRMC")) {
+        if (sentence.startsWith("$GPRMC")) {
             String[] rmcValues = sentence.split(",");
             //TODO: Maybe try to change these doubles back into strings for
             double nmeaLatitude = Double.parseDouble(rmcValues[3]);
             double nmeaLatMin = nmeaLatitude % 100; //get minutes from latitude value
-            nmeaLatitude/=100;
-            if(rmcValues[4].charAt(0)=='S'){
+            nmeaLatitude /= 100;
+            if (rmcValues[4].charAt(0) == 'S') {
                 nmeaLatitude = -nmeaLatitude;
             }
             double nmeaLongitude = Double.parseDouble(rmcValues[5]);
             double nmeaLonMin = nmeaLongitude % 100; //get minutes from longitude value
-            nmeaLongitude/=100;
-            if(rmcValues[6].charAt(0)=='W'){
+            nmeaLongitude /= 100;
+            if (rmcValues[6].charAt(0) == 'W') {
                 nmeaLongitude = -nmeaLongitude;
             }
 
@@ -254,8 +265,9 @@ public class MainActivity extends FragmentActivity {
     /**
      * Version: 17 November 2015: This is supposed to read the SBS-1 data from Dr. Brown's server
      * Version: 18 November 2015: I'm getting a NetworkOnMainThread exception, I need to fix that
-     */
+     *//*
     class sbsReaderTask extends AsyncTask <String, Void, String[]> {
+        //TODO: GET THIS WORKING
         private String tag = "sbsReaderTask";
 
         @Override
@@ -267,9 +279,9 @@ public class MainActivity extends FragmentActivity {
             // try to constuct a URL for accessing the server
             try {
                 //TODO: sbsrv1 is currently an "unknown protocol" - I need to fix that
-                /*final String DR_BROWN_SERVER = "sbsrv1.cs.nuim.ie";
+                *//*final String DR_BROWN_SERVER = "sbsrv1.cs.nuim.ie";
                 final String DR_BROWN_PORT = "30003";
-                final String FULL_SERVER_URL = DR_BROWN_SERVER + ":" + DR_BROWN_PORT;*/
+                final String FULL_SERVER_URL = DR_BROWN_SERVER + ":" + DR_BROWN_PORT;*//*
                 Log.d(tag, "About to try parsing a URI");
                 Uri builtUri = Uri.parse("http://sbsrv1.cs.nuim.ie:30003");
                 Log.d("Built URI", builtUri.toString());
@@ -319,5 +331,5 @@ public class MainActivity extends FragmentActivity {
             }
             return null;
         }
-    }
+    }*/
 }

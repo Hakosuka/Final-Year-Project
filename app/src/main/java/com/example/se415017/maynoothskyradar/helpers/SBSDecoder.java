@@ -11,7 +11,7 @@ import java.net.Socket;
 /**
  * Created by se415017 on 09/11/2015.
  */
-public class Dump1090Decoder {
+public class SBSDecoder {
     //TODO: sort out sockets
     private Socket socket;
     private int port = 9999; // default
@@ -23,30 +23,32 @@ public class Dump1090Decoder {
      * This constructs a decoder.
      * @param serverURL (the URL of the server I want to stream from), serverPort (the port I want to use)
      */
-    public Dump1090Decoder(String serverURL, int serverPort){
+    public SBSDecoder(String serverURL, int serverPort){
         this.port = serverPort;
         this.drBrownsServer = serverURL;
         try {
             socket = new Socket(drBrownsServer, port);
+            receive(socket);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public byte[] receive() throws IOException {
+    public byte[] receive(Socket s) throws IOException {
         //TODO: find some way of constantly streaming data
-        in = socket.getInputStream();
+        in = s.getInputStream();
         int result = in.read();
         for (int i = 0; i < 128; i++){
             buffer[i] = Byte.parseByte(Integer.toBinaryString(result), 2);
         }
+        Log.d(getClass().toString(), buffer.toString());
         return buffer;
     }
 
     /**
      * This method takes in the Mode-S code and converts it to the aircraft's callsign
      * @param modeSString
-     * @return
+     * @return callsign - the callsign of the aircraft
      */
     public String modeSToCallsign(String modeSString) {
         String callsign = "";
