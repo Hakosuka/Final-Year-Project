@@ -32,22 +32,62 @@ public class SocketService extends Service {
     IBinder myBinder = new LocalBinder();
     InputStream inputStream;
     DataInputStream diStream;
+    BufferedReader bufferedReader;
     StringWriter writer;
+    boolean firstReading = true; // checks if this is the first time the app is reading from the stream
     boolean socketConnected = false;
     boolean readerOpen = false;
+    byte current;
     byte[] buffer = new byte[128];
     public SocketService() {
     }
+    Intent bindingIntent;
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        //throw new UnsupportedOperationException("Not yet implemented");
+        bindingIntent = intent;
+        Log.d(TAG, "Returning binder");
         return myBinder;
     }
 
     public class LocalBinder extends Binder {
         public SocketService getService() {
+            if(writer == null) {
+                writer = new StringWriter();
+                Log.d(TAG, "New string writer created");
+            }
+            Log.d(TAG, "Returning SocketService");
+            new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    Log.d(TAG, "New thread running");
+                    try {
+                        //TODO: clean this up
+                        Log.d(TAG, "Beginning try block");
+                        socket = new Socket(DR_BROWNS_SERVER, SERVER_PORT);
+                        Log.d(TAG, "Socket created!");
+                        socketConnected = true;
+                        inputStream = socket.getInputStream();
+                        Log.d(TAG, "Input stream initialised");
+                        //IOUtils.copy(inputStream, writer, "UTF-8");
+                        diStream = new DataInputStream(inputStream);
+                        Log.d(TAG, "Data input stream initialised");
+                        readerOpen = true;
+                        current = (byte) inputStream.read();
+                        Log.d(TAG + "byte", Byte.toString(current));
+                        ConnectSocket connectSocket = new ConnectSocket();
+                        Log.d(TAG, "connectSocket initialised");
+                        while(readerOpen){
+                            Log.d(TAG, "readFromInputStream()" + readFromInputStream(inputStream));
+                            Log.d(TAG, diStream.readUTF());
+                            connectSocket.run();
+                        }
+                    } catch (IOException e) {
+                        //TODO: SocketException
+                        Log.e(TAG, e.toString() + ". Socket failed.");
+                    }
+                }
+            }).start();
             return SocketService.this;
         }
     }
@@ -55,30 +95,9 @@ public class SocketService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        if(writer == null) {
-            writer = new StringWriter();
-            Log.d(TAG, "New string writer created");
-        }
-        //TODO: NetworkOnMainThread error
-        new Thread(new Runnable(){
-            @Override
-            public void run() {
-                try {
-                    socket = new Socket(DR_BROWNS_SERVER, SERVER_PORT);
-                    socketConnected = true;
-                    inputStream = socket.getInputStream();
-                    IOUtils.copy(inputStream, writer, "UTF-8"); //TODO: socket exception
-                    diStream = new DataInputStream(inputStream);
-                    readerOpen = true;
-                    ConnectSocket connectSocket = new ConnectSocket();
-                    Log.d(getClass().toString(), "Socket created!");
-                    Log.d(TAG, "readFromInputStream()" + readFromInputStream(inputStream));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Log.d(TAG, "Socket failed");
-                }
-            }
-        }).start();
+
+
+
     }
 
     @Override
@@ -99,11 +118,22 @@ public class SocketService extends Service {
     }
 
     public static String readFromInputStream(InputStream inputStream) throws IOException {
-        BufferedReader reader=  new BufferedReader(new InputStreamReader(inputStream));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         StringBuilder builder = new StringBuilder();
         String line;
-        while ((line = reader.readLine()) != null) {
-            builder.append(line);
+        try {
+            while ((line = reader.readLine()) != null) {
+                builder.append(line + "\n"); //TODO: fix System.err warning
+                Log.d(TAG, "String from BufferedReader = " + line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return builder.toString();
     }
@@ -112,25 +142,34 @@ public class SocketService extends Service {
         //TODO: This is probably causing a memory leak, I need to fix this
         @Override
         public void run() {
-            Log.d(TAG, "ConnectSocket running");
-            while(socketConnected && readerOpen){
+            //Log.d(TAG, "ConnectSocket running");
+            //while(socketConnected && readerOpen){
                 Log.d(TAG, "About to try reading from socket stream");
                 try {
-                    int len = diStream.readInt();
+                    Log.d(TAG, socket.toString());
+                    socket = new Socket(DR_BROWNS_SERVER, SERVER_PORT);
+                    socketConnected = true;
+                    inputStream = socket.getInputStream();
+                    IOUtils.copy(inputStream, writer, "UTF-8");
+                    diStream = new DataInputStream(inputStream);
+                    String diStreamResult = diStream.readUTF();
                     String streamString = IOUtils.toString(inputStream, "UTF-8");
                     /*//byte[] streamResult = new byte[len];
                     if (len>0) {
 
                         //Log.d(TAG, streamResult.toString());
                     }*/
-                    Log.d(TAG, "DataInputStream: " + Integer.toString(len));
+
+                    bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                    Log.d(TAG, "DataInputStream: " + diStreamResult);
                     Log.d(TAG, "StringWriter from stream: " + streamString);
                     Log.d(TAG, "readFromInputStream()" + readFromInputStream(inputStream));
+                    Log.d(TAG, "bufferedReader from stream: " + bufferedReader.readLine());
                 } catch (IOException e) {
                     e.printStackTrace();
                     Toast.makeText(getApplicationContext(), "Socket request failed", Toast.LENGTH_LONG).show();
                 }
-            }
+            //}
         }
     }
 }
