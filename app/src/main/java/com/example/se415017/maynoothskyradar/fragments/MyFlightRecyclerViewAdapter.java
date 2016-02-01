@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.fragments.ItemFragment.OnListFragmentInteractionListener;
 import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent.DummyItem;
 
@@ -28,6 +29,7 @@ public class MyFlightRecyclerViewAdapter extends RecyclerView.Adapter<MyFlightRe
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        //TODO: Create fragment_item layout file
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.fragment_item, parent, false);
         return new ViewHolder(view);

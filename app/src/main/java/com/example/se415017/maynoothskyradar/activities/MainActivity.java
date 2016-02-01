@@ -23,6 +23,8 @@ import com.example.se415017.maynoothskyradar.services.SocketService;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import butterknife.Bind;
@@ -37,6 +39,7 @@ import butterknife.OnClick;
 public class MainActivity extends FragmentActivity {
     //TODO: move all of the UI stuff out of the Activity and into Fragments
     //TODO: fix "unable to unstantiate activity ComponentInfo" error
+    //TODO: instead of using hard-coded values for the server's URL, make the user enter it
     private String strUrl = "http://sbsrv1.cs.nuim.ie";
     private int serverPort = 30003;
     private String urlAndPort = "http://sbsrv1.cs.nuim.ie:30003";
@@ -69,31 +72,6 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
-    /*@OnClick(R.id.check_server_button)
-    public void checkServerHandler(View view){
-        Log.d("checkServer", "Button pressed");
-        NetHelper netHelper = new NetHelper(getApplicationContext());
-        if(netHelper.isConnected()) {
-            Log.d("checkServer", "Connection available");
-            ServerStat.setText("Server is available");
-        }
-        else {
-            Log.d("checkServer", "No connection available");
-            new MaterialDialog.Builder(this).title("No Internet connection available")
-                    .content("Please activate your mobile data or connect to wi-fi.")
-                    .cancelable(false)
-                    .positiveText("Open settings")
-                    .onPositive(new MaterialDialog.SingleButtonCallback() {
-                        @Override
-                        public void onClick(MaterialDialog dialog, DialogAction which) {
-                            Intent settingsIntent = new Intent(Settings.ACTION_SETTINGS);
-                            startActivity(settingsIntent);
-                        }
-                    });
-
-        }
-    }*/
-
     boolean netStatus = false;
     Boolean serverStatus = false;
     String[] dummyData = {
@@ -113,24 +91,34 @@ public class MainActivity extends FragmentActivity {
         fragManager = getSupportFragmentManager();
         ButterKnife.bind(this);
         NetHelper netHelper = new NetHelper(getApplicationContext());
-        Intent sockIntent = new Intent(this, SocketService.class);
-        bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
-
-        /** I will need the wi-fi to be constantly connected so that I can track planes while the
-         *  phone is asleep.
-         */
-        WifiManager.WifiLock wifiLock = ((WifiManager)getSystemService(Context.WIFI_SERVICE))
-                .createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
-        wifiLock.acquire();
-
         netStatus = netHelper.isConnected();
+        if(netStatus) {
+            try {
+                URL url = new URL(urlAndPort);
+                if(netHelper.serverIsUp(url)){
+                    Intent sockIntent = new Intent(this, SocketService.class);
+                    bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+                    /** I will need the wi-fi to be constantly connected so that I can track planes while the
+                     *  phone is asleep.
+                     */
+                    WifiManager.WifiLock wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
+                            .createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
+                    wifiLock.acquire();
+                } else {
+                    //TODO: alert the user that the server is unavailable
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                //TODO: alert the user that their URL is malformed
+            }
+        } //else { TODO: prompt user to activate mobile data/connect to wi-fi }
+
     }
 
     @Override
     protected void onStart() {
         super.onStart();
     }
-
 
     @Override
     protected void onResume() {
@@ -140,6 +128,7 @@ public class MainActivity extends FragmentActivity {
             bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
         }
     }
+
     @Override
     protected void onStop() {
         super.onStop();

@@ -39,16 +39,20 @@ public class NetHelper {
             return false;
         }
     }
-    public Boolean serverIsUp() {
+
+    // Checks if the user can connect to the server
+    // 1 February 2016 - added a parameter to allow for user-entered URLs
+    public Boolean serverIsUp(URL url) {
         HttpURLConnection urlConnection = null;
         try {
-            URL url = new URL("http://sbsrv1.cs.nuim.ie:30003");
+            //URL url = new URL("http://sbsrv1.cs.nuim.ie:30003"); moving away from hard-coded URL
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setReadTimeout(5000);
-            urlConnection.setConnectTimeout(5000);
+            urlConnection.setConnectTimeout(10000);
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
             int response = urlConnection.getResponseCode();
+            Log.d(getClass().toString(), "Response = " + Integer.toString(response));
             return (response >= 200 && response <= 399);
         } catch (IOException e) {
             e.printStackTrace();
