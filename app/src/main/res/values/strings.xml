@@ -20,4 +20,9 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="server_unavailable_title">Server unavailable</string>
+    <string name="server_unavailable_content">The request to the server is unavailable. Do you want to try again?</string>
+    <string name="try_again">Try again</string>
+    <string name="cancel_text">Cancel</string>
 </resources>

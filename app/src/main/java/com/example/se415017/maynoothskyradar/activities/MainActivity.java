@@ -8,6 +8,7 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
@@ -17,6 +18,8 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
 import com.example.se415017.maynoothskyradar.services.SocketService;
@@ -90,11 +93,13 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         fragManager = getSupportFragmentManager();
         ButterKnife.bind(this);
-        NetHelper netHelper = new NetHelper(getApplicationContext());
+        final NetHelper netHelper = new NetHelper(getApplicationContext());
         netStatus = netHelper.isConnected();
         if(netStatus) {
             try {
-                URL url = new URL(urlAndPort);
+                // This needs to be final so that url can be used when trying to reach the server
+                // again in the case of failing to get a satisfactory response
+                final URL url = new URL(urlAndPort);
                 if(netHelper.serverIsUp(url)){
                     Intent sockIntent = new Intent(this, SocketService.class);
                     bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
@@ -106,10 +111,34 @@ public class MainActivity extends FragmentActivity {
                     wifiLock.acquire();
                 } else {
                     //TODO: alert the user that the server is unavailable
+                    new MaterialDialog.Builder(this)
+                            .title(R.string.server_unavailable_title)
+                            .content(R.string.server_unavailable_content)
+                            .positiveText(R.string.try_again)
+                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    netHelper.serverIsUp(url);
+                                }
+                            })
+                            .negativeText(R.string.cancel_text)
+                            .show();
                 }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 //TODO: alert the user that their URL is malformed
+                new MaterialDialog.Builder(this)
+                        .title("URL error")
+                        .content("The URL you have entered is malformed. Please go to the settings menu and change it.")
+                        .positiveText("Settings")
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which){
+                                //TODO: Take the user to the Settings menu
+                            }
+                        })
+                        .negativeText(R.string.cancel_text)
+                        .show();
             }
         } //else { TODO: prompt user to activate mobile data/connect to wi-fi }
 
