@@ -38,8 +38,10 @@ public class MyFlightRecyclerViewAdapter extends RecyclerView.Adapter<MyFlightRe
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         holder.mItem = mValues.get(position);
-        holder.mIdView.setText(mValues.get(position).id);
-        holder.mContentView.setText(mValues.get(position).content);
+        //TODO: this is just placeholder code right now. Make this code relevant to the app.
+        //TODO: can't find symbol variable id, content
+        //holder.mIdView.setText(mValues.get(position).id);
+        //holder.mContentView.setText(mValues.get(position).content);
 
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -47,7 +49,8 @@ public class MyFlightRecyclerViewAdapter extends RecyclerView.Adapter<MyFlightRe
                 if (null != mListener) {
                     // Notify the active callbacks interface (the activity, if the
                     // fragment is attached to one) that an item has been selected.
-                    mListener.onListFragmentInteraction(holder.mItem);
+                    // TODO: this method needs a URI, not a DummyItem
+                    // mListener.onListFragmentInteraction(holder.mItem);
                 }
             }
         });

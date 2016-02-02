@@ -70,7 +70,10 @@ public class FlightFragment extends Fragment {
             } else {
                 recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
             }
-            recyclerView.setAdapter(new MyFlightRecyclerViewAdapter(DummyContent.ITEMS, mListener));
+            /*  TODO: the constructor MyFlightRecyclerViewAdapter can't be applied here, because
+                FlightFragment's OnListFragmentInteractionListener can't be converted to
+                ItemFragment's OnListFragmentInteractionListener. */
+            //recyclerView.setAdapter(new MyFlightRecyclerViewAdapter(DummyContent.ITEMS, mListener));
         }
         return view;
     }

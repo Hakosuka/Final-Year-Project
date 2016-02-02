@@ -22,6 +22,8 @@ public class NetHelper {
 
     ConnectivityManager connMgr;
     NetworkInfo netInfo;
+    int response;
+    String TAG = getClass().toString();
 
     public NetHelper(Context context){
         connMgr = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -42,26 +44,37 @@ public class NetHelper {
 
     // Checks if the user can connect to the server
     // 1 February 2016 - added a parameter to allow for user-entered URLs
-    public Boolean serverIsUp(URL url) {
-        HttpURLConnection urlConnection = null;
-        try {
-            //URL url = new URL("http://sbsrv1.cs.nuim.ie:30003"); moving away from hard-coded URL
-            urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setReadTimeout(5000);
-            urlConnection.setConnectTimeout(10000);
-            urlConnection.setRequestMethod("GET");
-            urlConnection.connect();
-            int response = urlConnection.getResponseCode();
-            Log.d(getClass().toString(), "Response = " + Integer.toString(response));
-            return (response >= 200 && response <= 399);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            if(urlConnection != null){
-                urlConnection.disconnect();
+    // 2 February 2016 - goddamn NetworkOnMainThread exceptions
+    public boolean serverIsUp(final URL url) {
+        Log.d(TAG, "About to start new thread");
+        new Thread(new Runnable() {
+            @Override
+            //TODO: This isn't being invoked
+            public void run() {
+                Log.d(TAG, "New thread running for serverIsUp()");
+                HttpURLConnection urlConnection = null;
+                try {
+                    //URL url = new URL("http://sbsrv1.cs.nuim.ie:30003"); moving away from hard-coded URL
+                    Log.d(TAG, "Trying to open connection");
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setReadTimeout(5000);
+                    urlConnection.setConnectTimeout(10000);
+                    urlConnection.setRequestMethod("GET");
+                    urlConnection.connect();
+                    response = urlConnection.getResponseCode();
+                    Log.d(TAG, "Response = " + Integer.toString(response));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if(urlConnection != null){
+                        urlConnection.disconnect();
+                        Log.d(TAG, "Disconnecting");
+                    }
+                }
             }
-        }
+        });
+        Log.d(TAG, "Response: " + Integer.toString(response));
+        return (response >= 200 && response <= 399);
     }
 }
 

@@ -25,4 +25,8 @@
     <string name="server_unavailable_content">The request to the server is unavailable. Do you want to try again?</string>
     <string name="try_again">Try again</string>
     <string name="cancel_text">Cancel</string>
+
+    <string name="conn_unavailable_title">No connection</string>
+    <string name="conn_unavailable_content">Your device isn\'t connected to the Internet. Please connect to wi-fi or activate your mobile data.</string>
+    <string name="settings">Settings</string>
 </resources>

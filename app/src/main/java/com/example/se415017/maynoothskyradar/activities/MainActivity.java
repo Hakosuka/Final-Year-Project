@@ -8,6 +8,7 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -17,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -100,7 +102,9 @@ public class MainActivity extends FragmentActivity {
                 // This needs to be final so that url can be used when trying to reach the server
                 // again in the case of failing to get a satisfactory response
                 final URL url = new URL(urlAndPort);
-                if(netHelper.serverIsUp(url)){
+                if(netHelper.serverIsUp(url))
+                {
+                    Toast.makeText(MainActivity.this, "Connection test successful", Toast.LENGTH_SHORT).show();
                     Intent sockIntent = new Intent(this, SocketService.class);
                     bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
                     /** I will need the wi-fi to be constantly connected so that I can track planes while the
@@ -126,11 +130,10 @@ public class MainActivity extends FragmentActivity {
                 }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
-                //TODO: alert the user that their URL is malformed
                 new MaterialDialog.Builder(this)
                         .title("URL error")
                         .content("The URL you have entered is malformed. Please go to the settings menu and change it.")
-                        .positiveText("Settings")
+                        .positiveText("Change URL")
                         .onPositive(new MaterialDialog.SingleButtonCallback() {
                             @Override
                             public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which){
@@ -140,7 +143,21 @@ public class MainActivity extends FragmentActivity {
                         .negativeText(R.string.cancel_text)
                         .show();
             }
-        } //else { TODO: prompt user to activate mobile data/connect to wi-fi }
+        } else {
+            new MaterialDialog.Builder(this)
+                    .title(R.string.conn_unavailable_title)
+                    .content(R.string.conn_unavailable_content)
+                    .positiveText("Network settings")
+                    .onPositive(new MaterialDialog.SingleButtonCallback() {
+                        @Override
+                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                            startActivityForResult(new Intent(Settings.ACTION_SETTINGS), 0); // the user can return to the app by pressing the back button
+                        }
+                    })
+                    .negativeText("Cancel")
+                    .show();
+
+        }
 
     }
 
@@ -243,90 +260,5 @@ public class MainActivity extends FragmentActivity {
             GpsLon.setText("Longitude: " + Double.toString(nmeaLongitude));
         }
     }
-    class checkServerTask extends AsyncTask <String, Void, Boolean>{
-        @Override
-        protected Boolean doInBackground(String... strUrl){
-            Boolean serverStatus = false;
-            try { URL url = new URL(strUrl[0]); }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            return serverStatus;
-        }
-
-        /*@Override
-        protected void onPostExecute(){
-
-        }*/
-    }
-    /**
-     * Version: 17 November 2015: This is supposed to read the SBS-1 data from Dr. Brown's server
-     * Version: 18 November 2015: I'm getting a NetworkOnMainThread exception, I need to fix that
-     *//*
-    class sbsReaderTask extends AsyncTask <String, Void, String[]> {
-        //TODO: GET THIS WORKING
-        private String tag = "sbsReaderTask";
-
-        @Override
-        protected String[] doInBackground(String... params){
-            HttpURLConnection urlConnection = null;
-            BufferedReader bufferedReader = null;
-            Socket socket = new Socket();
-            String[] serverResponse = null;
-            // try to constuct a URL for accessing the server
-            try {
-                //TODO: sbsrv1 is currently an "unknown protocol" - I need to fix that
-                *//*final String DR_BROWN_SERVER = "sbsrv1.cs.nuim.ie";
-                final String DR_BROWN_PORT = "30003";
-                final String FULL_SERVER_URL = DR_BROWN_SERVER + ":" + DR_BROWN_PORT;*//*
-                Log.d(tag, "About to try parsing a URI");
-                Uri builtUri = Uri.parse("http://sbsrv1.cs.nuim.ie:30003");
-                Log.d("Built URI", builtUri.toString());
-                URL url = new URL(builtUri.toString());
-
-                // open connection to the server
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
-
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
-                if(inputStream == null) {
-                    // do nothing except...
-                    Log.d(tag, "InputStream is null. Closing.");
-                    return null;
-                }
-                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-
-                String outputLine;
-                while((outputLine = bufferedReader.readLine()) != null){
-                    // Just adding a new line to be safe
-                    buffer.append(outputLine + "\n");
-                }
-                if(buffer.length()==0){
-                    // Buffer is null, don't bother parsing
-                    Log.d(tag, "Buffer is null. Closing.");
-                    return null;
-                }
-                String unsplitServerResponse = buffer.toString();
-                Log.d("Server response", unsplitServerResponse);
-                serverResponse = unsplitServerResponse.split(",");
-                return serverResponse;
-            } catch (IOException ioe) {
-                Log.e(tag, ioe.toString());
-            } finally {
-                if (urlConnection != null){
-                    urlConnection.disconnect(); // don't want to fry Dr. Brown's server with too many requests
-                }
-                if (bufferedReader != null){
-                    try {
-                        bufferedReader.close();
-                    } catch (IOException e) {
-                        Log.e(tag, "Error closing stream: " + e.toString());
-                    }
-                }
-            }
-            return null;
-        }
-    }*/
+    //I deleted [DJKhaled]A LOT[/DJKhaled] of redundant code below
 }
