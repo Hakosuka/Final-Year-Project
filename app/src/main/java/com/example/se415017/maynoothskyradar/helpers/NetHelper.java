@@ -22,8 +22,8 @@ public class NetHelper {
 
     ConnectivityManager connMgr;
     NetworkInfo netInfo;
-    int response;
-    String TAG = getClass().toString();
+    int response = 0;
+    String TAG = "NetHelper";
 
     public NetHelper(Context context){
         connMgr = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -33,7 +33,7 @@ public class NetHelper {
         netInfo = connMgr.getActiveNetworkInfo();
 
         if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-            Log.d("Connected to", netInfo.toString()); //NullPointerException
+            Log.d("Connected to", netInfo.toString()); //TODO: Test if this creates a NullPointerException
             return true;
         }
         else {
@@ -45,6 +45,7 @@ public class NetHelper {
     // Checks if the user can connect to the server
     // 1 February 2016 - added a parameter to allow for user-entered URLs
     // 2 February 2016 - goddamn NetworkOnMainThread exceptions
+    // 3 February 2016 - I forgot about start() for threads. Goddammit.
     public boolean serverIsUp(final URL url) {
         Log.d(TAG, "About to start new thread");
         new Thread(new Runnable() {
@@ -68,13 +69,12 @@ public class NetHelper {
                 } finally {
                     if(urlConnection != null){
                         urlConnection.disconnect();
-                        Log.d(TAG, "Disconnecting");
+                        Log.d(TAG, "Check finished");
                     }
                 }
             }
-        });
-        Log.d(TAG, "Response: " + Integer.toString(response));
-        return (response >= 200 && response <= 399);
+        }).start();
+        return(response >= 200 && response <= 399);
     }
 }
 

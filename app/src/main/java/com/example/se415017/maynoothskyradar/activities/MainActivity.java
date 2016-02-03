@@ -106,6 +106,7 @@ public class MainActivity extends FragmentActivity {
                 {
                     Toast.makeText(MainActivity.this, "Connection test successful", Toast.LENGTH_SHORT).show();
                     Intent sockIntent = new Intent(this, SocketService.class);
+                    Log.d(TAG, "Intent created");
                     bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
                     /** I will need the wi-fi to be constantly connected so that I can track planes while the
                      *  phone is asleep.
