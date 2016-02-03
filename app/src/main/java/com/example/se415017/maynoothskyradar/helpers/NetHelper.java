@@ -33,11 +33,11 @@ public class NetHelper {
         netInfo = connMgr.getActiveNetworkInfo();
 
         if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-            Log.d("Connected to", netInfo.toString()); //TODO: Test if this creates a NullPointerException
+            Log.d(TAG, netInfo.toString()); //TODO: Test if this creates a NullPointerException
             return true;
         }
         else {
-            Log.d("netInfo = ", "No available network info");
+            Log.d(TAG, "No available network info");
             return false;
         }
     }
@@ -46,11 +46,11 @@ public class NetHelper {
     // 1 February 2016 - added a parameter to allow for user-entered URLs
     // 2 February 2016 - goddamn NetworkOnMainThread exceptions
     // 3 February 2016 - I forgot about start() for threads. Goddammit.
-    public boolean serverIsUp(final URL url) {
+    // 4 February 2016 - Replaced with checking for the server in SocketService. Now redundant.
+    /*public boolean serverIsUp(final URL url) {
         Log.d(TAG, "About to start new thread");
         new Thread(new Runnable() {
             @Override
-            //TODO: This isn't being invoked
             public void run() {
                 Log.d(TAG, "New thread running for serverIsUp()");
                 HttpURLConnection urlConnection = null;
@@ -74,8 +74,9 @@ public class NetHelper {
                 }
             }
         }).start();
+        Log.d(TAG, "Response = " + Integer.toString(response));
         return(response >= 200 && response <= 399);
-    }
+    }*/
 }
 
 

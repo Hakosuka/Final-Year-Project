@@ -51,7 +51,7 @@ public class MainActivity extends FragmentActivity {
     public SocketService socketService;
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
     boolean socketServiceBound = false;
-    final String TAG = getClass().toString();
+    final String TAG = "MainActivity";
 
     public static FragmentManager fragManager;
 
@@ -101,9 +101,9 @@ public class MainActivity extends FragmentActivity {
             try {
                 // This needs to be final so that url can be used when trying to reach the server
                 // again in the case of failing to get a satisfactory response
-                final URL url = new URL(urlAndPort);
-                if(netHelper.serverIsUp(url))
-                {
+                URL url = new URL(urlAndPort);
+//                if(netHelper.serverIsUp(url))
+//                {
                     Toast.makeText(MainActivity.this, "Connection test successful", Toast.LENGTH_SHORT).show();
                     Intent sockIntent = new Intent(this, SocketService.class);
                     Log.d(TAG, "Intent created");
@@ -114,21 +114,21 @@ public class MainActivity extends FragmentActivity {
                     WifiManager.WifiLock wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
                             .createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
                     wifiLock.acquire();
-                } else {
-                    //TODO: alert the user that the server is unavailable
-                    new MaterialDialog.Builder(this)
-                            .title(R.string.server_unavailable_title)
-                            .content(R.string.server_unavailable_content)
-                            .positiveText(R.string.try_again)
-                            .onPositive(new MaterialDialog.SingleButtonCallback() {
-                                @Override
-                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                    netHelper.serverIsUp(url);
-                                }
-                            })
-                            .negativeText(R.string.cancel_text)
-                            .show();
-                }
+//                } else {
+//                    //TODO: alert the user that the server is unavailable
+//                    new MaterialDialog.Builder(this)
+//                            .title(R.string.server_unavailable_title)
+//                            .content(R.string.server_unavailable_content)
+//                            .positiveText(R.string.try_again)
+//                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+//                                @Override
+//                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+//                                    netHelper.serverIsUp(url);
+//                                }
+//                            })
+//                            .negativeText(R.string.cancel_text)
+//                            .show();
+//                }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 new MaterialDialog.Builder(this)
