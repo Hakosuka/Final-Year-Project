@@ -1,15 +1,20 @@
 package com.example.se415017.maynoothskyradar.services;
 
+import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.widget.Toast;
+
+import com.example.se415017.maynoothskyradar.activities.MainActivity;
 
 import org.apache.http.params.HttpParams;
 
@@ -40,6 +45,8 @@ public class SocketService extends Service {
     private static final int PORT = 30003;
     private static final String SERVER = "sbsrv1.cs.nuim.ie"; //TODO: make this hard-coded value redundant
     private static final String TAG = "SocketService";
+    public static final String PREFS = "UserPreferences";
+    private String serverAddr = ""; // should replace SERVER, is defined by the intent passed by MainActivity
     Intent bindingIntent;
     IBinder myBinder = new SimpleLocalBinder();
     boolean initialisationSuccess = false;
@@ -51,15 +58,17 @@ public class SocketService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         bindingIntent = intent;
+        serverAddr = intent.getStringExtra("serverAddr");
+        Log.d(TAG, "Server address = " + serverAddr);
         Log.d(TAG, "Returning binder");
         return myBinder;
     }
+
     //TODO: try and move this into getService()
     public void initialiseSocket() {
         try {
             socket = new Socket(SERVER, PORT);
             initialisationSuccess = true;
-            isURLReachable(SERVER);
             Log.d(TAG, "Initialisation successful");
         } catch (IOException e) {
             Log.e(TAG, e.toString());
@@ -119,31 +128,30 @@ public class SocketService extends Service {
     }
 
     /**
-     * Checks if the server is up.
-     * @params context, server - the address of the user's server, no need for http prefix
+     * Checks if you the network you've connected to has a web connection.
      * @return serverStatus - whether the server is up or not
      */
-    public boolean isURLReachable(String serverAddr) {
+    public boolean isURLReachable() {
 //        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 //        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         //if(networkInfo != null && networkInfo.isConnected()) {
         // The above code is redundant, because we wouldn't have reached this point had we not
         // detected any network connection while initialising this SocketService in MainActivity
+        //TODO: THIS IS CRASHING THE SERVER
             try {
-                URL serverURL = new URL("http", serverAddr, PORT, "");
+                URL serverURL = new URL("http://www.google.com/");
                 HttpURLConnection urlc = (HttpURLConnection) serverURL.openConnection();
                 urlc.setConnectTimeout(10000); // 10,000ms or 10s
+                urlc.setReadTimeout(15000); // 15,000ms or 15s
                 urlc.connect();
                 response = urlc.getResponseCode();
-                Log.d(TAG, "Response from " + serverAddr + ": " + Integer.toString(response));
+                Log.d(TAG, "Response: " + Integer.toString(response));
                 if (response == 200) {
                     Log.d(TAG, "Connection is of great success, high five!");
-                    Toast.makeText(getApplicationContext(), "Connection successful", Toast.LENGTH_LONG).show();
                     urlReachable = true;
                     return true;
                 } else {
                     Log.d(TAG, "Server unavailable.");
-                    Toast.makeText(getApplicationContext(), "Connection failed", Toast.LENGTH_LONG).show();
                     return false;
                 }
             } catch (MalformedURLException e1) {

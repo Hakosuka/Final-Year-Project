@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -45,9 +46,11 @@ public class MainActivity extends FragmentActivity {
     //TODO: move all of the UI stuff out of the Activity and into Fragments
     //TODO: fix "unable to unstantiate activity ComponentInfo" error
     //TODO: instead of using hard-coded values for the server's URL, make the user enter it
-    private String strUrl = "http://sbsrv1.cs.nuim.ie";
+    private String strUrl = "sbsrv1.cs.nuim.ie";
     private int serverPort = 30003;
-    private String urlAndPort = "http://sbsrv1.cs.nuim.ie:30003";
+    public static final String PREFS = "UserPreferences";
+    public static final String SERVER_PREF = "serverAddress";
+    URL url;
     public SocketService socketService;
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
     boolean socketServiceBound = false;
@@ -93,42 +96,41 @@ public class MainActivity extends FragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        final SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        strUrl = sharedPref.getString(SERVER_PREF, "");
         fragManager = getSupportFragmentManager();
         ButterKnife.bind(this);
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         netStatus = netHelper.isConnected();
         if(netStatus) {
+            if(strUrl.equalsIgnoreCase("")) {
+                Log.d(TAG, "No user-saved URL detected");
+                new MaterialDialog.Builder(this)
+                        .title("Server")
+                        .content(R.string.enter_address)
+                        .positiveText("Enter")
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                SharedPreferences.Editor editor = sharedPref.edit();
+                                editor.putString();
+                            }
+                        })
+            }
             try {
-                // This needs to be final so that url can be used when trying to reach the server
-                // again in the case of failing to get a satisfactory response
-                URL url = new URL(urlAndPort);
-//                if(netHelper.serverIsUp(url))
-//                {
-                    Toast.makeText(MainActivity.this, "Connection test successful", Toast.LENGTH_SHORT).show();
-                    Intent sockIntent = new Intent(this, SocketService.class);
-                    Log.d(TAG, "Intent created");
-                    bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
-                    /** I will need the wi-fi to be constantly connected so that I can track planes while the
-                     *  phone is asleep.
-                     */
-                    WifiManager.WifiLock wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
-                            .createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
-                    wifiLock.acquire();
-//                } else {
-//                    //TODO: alert the user that the server is unavailable
-//                    new MaterialDialog.Builder(this)
-//                            .title(R.string.server_unavailable_title)
-//                            .content(R.string.server_unavailable_content)
-//                            .positiveText(R.string.try_again)
-//                            .onPositive(new MaterialDialog.SingleButtonCallback() {
-//                                @Override
-//                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-//                                    netHelper.serverIsUp(url);
-//                                }
-//                            })
-//                            .negativeText(R.string.cancel_text)
-//                            .show();
-//                }
+                //TODO: Create an alert dialog if this is the user's first time, which asks them for the address of their server
+                url = new URL("http", strUrl, serverPort, "");
+                Log.d(TAG, "URL created: " + url.toString());
+                Intent sockIntent = new Intent(this, SocketService.class);
+                Log.d(TAG, "Intent created");
+                sockIntent.putExtra("serverAddr", url.toString());
+                bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+                /** I will need the wi-fi to be constantly connected so that I can track planes while the
+                 *  phone is asleep.
+                 */
+                WifiManager.WifiLock wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
+                        .createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
+                wifiLock.acquire();
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 new MaterialDialog.Builder(this)
@@ -172,6 +174,14 @@ public class MainActivity extends FragmentActivity {
         super.onResume();
         if(!socketServiceBound) {
             Intent sockIntent = new Intent(this, SocketService.class);
+            if(url == null) {
+                try {
+                    url = new URL("http", strUrl, serverPort, "");
+                } catch (MalformedURLException e) {
+                    Log.e(TAG, e.toString());
+                }
+            }
+            sockIntent.putExtra("serverAddr", url.toString());
             bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
         }
     }
