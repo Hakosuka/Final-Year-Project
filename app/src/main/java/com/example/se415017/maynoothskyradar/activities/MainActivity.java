@@ -46,7 +46,7 @@ public class MainActivity extends FragmentActivity {
     //TODO: move all of the UI stuff out of the Activity and into Fragments
     //TODO: fix "unable to unstantiate activity ComponentInfo" error
     //TODO: instead of using hard-coded values for the server's URL, make the user enter it
-    private String strUrl = "sbsrv1.cs.nuim.ie";
+    private String strUrl = ""; //"sbsrv1.cs.nuim.ie"; moving away from hard-coded value
     private int serverPort = 30003;
     public static final String PREFS = "UserPreferences";
     public static final String SERVER_PREF = "serverAddress";
@@ -109,13 +109,28 @@ public class MainActivity extends FragmentActivity {
                         .title("Server")
                         .content(R.string.enter_address)
                         .positiveText("Enter")
+                        .input("Server address", "", new MaterialDialog.InputCallback() {
+                            @Override
+                            public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
+                                Log.d(TAG, "User input = " + input.toString());
+                                strUrl = input.toString();
+                                SharedPreferences.Editor editor = sharedPref.edit();
+                                Log.d(TAG, "Address to be saved = " + strUrl);
+                                editor.putString(SERVER_PREF, strUrl);
+                                editor.apply(); //apply() works faster than commit()
+                            }
+                        })
                         .onPositive(new MaterialDialog.SingleButtonCallback() {
                             @Override
                             public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                                 SharedPreferences.Editor editor = sharedPref.edit();
-                                editor.putString();
+                                Log.d(TAG, "Address to be saved = " + strUrl);
+                                editor.putString(SERVER_PREF, strUrl);
+                                editor.apply();
                             }
                         })
+                        .negativeText(R.string.cancel_text)
+                        .show();
             }
             try {
                 //TODO: Create an alert dialog if this is the user's first time, which asks them for the address of their server
