@@ -83,7 +83,7 @@ public class SocketService extends Service {
                 public void run() {
                     Log.d(TAG, "Network thread running");
                     initialiseSocket();
-                    if(initialisationSuccess && urlReachable) {
+                    if(initialisationSuccess) { // && urlReachable) {
                         try {
                             InputStream inputStream = socket.getInputStream();
                             readFromInputStream(inputStream);

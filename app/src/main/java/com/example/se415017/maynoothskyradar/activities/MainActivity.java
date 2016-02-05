@@ -109,31 +109,35 @@ public class MainActivity extends FragmentActivity {
                         .title("Server")
                         .content(R.string.enter_address)
                         .positiveText("Enter")
-                        .input("Server address", "", new MaterialDialog.InputCallback() {
+                        .input("Server address", "", false, new MaterialDialog.InputCallback() {
+                            //The "false" above doesn't allow user input when the EditText field is empty
                             @Override
                             public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
                                 Log.d(TAG, "User input = " + input.toString());
                                 strUrl = input.toString();
                                 SharedPreferences.Editor editor = sharedPref.edit();
-                                Log.d(TAG, "Address to be saved = " + strUrl);
+                                Log.d(TAG, "onInput() Address to be saved = " + strUrl);
                                 editor.putString(SERVER_PREF, strUrl);
-                                editor.apply(); //apply() works faster than commit()
+                                //apply() works faster than commit() but commit() works immediately
+                                editor.commit();
                             }
                         })
                         .onPositive(new MaterialDialog.SingleButtonCallback() {
                             @Override
                             public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                SharedPreferences.Editor editor = sharedPref.edit();
-                                Log.d(TAG, "Address to be saved = " + strUrl);
-                                editor.putString(SERVER_PREF, strUrl);
-                                editor.apply();
+                                //TODO: The user's input isn't being picked up here!
+                                //SharedPreferences.Editor editor = sharedPref.edit();
+                                Log.d(TAG, "onPositive() invoked");
+                                Log.d(TAG, "onPositive() Address to be saved = " + strUrl);
+                                //editor.putString(SERVER_PREF, strUrl);
+                                //editor.apply();
                             }
                         })
                         .negativeText(R.string.cancel_text)
                         .show();
             }
             try {
-                //TODO: Create an alert dialog if this is the user's first time, which asks them for the address of their server
+                strUrl = sharedPref.getString(SERVER_PREF, "");
                 url = new URL("http", strUrl, serverPort, "");
                 Log.d(TAG, "URL created: " + url.toString());
                 Intent sockIntent = new Intent(this, SocketService.class);
@@ -187,6 +191,7 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        netStatus = new NetHelper(getApplicationContext()).isConnected();
         if(!socketServiceBound) {
             Intent sockIntent = new Intent(this, SocketService.class);
             if(url == null) {
