@@ -1,5 +1,6 @@
 package com.example.se415017.maynoothskyradar.activities;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -291,5 +292,60 @@ public class MainActivity extends FragmentActivity {
             GpsLon.setText("Longitude: " + Double.toString(nmeaLongitude));
         }
     }
-    //I deleted [DJKhaled]A LOT[/DJKhaled] of redundant code below
+    /**
+     * Shows the alert dialog which notifies the user that they have no Internet connection.
+     *
+     */
+    public MaterialDialog showNoInternetDialog(final Activity activity){
+        return new MaterialDialog.Builder(this)
+                .title(R.string.conn_unavailable_title)
+                .content(R.string.conn_unavailable_content)
+                .positiveText("Network settings")
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        startActivityForResult(new Intent(Settings.ACTION_SETTINGS), 0); // the user can return to the app by pressing the back button
+                    }
+                })
+                .negativeText("Cancel")
+                .show();
+    }
+    /**
+     * Shows the alert dialog which notifies the user that they haven't saved the address of their server.
+     *
+     */
+    public MaterialDialog showNoServerAddressDialog(final Activity activity){
+        return new MaterialDialog.Builder(this)
+                .title("Server")
+                .content(R.string.enter_address)
+                .positiveText("Enter")
+                .input("Server address", "", false, new MaterialDialog.InputCallback() {
+                    //The "false" above doesn't allow user input when the EditText field is empty
+                    @Override
+                    public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
+                        Log.d(TAG, "User input = " + input.toString());
+                        strUrl = input.toString();
+                        SharedPreferences sharedPref = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPref.edit();
+                        Log.d(TAG, "onInput() Address to be saved = " + strUrl);
+                        editor.putString(SERVER_PREF, strUrl);
+                        //apply() works faster than commit() but commit() works immediately
+                        editor.commit();
+                    }
+                })
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        //TODO: The user's input isn't being picked up here!
+                        //SharedPreferences.Editor editor = sharedPref.edit();
+                        Log.d(TAG, "onPositive() invoked");
+                        Log.d(TAG, "onPositive() Address to be saved = " + strUrl);
+                        //editor.putString(SERVER_PREF, strUrl);
+                        //editor.apply();
+                    }
+                })
+                .negativeText(R.string.cancel_text)
+                .show();
+    }
+    //I deleted A LOT of redundant code below
 }
