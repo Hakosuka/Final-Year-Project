@@ -100,8 +100,8 @@ public class SocketService extends Service {
 
     /**
     * Takes in an InputStream, reads it and then returns the line.
-    * @params InputStream inputStream - the stream derived from the socket
-    * @returns String builder.toString() - the result from the stream
+    * @param inputStream - the stream derived from the socket
+    * @return String builder.toString() - the result from the stream
     */
     public static String readFromInputStream(InputStream inputStream) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));

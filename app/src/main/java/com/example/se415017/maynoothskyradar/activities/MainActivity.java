@@ -6,6 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -106,80 +109,31 @@ public class MainActivity extends FragmentActivity {
         if(netStatus) {
             if(strUrl.equalsIgnoreCase("")) {
                 Log.d(TAG, "No user-saved URL detected");
-                new MaterialDialog.Builder(this)
-                        .title("Server")
-                        .content(R.string.enter_address)
-                        .positiveText("Enter")
-                        .input("Server address", "", false, new MaterialDialog.InputCallback() {
-                            //The "false" above doesn't allow user input when the EditText field is empty
-                            @Override
-                            public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
-                                Log.d(TAG, "User input = " + input.toString());
-                                strUrl = input.toString();
-                                SharedPreferences.Editor editor = sharedPref.edit();
-                                Log.d(TAG, "onInput() Address to be saved = " + strUrl);
-                                editor.putString(SERVER_PREF, strUrl);
-                                //apply() works faster than commit() but commit() works immediately
-                                editor.commit();
-                            }
-                        })
-                        .onPositive(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                //TODO: The user's input isn't being picked up here!
-                                //SharedPreferences.Editor editor = sharedPref.edit();
-                                Log.d(TAG, "onPositive() invoked");
-                                Log.d(TAG, "onPositive() Address to be saved = " + strUrl);
-                                //editor.putString(SERVER_PREF, strUrl);
-                                //editor.apply();
-                            }
-                        })
-                        .negativeText(R.string.cancel_text)
-                        .show();
-            }
-            try {
-                strUrl = sharedPref.getString(SERVER_PREF, "");
-                url = new URL("http", strUrl, serverPort, "");
-                Log.d(TAG, "URL created: " + url.toString());
-                Intent sockIntent = new Intent(this, SocketService.class);
-                Log.d(TAG, "Intent created");
-                sockIntent.putExtra("serverAddr", url.toString());
-                bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
-                /** I will need the wi-fi to be constantly connected so that I can track planes while the
-                 *  phone is asleep.
-                 */
-                WifiManager.WifiLock wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
-                        .createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
-                wifiLock.acquire();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                new MaterialDialog.Builder(this)
-                        .title("URL error")
-                        .content("The URL you have entered is malformed. Please go to the settings menu and change it.")
-                        .positiveText("Change URL")
-                        .onPositive(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which){
-                                //TODO: Take the user to the Settings menu
-                            }
-                        })
-                        .negativeText(R.string.cancel_text)
-                        .show();
+                showNoServerAddressDialog(MainActivity.this);
+            } else {
+                Log.d(TAG, "User-saved URL detected");
+                strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie"); // Screw it, I might as well just hard-code it in here
+                try {
+                    //TODO: This is being restarted after every configuration change!
+                    url = new URL("http", strUrl, serverPort, "");
+                    Log.d(TAG, "URL created: " + url.toString());
+                    Intent sockIntent = new Intent(this, SocketService.class);
+                    Log.d(TAG, "Intent created");
+                    sockIntent.putExtra("serverAddr", url.toString());
+                    bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+                    /** I will need the wi-fi to be constantly connected so that I can track planes while the
+                     *  phone is asleep.
+                     */
+                    //WifiManager.WifiLock wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
+                    //.createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
+                    //wifiLock.acquire();
+                } catch (MalformedURLException e) {
+                    Log.e(TAG, e.toString());
+                    showMalformedURLDialog(MainActivity.this);
+                }
             }
         } else {
-            new MaterialDialog.Builder(this)
-                    .title(R.string.conn_unavailable_title)
-                    .content(R.string.conn_unavailable_content)
-                    .positiveText("Network settings")
-                    .onPositive(new MaterialDialog.SingleButtonCallback() {
-                        @Override
-                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                            startActivityForResult(new Intent(Settings.ACTION_SETTINGS), 0); // the user can return to the app by pressing the back button
-                        }
-                    })
-                    .negativeText("Cancel")
-                    .show();
-
+            showNoInternetDialog(MainActivity.this);
         }
 
     }
@@ -192,18 +146,35 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        netStatus = new NetHelper(getApplicationContext()).isConnected();
-        if(!socketServiceBound) {
-            Intent sockIntent = new Intent(this, SocketService.class);
-            if(url == null) {
-                try {
-                    url = new URL("http", strUrl, serverPort, "");
-                } catch (MalformedURLException e) {
-                    Log.e(TAG, e.toString());
-                }
-            }
-            sockIntent.putExtra("serverAddr", url.toString());
-            bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+        //TODO: Check to see what happens if all of the below code within this method is commented-out
+//        netStatus = new NetHelper(getApplicationContext()).isConnected();
+//        if(!socketServiceBound) {
+//            Intent sockIntent = new Intent(this, SocketService.class);
+//            if(url == null) {
+//                try {
+//                    url = new URL("http", strUrl, serverPort, "");
+//                } catch (MalformedURLException e) {
+//                    Log.e(TAG, e.toString());
+//                }
+//            }
+//            sockIntent.putExtra("serverAddr", url.toString());
+//            bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+//        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        //TODO: Define the layouts in setContentView below
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
+            setContentView(R.layout.landscapeView);
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            setContentView(R.layout.portrait);
         }
     }
 
@@ -255,7 +226,7 @@ public class MainActivity extends FragmentActivity {
                     (SocketService.SimpleLocalBinder) service;
             socketService = binder.getService();
             socketServiceBound = true;
-            Log.d("MainActivity", "Socket service bound");
+            Log.d(TAG, "Socket service bound");
         }
 
         @Override
@@ -293,8 +264,33 @@ public class MainActivity extends FragmentActivity {
         }
     }
     /**
+     * Shows the alert dialog which notifies the user that they've entered a malformed URL.
+     * @param activity
+     * @return MaterialDialog
+     */
+    public MaterialDialog showMalformedURLDialog(final Activity activity){
+        return new MaterialDialog.Builder(this)
+                .title(R.string.malformed_url_title)
+                .content(R.string.malformed_url_content)
+                .inputRange(8, 255, Color.RED)
+                .positiveText("Submit")
+                .input("Server address", "", false, new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
+                        Log.d(TAG, "User input = " + input.toString());
+                        strUrl = input.toString();
+                        SharedPreferences sharedPref = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPref.edit();
+                        editor.putString(SERVER_PREF, strUrl);
+                        editor.apply();
+                    }
+                })
+                .show();
+    }
+    /**
      * Shows the alert dialog which notifies the user that they have no Internet connection.
-     *
+     * @param activity
+     * @return MaterialDialog
      */
     public MaterialDialog showNoInternetDialog(final Activity activity){
         return new MaterialDialog.Builder(this)
@@ -307,17 +303,25 @@ public class MainActivity extends FragmentActivity {
                         startActivityForResult(new Intent(Settings.ACTION_SETTINGS), 0); // the user can return to the app by pressing the back button
                     }
                 })
-                .negativeText("Cancel")
+                .negativeText("Exit app")
+                .onNegative(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        System.exit(0);
+                    }
+                })
                 .show();
     }
     /**
      * Shows the alert dialog which notifies the user that they haven't saved the address of their server.
-     *
+     * @param activity
+     * @return MaterialDialog
      */
     public MaterialDialog showNoServerAddressDialog(final Activity activity){
         return new MaterialDialog.Builder(this)
-                .title("Server")
+                .title(R.string.server_not_added)
                 .content(R.string.enter_address)
+                .inputRange(8, 255, Color.RED)
                 .positiveText("Enter")
                 .input("Server address", "", false, new MaterialDialog.InputCallback() {
                     //The "false" above doesn't allow user input when the EditText field is empty
@@ -329,22 +333,10 @@ public class MainActivity extends FragmentActivity {
                         SharedPreferences.Editor editor = sharedPref.edit();
                         Log.d(TAG, "onInput() Address to be saved = " + strUrl);
                         editor.putString(SERVER_PREF, strUrl);
-                        //apply() works faster than commit() but commit() works immediately
-                        editor.commit();
+                        //apply() works faster than apply() but apply() works immediately
+                        editor.apply();
                     }
                 })
-                .onPositive(new MaterialDialog.SingleButtonCallback() {
-                    @Override
-                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                        //TODO: The user's input isn't being picked up here!
-                        //SharedPreferences.Editor editor = sharedPref.edit();
-                        Log.d(TAG, "onPositive() invoked");
-                        Log.d(TAG, "onPositive() Address to be saved = " + strUrl);
-                        //editor.putString(SERVER_PREF, strUrl);
-                        //editor.apply();
-                    }
-                })
-                .negativeText(R.string.cancel_text)
                 .show();
     }
     //I deleted A LOT of redundant code below
