@@ -7,9 +7,13 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.widget.Toast;
@@ -43,12 +47,16 @@ public class SocketService extends Service {
      *  listen on port 30003.
      */
     private static final int PORT = 30003; //redundant
-    private static final String SERVER = "sbsrv1.cs.nuim.ie"; //TODO: make this hard-coded value redundant
+    private static final String SERVER = "sbsrv1.cs.nuim.ie"; //redundant
     private static final String TAG = "SocketService";
     public static final String PREFS = "UserPreferences";
     private String serverAddr = ""; // should replace SERVER, is defined by the intent passed by MainActivity
+
     Intent bindingIntent;
     IBinder myBinder = new SimpleLocalBinder();
+    Messenger messenger = new Messenger(new IncomingHandler());
+    Messenger replyMessenger;
+    Message message;
 
     private boolean initialisationSuccess = false;
     private boolean urlReachable = false;
@@ -64,10 +72,9 @@ public class SocketService extends Service {
         serverAddr = intent.getStringExtra("serverAddr");
         Log.d(TAG, "Server address = " + serverAddr);
         Log.d(TAG, "Returning binder");
-        return myBinder;
+        return messenger.getBinder();
     }
 
-    //TODO: try and move this into getService()
     public void initialiseSocket() {
         try {
             socket = new Socket(serverAddr, 30003);
@@ -85,29 +92,14 @@ public class SocketService extends Service {
     @Override
     public void onCreate(){
         Log.d(TAG, "Service created");
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                Log.d(TAG, "Network thread running");
-//                initialiseSocket();
-//                if(initialisationSuccess) { // && urlReachable) {
-//                    try {
-//                        InputStream inputStream = socket.getInputStream();
-//                        readFromInputStream(inputStream);
-//                    } catch (IOException e) {
-//                        Log.e(TAG, e.toString());
-//                    }
-//                }
-//            }
-//        }).start();
     }
 
     /**
-     * Starts running as soon as onStart() is called in a client
+     * Starts running as soon as startService(service) is called in a client
      * @param intent
      * @param flags
      * @param startId
-     * @return
+     * @return START_STICKY - advisable for services which are explicitly started/stopped
      */
     //TODO: This isn't being invoked!
     @Override
@@ -136,6 +128,7 @@ public class SocketService extends Service {
 
     public class SimpleLocalBinder extends Binder{
         public SocketService getService() {
+            Log.d(TAG, "Binder has got service");
 //            Log.d(TAG, "Opening new thread for network operations");
 //            new Thread(new Runnable() {
 //                @Override
@@ -174,7 +167,7 @@ public class SocketService extends Service {
     * @param inputStream - the stream derived from the socket
     * @return String builder.toString() - the result from the stream
     */
-    public static String readFromInputStream(InputStream inputStream) throws IOException {
+    public String readFromInputStream(InputStream inputStream) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         StringBuilder builder = new StringBuilder();
         String line;
@@ -184,6 +177,14 @@ public class SocketService extends Service {
                 line = reader.readLine();
                 builder.append(line);
                 Log.d(TAG, "String from BufferedReader = " + line);
+                if(replyMessenger != null){
+                    try {
+                        message.obj = line;
+                        replyMessenger.send(message);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, e.toString());
+                    }
+                }
             }
         } catch (IOException e) {
             Log.e(TAG, "readFromInputStream error: " + e.toString());
@@ -196,6 +197,15 @@ public class SocketService extends Service {
             }
         }
         return builder.toString();
+    }
+
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg){
+            if (msg.what == 1) {
+                replyMessenger = msg.replyTo;
+            }
+        }
     }
 
     /**
@@ -233,6 +243,4 @@ public class SocketService extends Service {
                 return false;
             }
     }
-
-
 }
