@@ -46,11 +46,12 @@ public class SocketService extends Service {
     /** Even if I move away from using a hardcoded address for the server, I'll still need to
      *  listen on port 30003.
      */
-    private static final int PORT = 30003; //redundant
-    private static final String SERVER = "sbsrv1.cs.nuim.ie"; //redundant
-    private static final String TAG = "SocketService";
-    public static final String PREFS = "UserPreferences";
-    private String serverAddr = ""; // should replace SERVER, is defined by the intent passed by MainActivity
+    static final int PORT = 30003; //redundant
+    static final int MESSAGE = 1;
+    static final String SERVER = "sbsrv1.cs.nuim.ie"; //redundant
+    static final String TAG = "SocketService";
+    static final String PREFS = "UserPreferences";
+    String serverAddr = ""; // should replace SERVER, is defined by the intent passed by MainActivity
 
     Intent bindingIntent;
     IBinder myBinder = new SimpleLocalBinder();
@@ -99,7 +100,7 @@ public class SocketService extends Service {
      * @param intent
      * @param flags
      * @param startId
-     * @return START_STICKY - advisable for services which are explicitly started/stopped
+     * @return
      */
     //TODO: This isn't being invoked!
     @Override
@@ -123,29 +124,12 @@ public class SocketService extends Service {
             }
         }).start();
         Log.d(TAG, "Returning service");
-        return START_STICKY;
+        return START_NOT_STICKY; // Don't bother restarting the Service if the device has ran out of memory
     }
 
     public class SimpleLocalBinder extends Binder{
         public SocketService getService() {
-            Log.d(TAG, "Binder has got service");
-//            Log.d(TAG, "Opening new thread for network operations");
-//            new Thread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    Log.d(TAG, "Network thread running");
-//                    initialiseSocket();
-//                    if(initialisationSuccess) { // && urlReachable) {
-//                        try {
-//                            InputStream inputStream = socket.getInputStream();
-//                            readFromInputStream(inputStream);
-//                        } catch (IOException e) {
-//                            Log.e(TAG, e.toString());
-//                        }
-//                    }
-//                }
-//            }).start();
-//            Log.d(TAG, "Returning service");
+            Log.d(TAG, "Binder is returning service");
             return SocketService.this;
         }
     }
@@ -202,7 +186,7 @@ public class SocketService extends Service {
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg){
-            if (msg.what == 1) {
+            if (msg.what == MESSAGE) {
                 replyMessenger = msg.replyTo;
             }
         }

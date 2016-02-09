@@ -53,8 +53,8 @@ public class MainActivity extends FragmentActivity {
     //TODO: move all of the UI stuff out of the Activity and into Fragments
     //TODO: fix "unable to unstantiate activity ComponentInfo" error
     //TODO: instead of using hard-coded values for the server's URL, make the user enter it
-    private String strUrl = ""; //"sbsrv1.cs.nuim.ie"; moving away from hard-coded value
-    private int serverPort = 30003;
+    String strUrl = ""; //Used to be "sbsrv1.cs.nuim.ie"; moving away from hard-coded value
+    int serverPort = 30003; //redundant
     public static final String PREFS = "UserPreferences";
     public static final String SERVER_PREF = "serverAddress";
     URL url;

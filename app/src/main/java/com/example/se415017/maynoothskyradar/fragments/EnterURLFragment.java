@@ -1,6 +1,7 @@
 package com.example.se415017.maynoothskyradar.fragments;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 import com.example.se415017.maynoothskyradar.R;
 
 import butterknife.Bind;
+import butterknife.OnClick;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -33,20 +35,22 @@ public class EnterURLFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 
     // TODO: Rename and change types of parameters
+    final String PREFS = "UserPreferences";
+    final String SERVER_PREF = "serverAddress";
 
     // TODO: Bind UI elements using ButterKnife
     @Bind(R.id.edit_url_fragment_title)
-    TextView EditUrlFragmentTitle;
+    TextView editUrlFragmentTitle;
     @Bind(R.id.edit_url_fragment_content)
-    TextView EditUrlFragmentContent;
+    TextView editUrlFragmentContent;
 
     @Bind(R.id.server_address_edit_field)
-    EditText ServerAddressEditor;
+    EditText serverAddressEditor;
 
     @Bind(R.id.button_submit_server_address)
-    Button SubmitServerAddressButton;
+    Button submitServerAddressButton;
     @Bind(R.id.button_clear)
-    Button ClearServerAddressEditorButton;
+    Button clearServerAddressEditorButton;
 
     private OnFragmentInteractionListener mListener;
 
@@ -57,9 +61,6 @@ public class EnterURLFragment extends Fragment {
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
      * @return A new instance of fragment EnterURLFragment.
      */
     // TODO: Rename and change types and number of parameters
@@ -80,12 +81,20 @@ public class EnterURLFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_enter_url, container, false);
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
+    @OnClick(R.id.button_submit_server_address)
+    protected void submitServerAddress(){
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        String editorText = serverAddressEditor.getText().toString();
+        editor.putString(SERVER_PREF, editorText);
+        editor.apply();
     }
+
+    @OnClick(R.id.button_clear)
+    protected void resetURLField(){
+        serverAddressEditor.setText("");
+    }
+
 
     @Override
     public void onAttach(Context context) {
