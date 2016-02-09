@@ -21,12 +21,17 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
-    <string name="enter_address">Please enter the web address of your server, without the port number.</string>
+    <string name="enter_address">Please enter the web address (no port number needed) of your server below.</string>
     <string name="malformed_url_title">Malformed URL</string>
     <string name="malformed_url_content">Please enter a different URL.</string>
+    <string name="add_address_here">Server address</string>
     <string name="server_not_added">No server address found</string>
     <string name="server_unavailable_title">Server unavailable</string>
     <string name="server_unavailable_content">The request to the server is unavailable. Do you want to try again?</string>
+
+    <string name="accept">Accept</string>
+    <string name="submit">Submit</string>
+    <string name="clear">Clear</string>
     <string name="try_again">Try again</string>
     <string name="cancel_text">Cancel</string>
 

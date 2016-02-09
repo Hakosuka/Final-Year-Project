@@ -1,6 +1,7 @@
 package com.example.se415017.maynoothskyradar.activities;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +16,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityManagerCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
@@ -35,6 +37,7 @@ import com.google.android.gms.maps.model.LatLng;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.net.URL;
 
 import butterknife.Bind;
@@ -85,7 +88,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     boolean netStatus = false;
-    Boolean serverStatus = false;
+    boolean serverStatus = false;
     String[] dummyData = {
             "$GPGGA,103102.557,5323.0900,N,00636.1283,W,1,08,1.0,49.1,M,56.5,M,,0000*7E",
             "$GPGSA,A,3,01,11,08,19,28,32,03,18,,,,,1.7,1.0,1.3*37",
@@ -100,36 +103,48 @@ public class MainActivity extends FragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         final SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         strUrl = sharedPref.getString(SERVER_PREF, "");
+
         fragManager = getSupportFragmentManager();
         ButterKnife.bind(this);
+
         final NetHelper netHelper = new NetHelper(getApplicationContext());
-        netStatus = netHelper.isConnected();
-        if(netStatus) {
+        if(netHelper.isConnected()) {
             if(strUrl.equalsIgnoreCase("")) {
                 Log.d(TAG, "No user-saved URL detected");
                 showNoServerAddressDialog(MainActivity.this);
             } else {
                 Log.d(TAG, "User-saved URL detected");
                 strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie"); // Screw it, I might as well just hard-code it in here
-                try {
-                    //TODO: This is being restarted after every configuration change!
-                    url = new URL("http", strUrl, serverPort, "");
-                    Log.d(TAG, "URL created: " + url.toString());
+
+                if(!doesSocketServiceExist(SocketService.class)) {
+                    Log.d(TAG, "No existing SocketService found");
+                    try {
+                        url = new URL("http", strUrl, 30003, "");
+                        Log.d(TAG, "URL created: " + url.toString());
+                    } catch (MalformedURLException e) {
+                        Log.e(TAG, e.toString());
+                        showMalformedURLDialog(MainActivity.this);
+                    }
                     Intent sockIntent = new Intent(this, SocketService.class);
                     Log.d(TAG, "Intent created");
+
                     sockIntent.putExtra("serverAddr", url.toString());
-                    bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+                    startService(sockIntent);
+                    /**
+                     * bindService kills the service upon unbinding
+                     */
+                    //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
                     /** I will need the wi-fi to be constantly connected so that I can track planes while the
                      *  phone is asleep.
                      */
                     //WifiManager.WifiLock wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
                     //.createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
                     //wifiLock.acquire();
-                } catch (MalformedURLException e) {
-                    Log.e(TAG, e.toString());
-                    showMalformedURLDialog(MainActivity.this);
+                } else {
+                    Log.d(TAG, "Existing SocketService found");
                 }
             }
         } else {
@@ -145,6 +160,8 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     protected void onResume() {
+        Log.d(TAG, "MainActivity resuming");
+        Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
         super.onResume();
         //TODO: Check to see what happens if all of the below code within this method is commented-out
 //        netStatus = new NetHelper(getApplicationContext()).isConnected();
@@ -172,20 +189,16 @@ public class MainActivity extends FragmentActivity {
         super.onConfigurationChanged(newConfig);
         //TODO: Define the layouts in setContentView below
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
-            setContentView(R.layout.landscapeView);
+            //setContentView(R.layout.landscapeView);
         } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            setContentView(R.layout.portrait);
+            //setContentView(R.layout.portrait);
         }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if(socketServiceBound) {
-            unbindService(mConnection);
-            Log.d(TAG, "Socket service unbound from MainActivity");
-            socketServiceBound = false;
-        }
+
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -196,11 +209,17 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     public void onDestroy(){
+        Log.d(TAG, "Killing MainActivity");
+//        if(socketServiceBound) {
+//            unbindService(mConnection);
+//            Log.d(TAG, "Socket service unbound from MainActivity");
+//        }
+//        if(doesSocketServiceExist(SocketService.class)){
+//            Log.d(TAG, "Killing SocketService");
+//            Intent stopSockIntent = new Intent(this, SocketService.class);
+//            stopService(stopSockIntent);
+//        }
         super.onDestroy();
-        if(socketServiceBound) {
-            unbindService(mConnection);
-            Log.d(TAG, "Socket service unbound from MainActivity");
-        }
     }
 
     @Override
@@ -234,6 +253,21 @@ public class MainActivity extends FragmentActivity {
             socketServiceBound = false;
         }
     };
+
+    /**
+     * Checks if an instance of a particular service exists
+     * @param serviceClass - the Service I want to look for
+     * @return boolean which tells me if an instance of that Service exists
+     */
+    private boolean doesSocketServiceExist(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * This method parses lines of NMEA data to check if they contain latitude
      * and longitude data.
@@ -269,6 +303,7 @@ public class MainActivity extends FragmentActivity {
      * @return MaterialDialog
      */
     public MaterialDialog showMalformedURLDialog(final Activity activity){
+        Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
         return new MaterialDialog.Builder(this)
                 .title(R.string.malformed_url_title)
                 .content(R.string.malformed_url_content)
@@ -293,6 +328,7 @@ public class MainActivity extends FragmentActivity {
      * @return MaterialDialog
      */
     public MaterialDialog showNoInternetDialog(final Activity activity){
+        Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
         return new MaterialDialog.Builder(this)
                 .title(R.string.conn_unavailable_title)
                 .content(R.string.conn_unavailable_content)
@@ -318,6 +354,7 @@ public class MainActivity extends FragmentActivity {
      * @return MaterialDialog
      */
     public MaterialDialog showNoServerAddressDialog(final Activity activity){
+        Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
         return new MaterialDialog.Builder(this)
                 .title(R.string.server_not_added)
                 .content(R.string.enter_address)

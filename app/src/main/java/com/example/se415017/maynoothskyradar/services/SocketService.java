@@ -42,15 +42,18 @@ public class SocketService extends Service {
     /** Even if I move away from using a hardcoded address for the server, I'll still need to
      *  listen on port 30003.
      */
-    private static final int PORT = 30003;
+    private static final int PORT = 30003; //redundant
     private static final String SERVER = "sbsrv1.cs.nuim.ie"; //TODO: make this hard-coded value redundant
     private static final String TAG = "SocketService";
     public static final String PREFS = "UserPreferences";
     private String serverAddr = ""; // should replace SERVER, is defined by the intent passed by MainActivity
     Intent bindingIntent;
     IBinder myBinder = new SimpleLocalBinder();
-    boolean initialisationSuccess = false;
-    boolean urlReachable = false;
+
+    private boolean initialisationSuccess = false;
+    private boolean urlReachable = false;
+    private static boolean socketConnected = false;
+
     int response = 0;
     public SocketService() {
     }
@@ -67,7 +70,8 @@ public class SocketService extends Service {
     //TODO: try and move this into getService()
     public void initialiseSocket() {
         try {
-            socket = new Socket(SERVER, PORT);
+            socket = new Socket(serverAddr, 30003);
+            Log.d(TAG, "Socket created = " + socket.toString());
             initialisationSuccess = true;
             Log.d(TAG, "Initialisation successful");
         } catch (IOException e) {
@@ -75,29 +79,96 @@ public class SocketService extends Service {
         }
     }
 
-    public class SimpleLocalBinder extends Binder{
-        public SocketService getService() {
-            Log.d(TAG, "Opening new thread for network operations");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d(TAG, "Network thread running");
-                    initialiseSocket();
-                    if(initialisationSuccess) { // && urlReachable) {
-                        try {
-                            InputStream inputStream = socket.getInputStream();
-                            readFromInputStream(inputStream);
-                        } catch (IOException e) {
-                            Log.e(TAG, e.toString());
-                        }
+    /**
+     * Starts running once constructed,
+     */
+    @Override
+    public void onCreate(){
+        Log.d(TAG, "Service created");
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                Log.d(TAG, "Network thread running");
+//                initialiseSocket();
+//                if(initialisationSuccess) { // && urlReachable) {
+//                    try {
+//                        InputStream inputStream = socket.getInputStream();
+//                        readFromInputStream(inputStream);
+//                    } catch (IOException e) {
+//                        Log.e(TAG, e.toString());
+//                    }
+//                }
+//            }
+//        }).start();
+    }
+
+    /**
+     * Starts running as soon as onStart() is called in a client
+     * @param intent
+     * @param flags
+     * @param startId
+     * @return
+     */
+    //TODO: This isn't being invoked!
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId){
+        serverAddr = intent.getStringExtra("serverAddr");
+        Log.d(TAG, "Service started");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "Network thread running");
+                initialiseSocket();
+                if(initialisationSuccess) { // && urlReachable) {
+                    try {
+                        InputStream inputStream = socket.getInputStream();
+                        socketConnected = true;
+                        readFromInputStream(inputStream);
+                    } catch (IOException e) {
+                        Log.e(TAG, e.toString());
                     }
                 }
-            }).start();
-            Log.d(TAG, "Returning service");
+            }
+        }).start();
+        Log.d(TAG, "Returning service");
+        return START_STICKY;
+    }
+
+    public class SimpleLocalBinder extends Binder{
+        public SocketService getService() {
+//            Log.d(TAG, "Opening new thread for network operations");
+//            new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    Log.d(TAG, "Network thread running");
+//                    initialiseSocket();
+//                    if(initialisationSuccess) { // && urlReachable) {
+//                        try {
+//                            InputStream inputStream = socket.getInputStream();
+//                            readFromInputStream(inputStream);
+//                        } catch (IOException e) {
+//                            Log.e(TAG, e.toString());
+//                        }
+//                    }
+//                }
+//            }).start();
+//            Log.d(TAG, "Returning service");
             return SocketService.this;
         }
     }
 
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+        if(initialisationSuccess){
+            try {
+                socket.close();
+                Log.d(TAG, "Socket closed");
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+            }
+        }
+    }
     /**
     * Takes in an InputStream, reads it and then returns the line.
     * @param inputStream - the stream derived from the socket
@@ -109,7 +180,7 @@ public class SocketService extends Service {
         String line;
         Log.d(TAG, "About to try reading from BufferedReader");
         try {
-            while(true){
+            while(socketConnected){
                 line = reader.readLine();
                 builder.append(line);
                 Log.d(TAG, "String from BufferedReader = " + line);
@@ -163,16 +234,5 @@ public class SocketService extends Service {
             }
     }
 
-    @Override
-    public void onDestroy(){
-        super.onDestroy();
-        if(initialisationSuccess){
-            try {
-                socket.close();
-                Log.d(TAG, "Socket closed");
-            } catch (IOException e) {
-                Log.e(TAG, e.toString());
-            }
-        }
-    }
+
 }
