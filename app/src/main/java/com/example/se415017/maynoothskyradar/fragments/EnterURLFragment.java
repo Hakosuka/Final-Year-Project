@@ -1,6 +1,7 @@
 package com.example.se415017.maynoothskyradar.fragments;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
+import com.example.se415017.maynoothskyradar.activities.MainActivity;
 import com.example.se415017.maynoothskyradar.helpers.TextValidator;
 
 import butterknife.Bind;
@@ -119,6 +121,8 @@ public class EnterURLFragment extends Fragment {
         String editorText = serverAddressEditor.getText().toString();
         editor.putString(SERVER_PREF, editorText);
         editor.apply();
+        Intent returnToMainActivityIntent = new Intent(getActivity(), MainActivity.class);
+        startActivity(returnToMainActivityIntent);
     }
 
     @OnClick(R.id.button_clear)

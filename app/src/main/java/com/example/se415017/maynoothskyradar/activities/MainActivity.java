@@ -103,7 +103,7 @@ public class MainActivity extends FragmentActivity {
             "$GPRMC,103102.557,A,5323.0900,N,00636.1283,W,000.0,308.8,101115,,,A*79",
             "$GPVTG,308.8,T,,M,000.0,N,000.0,K,A*0E"
     };
-
+    //TODO: Research WifiLocks and determine if I need them in my app
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -113,7 +113,7 @@ public class MainActivity extends FragmentActivity {
         strUrl = sharedPref.getString(SERVER_PREF, "");
 
         fragManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragManager.beginTransaction();
+        //FragmentTransaction fragmentTransaction = fragManager.beginTransaction();
 
         ButterKnife.bind(this);
         Fragment currentFragment;
@@ -134,7 +134,7 @@ public class MainActivity extends FragmentActivity {
                 if(!doesSocketServiceExist(SocketService.class)) {
                     Log.d(TAG, "No existing SocketService found");
                     try {
-                        url = new URL("http", strUrl, 30003, "");
+                        url = new URL("http", strUrl, ""); // Now is not the time to add the port, that comes later
                         Log.d(TAG, "URL created: " + url.toString());
                     } catch (MalformedURLException e) {
                         Log.e(TAG, e.toString());
@@ -149,12 +149,6 @@ public class MainActivity extends FragmentActivity {
                      * bindService kills the service upon unbinding
                      */
                     //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
-                    /** I will need the wi-fi to be constantly connected so that I can track planes while the
-                     *  phone is asleep.
-                     */
-                    //WifiManager.WifiLock wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
-                    //.createWifiLock(WifiManager.WIFI_MODE_FULL, "skyRadarLock");
-                    //wifiLock.acquire();
                 } else {
                     Log.d(TAG, "Existing SocketService found");
                 }

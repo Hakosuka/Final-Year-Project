@@ -14,6 +14,7 @@ import com.example.se415017.maynoothskyradar.R;
 
 /**
  * TODO: document your custom view class.
+ * TODO: change all of this so that it's a list element that does the job
  */
 public class FlightView extends View {
     private String mExampleString; // TODO: use a default from R.string...

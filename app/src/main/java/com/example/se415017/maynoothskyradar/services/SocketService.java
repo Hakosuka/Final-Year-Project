@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
@@ -79,7 +80,7 @@ public class SocketService extends Service {
     public void initialiseSocket() {
         try {
             socket = new Socket(serverAddr, 30003);
-            socket.setSoTimeout(10000); // Wait 10 secs before timing out
+            socket.connect(new InetSocketAddress(serverAddr, 30003), 10000); // Wait 10 secs before timing out
             Log.d(TAG, "Socket created = " + socket.toString());
             initialisationSuccess = true;
             Log.d(TAG, "Initialisation successful");
@@ -107,6 +108,7 @@ public class SocketService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
         serverAddr = intent.getStringExtra("serverAddr");
+        Log.d(TAG, "Address obtained = " + serverAddr);
         Log.d(TAG, "Service started");
         new Thread(new Runnable() {
             @Override
@@ -141,8 +143,9 @@ public class SocketService extends Service {
         if(initialisationSuccess){
             try {
                 socket.close();
-                Log.d(TAG, "Socket closed");
-            } catch (IOException e) {
+                Log.d(TAG, "Socket closed? " + Boolean.toString(socket.isClosed())); // Just checking to see if the socket has actually closed
+            }
+            catch (IOException e) {
                 Log.e(TAG, e.toString());
             }
         }
