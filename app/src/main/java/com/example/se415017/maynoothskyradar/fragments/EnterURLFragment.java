@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +15,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
+import com.example.se415017.maynoothskyradar.helpers.TextValidator;
 
 import butterknife.Bind;
+import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 /**
@@ -37,8 +41,8 @@ public class EnterURLFragment extends Fragment {
     // TODO: Rename and change types of parameters
     final String PREFS = "UserPreferences";
     final String SERVER_PREF = "serverAddress";
+    final String TAG = getClass().getSimpleName();
 
-    // TODO: Bind UI elements using ButterKnife
     @Bind(R.id.edit_url_fragment_title)
     TextView editUrlFragmentTitle;
     @Bind(R.id.edit_url_fragment_content)
@@ -46,6 +50,7 @@ public class EnterURLFragment extends Fragment {
 
     @Bind(R.id.server_address_edit_field)
     EditText serverAddressEditor;
+    //TODO: Maybe it would be a good idea to ask the user to enter their latitude and longitude
 
     @Bind(R.id.button_submit_server_address)
     Button submitServerAddressButton;
@@ -78,7 +83,33 @@ public class EnterURLFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        View v = inflater.inflate(R.layout.fragment_enter_url, container, false);
+        ButterKnife.bind(this, v);
+
+        serverAddressEditor.addTextChangedListener(new TextValidator(serverAddressEditor) {
+            @Override
+            public void validate(TextView textView, String text) {
+                //TODO: Add validation code
+                Log.d(TAG, "Text to validate: " + text);
+                if(text.length() > 0) {
+                    enableResetButton(true);
+                    //TODO: Implement a proper RegEx check
+                    if(text.length() > 7) {
+                        enableSubmitButton(true);
+                    }
+                }
+            }
+        });
+
         return inflater.inflate(R.layout.fragment_enter_url, container, false);
+    }
+    //The following two methods determine whether I enable the "submit" and "reset" buttons.
+    protected void enableSubmitButton(boolean doIEnableThis){
+        submitServerAddressButton.setEnabled(doIEnableThis);
+    }
+
+    protected void enableResetButton(boolean doIEnableThis){
+        clearServerAddressEditorButton.setEnabled(doIEnableThis);
     }
 
     @OnClick(R.id.button_submit_server_address)
@@ -93,6 +124,8 @@ public class EnterURLFragment extends Fragment {
     @OnClick(R.id.button_clear)
     protected void resetURLField(){
         serverAddressEditor.setText("");
+        enableResetButton(false);
+        enableSubmitButton(false);
     }
 
 

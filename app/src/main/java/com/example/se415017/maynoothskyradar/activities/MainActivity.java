@@ -17,8 +17,10 @@ import android.os.IBinder;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityManagerCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -30,6 +32,7 @@ import android.widget.Toast;
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.example.se415017.maynoothskyradar.R;
+import com.example.se415017.maynoothskyradar.fragments.EnterURLFragment;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
 import com.example.se415017.maynoothskyradar.services.SocketService;
 import com.google.android.gms.maps.model.LatLng;
@@ -51,8 +54,7 @@ import butterknife.OnClick;
  */
 public class MainActivity extends FragmentActivity {
     //TODO: move all of the UI stuff out of the Activity and into Fragments
-    //TODO: fix "unable to unstantiate activity ComponentInfo" error
-    //TODO: instead of using hard-coded values for the server's URL, make the user enter it
+    //DONE: instead of using hard-coded values for the server's URL, make the user enter it
     String strUrl = ""; //Used to be "sbsrv1.cs.nuim.ie"; moving away from hard-coded value
     int serverPort = 30003; //redundant
     public static final String PREFS = "UserPreferences";
@@ -79,6 +81,7 @@ public class MainActivity extends FragmentActivity {
     @Bind(R.id.server_status)
     TextView ServerStat;
 
+    //Redundant
     @OnClick(R.id.button_gps_activation)
     public void activateGPS(View view){
         Log.d(TAG, "activateGPS button pressed");
@@ -89,6 +92,8 @@ public class MainActivity extends FragmentActivity {
 
     boolean netStatus = false;
     boolean serverStatus = false;
+
+    // using the data supplied in Joe's email from 10 November
     String[] dummyData = {
             "$GPGGA,103102.557,5323.0900,N,00636.1283,W,1,08,1.0,49.1,M,56.5,M,,0000*7E",
             "$GPGSA,A,3,01,11,08,19,28,32,03,18,,,,,1.7,1.0,1.3*37",
@@ -97,7 +102,7 @@ public class MainActivity extends FragmentActivity {
             "$GPGSV,3,3,10,18,07,044,35,30,03,276,42*75",
             "$GPRMC,103102.557,A,5323.0900,N,00636.1283,W,000.0,308.8,101115,,,A*79",
             "$GPVTG,308.8,T,,M,000.0,N,000.0,K,A*0E"
-    }; // using the data supplied in Joe's email from 10 November
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,13 +113,20 @@ public class MainActivity extends FragmentActivity {
         strUrl = sharedPref.getString(SERVER_PREF, "");
 
         fragManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragManager.beginTransaction();
+
         ButterKnife.bind(this);
+        Fragment currentFragment;
 
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         if(netHelper.isConnected()) {
             if(strUrl.equalsIgnoreCase("")) {
+                //TODO: Take the user to the setup activity
                 Log.d(TAG, "No user-saved URL detected");
-                showNoServerAddressDialog(MainActivity.this);
+                //showNoServerAddressDialog(MainActivity.this);
+                Toast.makeText(MainActivity.this, "Server address not found", Toast.LENGTH_LONG).show();
+                Intent setUpIntent = new Intent(this, SetUpActivity.class);
+                startActivity(setUpIntent);
             } else {
                 Log.d(TAG, "User-saved URL detected");
                 strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie"); // Screw it, I might as well just hard-code it in here
@@ -163,7 +175,7 @@ public class MainActivity extends FragmentActivity {
         Log.d(TAG, "MainActivity resuming");
         Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
         super.onResume();
-        //TODO: Check to see what happens if all of the below code within this method is commented-out
+        //DONE: Check to see what happens if all of the below code within this method is commented-out
 //        netStatus = new NetHelper(getApplicationContext()).isConnected();
 //        if(!socketServiceBound) {
 //            Intent sockIntent = new Intent(this, SocketService.class);

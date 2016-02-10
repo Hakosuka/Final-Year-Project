@@ -12,7 +12,7 @@ import java.net.Socket;
  * Created by se415017 on 09/11/2015.
  */
 public class SBSDecoder {
-    //TODO: sort out sockets
+    //TODO: Sockets sorted out, this is kind of useless
     private Socket socket;
     private int port = 9999; // default
     private String drBrownsServer = "192.168.1.1"; // default
@@ -35,7 +35,7 @@ public class SBSDecoder {
     }
 
     public byte[] receive(Socket s) throws IOException {
-        //TODO: find some way of constantly streaming data
+        //Redundant
         in = s.getInputStream();
         int result = in.read();
         for (int i = 0; i < 128; i++){

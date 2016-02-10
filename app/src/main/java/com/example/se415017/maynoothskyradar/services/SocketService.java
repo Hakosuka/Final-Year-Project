@@ -79,6 +79,7 @@ public class SocketService extends Service {
     public void initialiseSocket() {
         try {
             socket = new Socket(serverAddr, 30003);
+            socket.setSoTimeout(10000); // Wait 10 secs before timing out
             Log.d(TAG, "Socket created = " + socket.toString());
             initialisationSuccess = true;
             Log.d(TAG, "Initialisation successful");
@@ -102,7 +103,7 @@ public class SocketService extends Service {
      * @param startId
      * @return
      */
-    //TODO: This isn't being invoked!
+    //This isn't being invoked...because I forgot I was using bindService, rather than startService (D'OH!)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
         serverAddr = intent.getStringExtra("serverAddr");
@@ -190,41 +191,5 @@ public class SocketService extends Service {
                 replyMessenger = msg.replyTo;
             }
         }
-    }
-
-    /**
-     * Checks if you the network you've connected to has a web connection.
-     * @return serverStatus - whether the server is up or not
-     */
-    public boolean isURLReachable() {
-//        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-//        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-        //if(networkInfo != null && networkInfo.isConnected()) {
-        // The above code is redundant, because we wouldn't have reached this point had we not
-        // detected any network connection while initialising this SocketService in MainActivity
-        //TODO: THIS IS CRASHING THE SERVER
-            try {
-                URL serverURL = new URL("http://www.google.com/");
-                HttpURLConnection urlc = (HttpURLConnection) serverURL.openConnection();
-                urlc.setConnectTimeout(10000); // 10,000ms or 10s
-                urlc.setReadTimeout(15000); // 15,000ms or 15s
-                urlc.connect();
-                response = urlc.getResponseCode();
-                Log.d(TAG, "Response: " + Integer.toString(response));
-                if (response == 200) {
-                    Log.d(TAG, "Connection is of great success, high five!");
-                    urlReachable = true;
-                    return true;
-                } else {
-                    Log.d(TAG, "Server unavailable.");
-                    return false;
-                }
-            } catch (MalformedURLException e1) {
-                Log.e(TAG, e1.toString());
-                return false;
-            } catch (IOException e2) {
-                Log.e(TAG, e2.toString());
-                return false;
-            }
     }
 }
