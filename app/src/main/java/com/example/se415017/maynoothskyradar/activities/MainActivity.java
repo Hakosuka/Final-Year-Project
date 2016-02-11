@@ -124,17 +124,24 @@ public class MainActivity extends FragmentActivity {
                 //TODO: Take the user to the setup activity
                 Log.d(TAG, "No user-saved URL detected");
                 //showNoServerAddressDialog(MainActivity.this);
-                Toast.makeText(MainActivity.this, "Server address not found", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "Server address not found", Toast.LENGTH_LONG)
+                        .show();
                 Intent setUpIntent = new Intent(this, SetUpActivity.class);
+
+                //Stops the app from returning to the MainActivity if I press the back button while
+                //in the SetUpActivity
+                setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(setUpIntent);
             } else {
                 Log.d(TAG, "User-saved URL detected");
-                strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie"); // Screw it, I might as well just hard-code it in here
+                //If all else fails, use sbsrv1.cs.nuim.ie as the default string
+                strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie");
 
                 if(!doesSocketServiceExist(SocketService.class)) {
                     Log.d(TAG, "No existing SocketService found");
                     try {
-                        url = new URL("http", strUrl, ""); // Now is not the time to add the port, that comes later
+                        //Now is not the time to add the port, that comes later
+                        url = new URL("http", strUrl, "");
                         Log.d(TAG, "URL created: " + url.toString());
                     } catch (MalformedURLException e) {
                         Log.e(TAG, e.toString());

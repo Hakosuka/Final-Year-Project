@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -88,18 +89,36 @@ public class EnterURLFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_enter_url, container, false);
         ButterKnife.bind(this, v);
 
-        serverAddressEditor.addTextChangedListener(new TextValidator(serverAddressEditor) {
+//        serverAddressEditor.addTextChangedListener(new TextValidator(serverAddressEditor) {
+//            @Override
+//            public void validate(TextView textView, String text) {
+//                //TODO: Add validation code
+//                Log.d(TAG, "Text to validate: " + textView.getText().toString());
+//                if(text.length() > 0) {
+//                    enableResetButton(true);
+//                    //TODO: Implement a proper RegEx check
+//                    if(text.length() > 7) {
+//                        enableSubmitButton(true);
+//                    }
+//                }
+//            }
+//        });
+        serverAddressEditor.addTextChangedListener(new TextWatcher() {
             @Override
-            public void validate(TextView textView, String text) {
-                //TODO: Add validation code
-                Log.d(TAG, "Text to validate: " + text);
-                if(text.length() > 0) {
-                    enableResetButton(true);
-                    //TODO: Implement a proper RegEx check
-                    if(text.length() > 7) {
-                        enableSubmitButton(true);
-                    }
-                }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                clearServerAddressEditorButton.setEnabled(s.toString().length() > 0);
+                //TODO: Add a RegEx check within setEnabled() below
+                submitServerAddressButton.setEnabled(s.toString().length() > 7);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
             }
         });
 
@@ -139,7 +158,7 @@ public class EnterURLFragment extends Fragment {
         if (context instanceof OnFragmentInteractionListener) {
             mListener = (OnFragmentInteractionListener) context;
         } else {
-            throw new RuntimeException(context.toString()
+            throw new RuntimeException(context.toString() //TODO: implement OnFragmentInteractionListner
                     + " must implement OnFragmentInteractionListener");
         }
     }

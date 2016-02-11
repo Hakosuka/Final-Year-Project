@@ -33,6 +33,8 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
 
+import io.realm.annotations.PrimaryKey;
+
 /**
  * This is a complete overhaul of the original SocketService class, in an attempt to get rid of any
  * redundant code.
@@ -82,10 +84,19 @@ public class SocketService extends Service {
             socket = new Socket(serverAddr, 30003);
             socket.connect(new InetSocketAddress(serverAddr, 30003), 10000); // Wait 10 secs before timing out
             Log.d(TAG, "Socket created = " + socket.toString());
-            initialisationSuccess = true;
+            initialisationSuccess = !socket.isClosed();
             Log.d(TAG, "Initialisation successful");
         } catch (IOException e) {
             Log.e(TAG, e.toString());
+        }
+    }
+    public void reconnectSocket(Socket socket) {
+        if(socket!=null && initialisationSuccess){
+            try {
+                socket.connect(new InetSocketAddress(serverAddr, 30003), 10000);
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+            }
         }
     }
 
@@ -95,6 +106,8 @@ public class SocketService extends Service {
     @Override
     public void onCreate(){
         Log.d(TAG, "Service created");
+        super.onCreate();
+        myBinder = new Binder();
     }
 
     /**
@@ -150,6 +163,29 @@ public class SocketService extends Service {
             }
         }
     }
+
+    @Override
+    public boolean onUnbind(Intent unbindIntent){
+        Log.d(TAG, "Socket service unbound");
+        if(socket != null){
+            try {
+                socket.close();
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+            }
+        }
+        super.onUnbind(unbindIntent);
+        return true;
+    }
+
+    @Override
+    public void onRebind(Intent rebindIntent){
+        Log.d(TAG, "Socket service rebound");
+        super.onRebind(rebindIntent);
+        if(socket!=null){
+                reconnectSocket(socket);
+        }
+    }
     /**
     * Takes in an InputStream, reads it and then returns the line.
     * @param inputStream - the stream derived from the socket
@@ -176,7 +212,7 @@ public class SocketService extends Service {
             }
         } catch (IOException e) {
             Log.e(TAG, "readFromInputStream error: " + e.toString());
-        } finally {
+        } finally { // runs clean-up code
             try {
                 Log.d(TAG, "Closing InputStream");
                 inputStream.close();
