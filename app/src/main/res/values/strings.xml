@@ -3,8 +3,8 @@
     <string name="action_settings">Settings</string>
     <string name="loading">Loading&#8230;</string>
     <string name="pModel">Aircraft:</string>
-    <string name="lati">Latitude:</string>
-    <string name="longi">Longitude:</string>
+    <string name="lati">Latitude</string>
+    <string name="longi">Longitude</string>
     <string name="alt">Altitude:</string>
     <string name="reg">Registration:</string>
     <string name="vSpeed">Vertical Speed:</string>
@@ -22,6 +22,7 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <string name="enter_address">Please enter the web address (no port number needed) of your server below.</string>
+    <string name="enter_lat_and_lon">Please enter the latitude and longitude you wish the map to be centred on, with negative values for West and/or South.</string>
     <string name="malformed_url_title">Malformed URL</string>
     <string name="malformed_url_content">Please enter a different URL.</string>
     <string name="add_address_here">Server address</string>
