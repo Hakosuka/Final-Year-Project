@@ -1,4 +1,4 @@
-package com.example.se415017.maynoothskyradar.adapters;
+package com.example.se415017.maynoothskyradar.views;
 
 import android.content.Context;
 import android.content.res.TypedArray;

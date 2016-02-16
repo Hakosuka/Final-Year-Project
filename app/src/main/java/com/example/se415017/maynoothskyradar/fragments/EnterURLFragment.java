@@ -9,6 +9,7 @@ import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +19,7 @@ import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.activities.MainActivity;
-import com.example.se415017.maynoothskyradar.helpers.TextValidator;
+import com.example.se415017.maynoothskyradar.helpers.WebAddressValidator;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -48,6 +49,14 @@ public class EnterURLFragment extends Fragment {
     final String LON_PREF = "longitude";
     final String TAG = getClass().getSimpleName();
 
+    boolean validLatitude = false;
+    boolean validLongitude = false;
+    boolean validServerAddress = false;
+
+    String enteredLat = "";
+    String enteredLon = "";
+    String enteredAddress = "";
+
     @Bind(R.id.edit_url_fragment_title)
     TextView editUrlFragmentTitle;
     @Bind(R.id.edit_url_fragment_content)
@@ -57,11 +66,44 @@ public class EnterURLFragment extends Fragment {
 
     @Bind(R.id.server_address_edit_field)
     EditText serverAddressEditor;
-    //TODO: Maybe it would be a good idea to ask the user to enter their latitude and longitude
+//    @OnTextChanged(R.id.server_address_edit_field)
+//    protected void onTextChanged(CharSequence s) {
+//        Log.d("TAG", "Entered URL = " + s);
+//        enteredAddress = s.toString();
+//        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+//                || enteredLat.length() > 0 || enteredLon.length() > 0);
+//        //Checks that the user has entered a valid web address
+//        submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
+//                && checkForValidLon(enteredLon)
+//                && checkForValidURLOrIP(enteredAddress));
+//    }
+    WebAddressValidator webAddressValidator;
+
     @Bind(R.id.latitude_edit_field)
     EditText latitudeEditor;
+//    @OnTextChanged(R.id.latitude_edit_field)
+//    void onTextChanged(CharSequence s){
+//        Log.d(TAG, "Entered latitude = " + s);
+//        enteredLat = s.toString();
+//        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+//                || enteredLat.length() > 0 || enteredLon.length() > 0);
+//        submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
+//                && checkForValidLon(enteredLon)
+//                && checkForValidURLOrIP(enteredAddress));
+//    }
+
     @Bind(R.id.longitude_edit_field)
     EditText longitudeEditor;
+//    @OnTextChanged(R.id.longitude_edit_field)
+//    void onTextChanged(CharSequence s){
+//        Log.d(TAG, "Entered longitude = " + s);
+//        enteredLon = s.toString();
+//        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+//                || enteredLat.length() > 0 || enteredLon.length() > 0);
+//        submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
+//                && checkForValidLon(enteredLon)
+//                && checkForValidURLOrIP(enteredAddress));
+//    }
 
     @Bind(R.id.button_submit_server_address)
     Button submitServerAddressButton;
@@ -97,20 +139,6 @@ public class EnterURLFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_enter_url, container, false);
         ButterKnife.bind(this, v);
 
-//        serverAddressEditor.addTextChangedListener(new TextValidator(serverAddressEditor) {
-//            @Override
-//            public void validate(TextView textView, String text) {
-//                //TODO: Add validation code
-//                Log.d(TAG, "Text to validate: " + textView.getText().toString());
-//                if(text.length() > 0) {
-//                    enableResetButton(true);
-//                    //TODO: Implement a proper RegEx check
-//                    if(text.length() > 7) {
-//                        enableSubmitButton(true);
-//                    }
-//                }
-//            }
-//        });
         serverAddressEditor.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -119,17 +147,24 @@ public class EnterURLFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                Log.d("TAG", "Entered URL = " + s);
-                clearServerAddressEditorButton.setEnabled(s.length() > 0);
-                //TODO: Add a RegEx check within setEnabled() below
-                submitServerAddressButton.setEnabled(s.length() > 7);
+
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-
+                Log.d(TAG, "Text changed: " + s.toString());
+                Log.d(TAG, "Entered URL = " + s);
+                Log.d(TAG, "Edited URL = " + serverAddressEditor.getText().toString());
+                enteredAddress = s.toString();
+                clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+                        || enteredLat.length() > 0 || enteredLon.length() > 0);
+                //Checks that the user has entered a valid web address
+                submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
+                && checkForValidLon(enteredLon)
+                && checkForValidURLOrIP(enteredAddress));
             }
         });
+        //serverAddressEditor.addTextChangedListener(webAddressValidator);
         latitudeEditor.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -138,14 +173,41 @@ public class EnterURLFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                Log.d(TAG, "Entered latitude = " + s);
-                clearServerAddressEditorButton.setEnabled(s.length() > 0);
-                submitServerAddressButton.setEnabled();
+
             }
 
             @Override
             public void afterTextChanged(Editable s) {
+                Log.d(TAG, "Entered latitude = " + s);
+                enteredLat = s.toString();
+                clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+                        || enteredLat.length() > 0 || enteredLon.length() > 0);
+                submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
+                        && checkForValidLon(enteredLon)
+                        && checkForValidURLOrIP(enteredAddress));
+            }
+        });
 
+        longitudeEditor.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                Log.d(TAG, "Entered longitude = " + s);
+                enteredLon = s.toString();
+                clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+                        || enteredLat.length() > 0 || enteredLon.length() > 0);
+                submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
+                        && checkForValidLon(enteredLon)
+                        && checkForValidURLOrIP(enteredAddress));
             }
         });
 
@@ -188,23 +250,31 @@ public class EnterURLFragment extends Fragment {
     }
 
     /**
-     *
+     * Checks that the string entered by the user is a valid latitude value.
      * @param lat the string to be checked to ensure that it's a number between -90 and 90 (inclusive)
      * @return whether or not the entered number is between -90 and 90
      */
     public boolean checkForValidLat(String lat){
-        double latDouble = Double.parseDouble(lat);
-        return -90.0 <= latDouble && latDouble <= 90.0;
+        return lat.matches("^[-+]?([1-8]?\\d(\\.\\d+)?|90(\\.0+)?)");
     }
 
     /**
-     *
+     * Checks that the string entered by the user is a valid longitude value.
      * @param lon the string to be entered to ensure that it's a number between -180 and 180 (inclusive)
-     *
+     * @return whether or not the entered number is between -180 and 180
      */
     public boolean checkForValidLon(String lon){
-        double lonDouble = Double.parseDouble(lon);
-        return -180.0 <= lonDouble && lonDouble <= 180.0;
+        return lon.matches("[-+]?(180(\\.0+)?|((1[0-7]\\d)|([1-9]?\\d))(\\.\\d+)?)");
+    }
+
+    /**
+     * Checks
+     * @param urlStr The URL (or IP address) of the server entered by the user
+     * @return whether or not the entered string represents a valid URL/IP address
+     */
+    public boolean checkForValidURLOrIP(String urlStr){
+        return (Patterns.WEB_URL.matcher(urlStr).matches()
+                || Patterns.IP_ADDRESS.matcher(urlStr).matches());
     }
     @Override
     public void onAttach(Context context) {

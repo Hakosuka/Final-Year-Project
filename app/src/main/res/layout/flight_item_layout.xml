@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent" android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="5dp"
+    android:background="#dedede">
+
+    <TextView
+        android:id="@+id/hex_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mode-S HexIdent:"
+        android:textStyle="bold"
+        android:textSize="16sp" />
+    <TextView
+        android:id="@+id/hex_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:paddingLeft="@dimen/content_margin"
+        android:layout_alignBottom="@id/hex_title"
+        android:layout_toRightOf="@id/hex_title"
+        android:layout_toEndOf="@id/hex_title"
+        android:textColor="#000000"/>
+    <TextView
+        android:id="@+id/callsign_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:paddingLeft="@dimen/inside_margin"
+        android:layout_alignBottom="@id/hex_title"
+        android:layout_toRightOf="@id/hex_content"
+        android:layout_toEndOf="@id/hex_content"/>
+
+    <TextView
+        android:id="@+id/altitude_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Altitude:"
+        android:textStyle="bold"
+        android:layout_below="@id/hex_title"
+        android:layout_alignRight="@id/hex_title"
+        android:layout_alignEnd="@id/hex_title" />
+    <TextView
+        android:id="@+id/altitude_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/content_margin"
+        android:layout_alignBottom="@id/altitude_title"
+        android:layout_toRightOf="@id/altitude_title"
+        android:layout_toEndOf="@id/altitude_title"/>
+
+    <TextView
+        android:id="@+id/latitude_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Latitude:"
+        android:textStyle="bold"
+        android:layout_below="@+id/altitude_title"
+        android:layout_alignRight="@+id/altitude_title"
+        android:layout_alignEnd="@+id/altitude_title" />
+    <TextView
+        android:id="@+id/latitude_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/content_margin"
+        android:layout_alignBottom="@id/latitude_content"
+        android:layout_toRightOf="@id/latitude_content"
+        android:layout_toEndOf="@id/latitude_content"/>
+
+    <TextView
+        android:id="@+id/longitude_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Longitude:"
+        android:textStyle="bold"
+        android:layout_below="@+id/latitude_title"
+        android:layout_alignRight="@+id/latitude_title"
+        android:layout_alignEnd="@+id/latitude_title" />
+    <TextView
+        android:id="@+id/longitude_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/content_margin"
+        android:layout_alignBottom="@id/longitude_title"
+        android:layout_toRightOf="@id/longitude_title"
+        android:layout_toEndOf="@id/longitude_title"/>
+
+</RelativeLayout>

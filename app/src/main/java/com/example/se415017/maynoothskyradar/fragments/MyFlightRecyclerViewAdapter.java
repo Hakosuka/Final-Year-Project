@@ -31,7 +31,7 @@ public class MyFlightRecyclerViewAdapter extends RecyclerView.Adapter<MyFlightRe
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         //TODO: Create fragment_item layout file
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.fragment_item, parent, false);
+                .inflate(R.layout.flight_item_layout, parent, false);
         return new ViewHolder(view);
     }
 
