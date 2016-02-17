@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
+import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Patterns;
@@ -19,11 +20,14 @@ import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.activities.MainActivity;
+import com.example.se415017.maynoothskyradar.helpers.DecimalDigitsInputFilter;
+import com.example.se415017.maynoothskyradar.helpers.InputHelper;
 import com.example.se415017.maynoothskyradar.helpers.WebAddressValidator;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import butterknife.OnTextChanged;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -48,6 +52,8 @@ public class EnterURLFragment extends Fragment {
     final String LAT_PREF = "latitude";
     final String LON_PREF = "longitude";
     final String TAG = getClass().getSimpleName();
+    
+    InputHelper inputHelper;
 
     boolean validLatitude = false;
     boolean validLongitude = false;
@@ -66,44 +72,43 @@ public class EnterURLFragment extends Fragment {
 
     @Bind(R.id.server_address_edit_field)
     EditText serverAddressEditor;
-//    @OnTextChanged(R.id.server_address_edit_field)
-//    protected void onTextChanged(CharSequence s) {
-//        Log.d("TAG", "Entered URL = " + s);
-//        enteredAddress = s.toString();
-//        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
-//                || enteredLat.length() > 0 || enteredLon.length() > 0);
-//        //Checks that the user has entered a valid web address
-//        submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
-//                && checkForValidLon(enteredLon)
-//                && checkForValidURLOrIP(enteredAddress));
-//    }
-    WebAddressValidator webAddressValidator;
+    @OnTextChanged(R.id.server_address_edit_field)
+    void onServerTextChanged(CharSequence s, int start, int before, int count) {
+        Log.d(TAG, "Entered URL = " + s.toString());
+        enteredAddress = s.toString();
+        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+                || enteredLat.length() > 0 || enteredLon.length() > 0);
+        //Checks that the user has entered a valid web address
+        submitServerAddressButton.setEnabled(inputHelper.checkForValidLat(enteredLat)
+                && inputHelper.checkForValidLon(enteredLon)
+                && inputHelper.checkForValidURLOrIP(enteredAddress));
+    }
 
     @Bind(R.id.latitude_edit_field)
     EditText latitudeEditor;
-//    @OnTextChanged(R.id.latitude_edit_field)
-//    void onTextChanged(CharSequence s){
-//        Log.d(TAG, "Entered latitude = " + s);
-//        enteredLat = s.toString();
-//        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
-//                || enteredLat.length() > 0 || enteredLon.length() > 0);
-//        submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
-//                && checkForValidLon(enteredLon)
-//                && checkForValidURLOrIP(enteredAddress));
-//    }
+    @OnTextChanged(value=R.id.latitude_edit_field)
+    void onLatitudeTextChanged(CharSequence s, int start, int before, int count){
+        Log.d(TAG, "Entered latitude = " + s);
+        enteredLat = s.toString();
+        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+            || enteredLat.length() > 0 || enteredLon.length() > 0);
+        submitServerAddressButton.setEnabled(inputHelper.checkForValidLat(enteredLat)
+            && inputHelper.checkForValidLon(enteredLon)
+            && inputHelper.checkForValidURLOrIP(enteredAddress));
+    }
 
     @Bind(R.id.longitude_edit_field)
     EditText longitudeEditor;
-//    @OnTextChanged(R.id.longitude_edit_field)
-//    void onTextChanged(CharSequence s){
-//        Log.d(TAG, "Entered longitude = " + s);
-//        enteredLon = s.toString();
-//        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
-//                || enteredLat.length() > 0 || enteredLon.length() > 0);
-//        submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
-//                && checkForValidLon(enteredLon)
-//                && checkForValidURLOrIP(enteredAddress));
-//    }
+    @OnTextChanged(R.id.longitude_edit_field)
+    void onLongitudeTextChanged(CharSequence s, int start, int before, int count){
+        Log.d(TAG, "Entered longitude = " + s);
+        enteredLon = s.toString();
+        clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
+                || enteredLat.length() > 0 || enteredLon.length() > 0);
+        submitServerAddressButton.setEnabled(inputHelper.checkForValidLat(enteredLat)
+                && inputHelper.checkForValidLon(enteredLon)
+                && inputHelper.checkForValidURLOrIP(enteredAddress));
+    }
 
     @Bind(R.id.button_submit_server_address)
     Button submitServerAddressButton;
@@ -126,11 +131,13 @@ public class EnterURLFragment extends Fragment {
         EnterURLFragment fragment = new EnterURLFragment();
         return fragment;
     }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
+    // TODO: Check if I really need onCreate()
+//    @Override
+//    public void onCreate(Bundle savedInstanceState) {
+//        super.onCreate(savedInstanceState);
+//        if(inputHelper == null)
+//            inputHelper = new InputHelper();
+//    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -139,79 +146,27 @@ public class EnterURLFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_enter_url, container, false);
         ButterKnife.bind(this, v);
 
-        serverAddressEditor.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        if(inputHelper == null)
+            inputHelper = new InputHelper();
 
-            }
+        Log.d(TAG, "Is savedInstanceState empty? " +
+                Boolean.toString(savedInstanceState == null));
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+        // Limit the user to two decimal places
+        latitudeEditor.setFilters(new InputFilter[] {new DecimalDigitsInputFilter(2)});
+        longitudeEditor.setFilters(new InputFilter[] {new DecimalDigitsInputFilter(2)});
 
-            }
+        // If the user has changed their device's orientation, load their inputs from before they did that
+        if(savedInstanceState != null){
+            Log.d(TAG, "Entering saved user inputs into EditText fields");
+            serverAddressEditor.setText(savedInstanceState.getString(SERVER_PREF, "")); //TODO: NullPointerException!
+            latitudeEditor.setText(savedInstanceState.getString(LAT_PREF, ""));
+            longitudeEditor.setText(savedInstanceState.getString(LON_PREF, ""));
+        } else {
+            Log.d(TAG, "No saved user inputs to enter");
+        }
 
-            @Override
-            public void afterTextChanged(Editable s) {
-                Log.d(TAG, "Text changed: " + s.toString());
-                Log.d(TAG, "Entered URL = " + s);
-                Log.d(TAG, "Edited URL = " + serverAddressEditor.getText().toString());
-                enteredAddress = s.toString();
-                clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
-                        || enteredLat.length() > 0 || enteredLon.length() > 0);
-                //Checks that the user has entered a valid web address
-                submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
-                && checkForValidLon(enteredLon)
-                && checkForValidURLOrIP(enteredAddress));
-            }
-        });
-        //serverAddressEditor.addTextChangedListener(webAddressValidator);
-        latitudeEditor.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                Log.d(TAG, "Entered latitude = " + s);
-                enteredLat = s.toString();
-                clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
-                        || enteredLat.length() > 0 || enteredLon.length() > 0);
-                submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
-                        && checkForValidLon(enteredLon)
-                        && checkForValidURLOrIP(enteredAddress));
-            }
-        });
-
-        longitudeEditor.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                Log.d(TAG, "Entered longitude = " + s);
-                enteredLon = s.toString();
-                clearServerAddressEditorButton.setEnabled(enteredAddress.length() > 0
-                        || enteredLat.length() > 0 || enteredLon.length() > 0);
-                submitServerAddressButton.setEnabled(checkForValidLat(enteredLat)
-                        && checkForValidLon(enteredLon)
-                        && checkForValidURLOrIP(enteredAddress));
-            }
-        });
-
-        return inflater.inflate(R.layout.fragment_enter_url, container, false);
+        return v;
     }
     //The following two methods determine whether I enable the "submit" and "reset" buttons.
     protected void enableSubmitButton(boolean doIEnableThis){
@@ -233,7 +188,7 @@ public class EnterURLFragment extends Fragment {
         long lonFromEditor = Double.doubleToRawLongBits(
                 Double.parseDouble(longitudeEditor.getText().toString()));
         editor.putString(SERVER_PREF, editorText);
-        editor.putFloat(LAT_PREF, latFromEditor);
+        editor.putLong(LAT_PREF, latFromEditor);
         editor.putLong(LON_PREF, lonFromEditor);
         editor.apply();
         Intent returnToMainActivityIntent = new Intent(getActivity(), MainActivity.class);
@@ -306,5 +261,28 @@ public class EnterURLFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+    }
+
+    @Override
+    public void onDestroy(){
+        Bundle savedInstanceState = new Bundle();
+        enteredLat = latitudeEditor.getText().toString();
+        enteredLon = longitudeEditor.getText().toString();
+        enteredAddress = serverAddressEditor.getText().toString();
+        Log.d(TAG, "Editor entries = " + enteredLat + ", " + enteredLon + ", " + enteredAddress);
+        Log.d(TAG, "Fragment destroyed");
+        super.onDestroy();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        Log.d(TAG, "Preparing to save state");
+        super.onSaveInstanceState(outState);
+        if(!serverAddressEditor.getText().toString().equals(""))
+            outState.putString(SERVER_PREF, serverAddressEditor.getText().toString());
+        if(!latitudeEditor.getText().toString().equals(""))
+            outState.putString(LAT_PREF, latitudeEditor.getText().toString());
+        if(!longitudeEditor.getText().toString().equals(""))
+            outState.putString(LON_PREF, longitudeEditor.getText().toString());
     }
 }
