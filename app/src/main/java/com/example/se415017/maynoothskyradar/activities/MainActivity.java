@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -38,6 +39,7 @@ import com.example.se415017.maynoothskyradar.services.SocketService;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.Socket;
@@ -117,6 +119,8 @@ public class MainActivity extends FragmentActivity {
 
         ButterKnife.bind(this);
         Fragment currentFragment;
+
+        Log.d(TAG, "String from example log = " + readFromTextFile(getAssets()));
 
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         if(netHelper.isConnected()) {
@@ -388,6 +392,25 @@ public class MainActivity extends FragmentActivity {
                     }
                 })
                 .show();
+    }
+    public String readFromTextFile(AssetManager assetManager){
+        try {
+            String[] files = assetManager.list("File");
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
+        }
+        InputStream inputStream;
+        try {
+            inputStream = assetManager.open("example-log-small.txt");
+            int size = inputStream.available();
+            byte[] buffer = new byte[size];
+            inputStream.read(buffer);
+            inputStream.close();
+            return new String(buffer);
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
+            return e.toString();
+        }
     }
     //I deleted A LOT of redundant code below
 }
