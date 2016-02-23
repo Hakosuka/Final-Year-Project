@@ -45,14 +45,17 @@ public class Aircraft extends RealmObject {
     public String getCallsign()     { return callsign; }
     public void setCallsign(String callsign)    { this.callsign = callsign; }
 
+    public int getAltitude()        { return altitude; }
+    public void setAltitude(int altitude)       { this.altitude = altitude; }
+
     public double getLatitude()     { return latitude; }
-    public void setLatitude(double latitude) { this.latitude = latitude; }
+    public void setLatitude(double latitude)    { this.latitude = latitude; }
 
     public double getLongitude()    { return longitude; }
-    public void setLongitude(double longitude) { this.longitude = longitude; }
+    public void setLongitude(double longitude)  { this.longitude = longitude; }
 
-    public int getAltitude()        { return altitude; }
-    public void setAltitude(int altitude){
-        this.altitude = altitude;
+    public String getAircraftStatus() {
+        return icaoHexAddr + ", " + callsign + ", " + Integer.toString(altitude) + ", " +
+                Double.toString(latitude) + ", " + Double.toString(longitude);
     }
 }
