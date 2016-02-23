@@ -16,6 +16,7 @@ public class SBSDecoder {
     private Socket socket;
     private int port = 9999; // default
     private String drBrownsServer = "192.168.1.1"; // default
+    String TAG = getClass().getSimpleName();
     OutputStream out = null;
     InputStream in = null;
     byte[] buffer = new byte[128]; // adsMonitor.py uses 128-byte buffer
@@ -53,5 +54,35 @@ public class SBSDecoder {
     public String modeSToCallsign(String modeSString) {
         String callsign = "";
         return callsign;
+    }
+
+    /**
+     * Parses the SBS-1 message
+     * @param sbsMessageArray The array of strings created when splitting the SBS-1 messages
+     */
+    public void parseSBSMessage(String[] sbsMessageArray){
+        if(sbsMessageArray[0].equals("MSG")){
+            //sbsMessageArray[1] is the type of transmission message
+            switch(Integer.parseInt(sbsMessageArray[1])){
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    break;
+                case 6:
+                    break;
+                case 7:
+                    break;
+                case 8:
+                    break;
+            }
+        } else {
+            Log.d(TAG, "Not a transmission message, it's a " + sbsMessageArray[0] + " instead.");
+        }
     }
 }

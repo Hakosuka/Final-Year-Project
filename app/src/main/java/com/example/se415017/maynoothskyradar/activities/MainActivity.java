@@ -9,6 +9,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.wifi.WifiManager;
@@ -35,15 +36,22 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.fragments.EnterURLFragment;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
+import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
+import com.example.se415017.maynoothskyradar.objects.Aircraft;
 import com.example.se415017.maynoothskyradar.services.SocketService;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -66,13 +74,14 @@ public class MainActivity extends FragmentActivity {
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
     boolean socketServiceBound = false;
     final String TAG = "MainActivity";
+    ArrayList<Aircraft> aircraftArrayList;
 
     public static FragmentManager fragManager;
 
     @Bind(R.id.button_gps_activation)
     Button GpsActivationButton;
-    @Bind(R.id.check_server_button)
-    Button CheckServerButton;
+    @Bind(R.id.read_sample_log_button)
+    Button ReadSampleLogButton;
 
     //These are the GPS coordinates of the server
     @Bind(R.id.gps_latitude)
@@ -90,6 +99,11 @@ public class MainActivity extends FragmentActivity {
         for(int i = 0; i < dummyData.length; i++){
             decodeNMEA(dummyData[i]);
         }
+    }
+
+    @OnClick(R.id.read_sample_log_button)
+    public void readSampleLog(View view) {
+        Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
     }
 
     boolean netStatus = false;
@@ -120,9 +134,8 @@ public class MainActivity extends FragmentActivity {
         ButterKnife.bind(this);
         Fragment currentFragment;
 
-        Log.d(TAG, "String from example log = " + readFromTextFile(getAssets()));
-
         final NetHelper netHelper = new NetHelper(getApplicationContext());
+        Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
         if(netHelper.isConnected()) {
             if(strUrl.equalsIgnoreCase("")) {
                 //TODO: Take the user to the setup activity
@@ -155,7 +168,8 @@ public class MainActivity extends FragmentActivity {
                     Log.d(TAG, "Intent created");
 
                     sockIntent.putExtra("serverAddr", url.toString());
-                    startService(sockIntent);
+                    //TODO: Reactivate after I've done testing with the example log
+                    //startService(sockIntent);
                     /**
                      * bindService kills the service upon unbinding
                      */
@@ -367,6 +381,7 @@ public class MainActivity extends FragmentActivity {
     }
     /**
      * Shows the alert dialog which notifies the user that they haven't saved the address of their server.
+     * Now redundant.
      * @param activity
      * @return MaterialDialog
      */
@@ -393,24 +408,103 @@ public class MainActivity extends FragmentActivity {
                 })
                 .show();
     }
-    public String readFromTextFile(AssetManager assetManager){
+
+    public String readFromTextFile(Context context) {
+        Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));
         try {
-            String[] files = assetManager.list("File");
-        } catch (IOException e) {
-            Log.e(TAG, e.toString());
+            while (s.hasNext()) {
+                String word = s.next();
+                String[] splitLine = word.split(","); //split the line from the log using the comma
+                Log.d(TAG, "Line from sample log = " + word + ", has " + Integer.toString(splitLine.length) + " elements.");
+                parseSBSMessage(splitLine);
+            }
+//        } catch (InterruptedException e) {
+//            Log.e(TAG, e.toString());
+        } finally {
+            s.close();
         }
-        InputStream inputStream;
-        try {
-            inputStream = assetManager.open("example-log-small.txt");
-            int size = inputStream.available();
-            byte[] buffer = new byte[size];
-            inputStream.read(buffer);
-            inputStream.close();
-            return new String(buffer);
-        } catch (IOException e) {
-            Log.e(TAG, e.toString());
-            return e.toString();
+        return s.toString();
+    }
+
+    public void parseSBSMessage(String[] sbsMessageArray){
+        //By checking for 22 fields, we don't get thrown off by transmission messages without
+        //that amount of fields
+        Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
+        if(sbsMessageArray[0].equals("MSG") && sbsMessageArray.length == 22){
+            //sbsMessageArray[1] is the type of transmission message
+            switch(Integer.parseInt(sbsMessageArray[1])) {
+                case 1:
+                    Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
+                    break;
+                case 2:
+                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                    Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
+                    Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
+                    Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
+                    break;
+                case 3:
+                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                    Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
+                    Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
+                    break;
+                case 4:
+                    Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
+                    Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
+                    break;
+                case 5:
+                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                    break;
+                case 6:
+                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                    break;
+                case 7:
+                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                    break;
+                case 8:
+                    Log.d(TAG, "Is this plane on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
+                    break;
+            }
+            //Checks if an aircraft with a given ICAO hex code is found in the list
+            boolean hexIdentFound = false;
+            if(aircraftArrayList.size() != 0){
+                for(Aircraft aircraft : aircraftArrayList){
+                    //The ICAO hex code is the 5th element of the message
+                    hexIdentFound = aircraft.getIcaoHexAddr().equals(sbsMessageArray[4]);
+                    if(hexIdentFound)
+                        switch(Integer.parseInt(sbsMessageArray[1])) {
+                            case 1:
+                                aircraft.setRegCode(sbsMessageArray[10]);
+                                break;
+                            case 2:
+                                aircraft.setAltitude(Integer.parseInt(sbsMessageArray[11]));
+                                aircraft.setLatitude(Double.parseDouble(sbsMessageArray[14]));
+                                aircraft.setLongitude(Double.parseDouble(sbsMessageArray[15]));
+                                break;
+                            case 3:
+                                aircraft.setAltitude(Integer.parseInt(sbsMessageArray[11]));
+                                aircraft.setLatitude(Double.parseDouble(sbsMessageArray[14]));
+                                aircraft.setLongitude(Double.parseDouble(sbsMessageArray[15]));
+                                break;
+                            case 4:
+                                //TODO: Add ground speed and track
+                                break;
+                            case 5|6|7:
+                                aircraft.setAltitude(Integer.parseInt(sbsMessageArray[11]));
+                                break;
+                            case 8:
+                                break;
+                        }
+                        break; //No need to keep checking the list
+                }
+            } else {
+                //Add the newly-found aircraft
+                aircraftArrayList.add(new Aircraft(sbsMessageArray[4], sbsMessageArray[10],
+                        Integer.parseInt(sbsMessageArray[11]),
+                        Double.parseDouble(sbsMessageArray[14]),
+                        Double.parseDouble(sbsMessageArray[15])));
+            }
+        } else {
+            Log.d(TAG, "Not a transmission message, it's a " + sbsMessageArray[0] + " instead.");
         }
     }
-    //I deleted A LOT of redundant code below
 }
