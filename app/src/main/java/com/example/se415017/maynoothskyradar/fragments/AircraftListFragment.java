@@ -11,10 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.se415017.maynoothskyradar.R;
-import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent;
 import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent.DummyItem;
-
-import java.util.List;
 
 /**
  * A fragment representing a list of Items.
@@ -22,7 +19,7 @@ import java.util.List;
  * Activities containing this fragment MUST implement the {@link OnListFragmentInteractionListener}
  * interface.
  */
-public class FlightFragment extends Fragment {
+public class AircraftListFragment extends Fragment {
 
     // TODO: Customize parameter argument names
     private static final String ARG_COLUMN_COUNT = "column-count";
@@ -34,13 +31,13 @@ public class FlightFragment extends Fragment {
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public FlightFragment() {
+    public AircraftListFragment() {
     }
 
     // TODO: Customize parameter initialization
     @SuppressWarnings("unused")
-    public static FlightFragment newInstance(int columnCount) {
-        FlightFragment fragment = new FlightFragment();
+    public static AircraftListFragment newInstance(int columnCount) {
+        AircraftListFragment fragment = new AircraftListFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_COLUMN_COUNT, columnCount);
         fragment.setArguments(args);
@@ -71,7 +68,7 @@ public class FlightFragment extends Fragment {
                 recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
             }
             /*  TODO: the constructor MyFlightRecyclerViewAdapter can't be applied here, because
-                FlightFragment's OnListFragmentInteractionListener can't be converted to
+                AircraftListFragment's OnListFragmentInteractionListener can't be converted to
                 ItemFragment's OnListFragmentInteractionListener. */
             //recyclerView.setAdapter(new MyFlightRecyclerViewAdapter(DummyContent.ITEMS, mListener));
         }

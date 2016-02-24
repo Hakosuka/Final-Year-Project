@@ -128,6 +128,8 @@ public class MainActivity extends FragmentActivity {
         final SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         strUrl = sharedPref.getString(SERVER_PREF, "");
 
+        aircraftArrayList = new ArrayList<Aircraft>();
+
         fragManager = getSupportFragmentManager();
         //FragmentTransaction fragmentTransaction = fragManager.beginTransaction();
 
@@ -137,47 +139,47 @@ public class MainActivity extends FragmentActivity {
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
         if(netHelper.isConnected()) {
-            if(strUrl.equalsIgnoreCase("")) {
-                //TODO: Take the user to the setup activity
-                Log.d(TAG, "No user-saved URL detected");
-                //showNoServerAddressDialog(MainActivity.this);
-                Toast.makeText(MainActivity.this, "Server address not found", Toast.LENGTH_LONG)
-                        .show();
-                Intent setUpIntent = new Intent(this, SetUpActivity.class);
-
-                //Stops the app from returning to the MainActivity if I press the back button while
-                //in the SetUpActivity
-                setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(setUpIntent);
-            } else {
-                Log.d(TAG, "User-saved URL detected");
-                //If all else fails, use sbsrv1.cs.nuim.ie as the default string
-                strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie");
-
-                if(!doesSocketServiceExist(SocketService.class)) {
-                    Log.d(TAG, "No existing SocketService found");
-                    try {
-                        //Now is not the time to add the port, that comes later
-                        url = new URL("http", strUrl, "");
-                        Log.d(TAG, "URL created: " + url.toString());
-                    } catch (MalformedURLException e) {
-                        Log.e(TAG, e.toString());
-                        showMalformedURLDialog(MainActivity.this);
-                    }
-                    Intent sockIntent = new Intent(this, SocketService.class);
-                    Log.d(TAG, "Intent created");
-
-                    sockIntent.putExtra("serverAddr", url.toString());
-                    //TODO: Reactivate after I've done testing with the example log
-                    //startService(sockIntent);
-                    /**
-                     * bindService kills the service upon unbinding
-                     */
-                    //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
-                } else {
-                    Log.d(TAG, "Existing SocketService found");
-                }
-            }
+//            if(strUrl.equalsIgnoreCase("")) {
+//                //TODO: Take the user to the setup activity
+//                Log.d(TAG, "No user-saved URL detected");
+//                //showNoServerAddressDialog(MainActivity.this);
+//                Toast.makeText(MainActivity.this, "Server address not found", Toast.LENGTH_LONG)
+//                        .show();
+//                Intent setUpIntent = new Intent(this, SetUpActivity.class);
+//
+//                //Stops the app from returning to the MainActivity if I press the back button while
+//                //in the SetUpActivity
+//                setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+//                startActivity(setUpIntent);
+//            } else {
+//                Log.d(TAG, "User-saved URL detected");
+//                //If all else fails, use sbsrv1.cs.nuim.ie as the default string
+//                strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie");
+//
+//                if(!doesSocketServiceExist(SocketService.class)) {
+//                    Log.d(TAG, "No existing SocketService found");
+//                    try {
+//                        //Now is not the time to add the port, that comes later
+//                        url = new URL("http", strUrl, "");
+//                        Log.d(TAG, "URL created: " + url.toString());
+//                    } catch (MalformedURLException e) {
+//                        Log.e(TAG, e.toString());
+//                        showMalformedURLDialog(MainActivity.this);
+//                    }
+//                    Intent sockIntent = new Intent(this, SocketService.class);
+//                    Log.d(TAG, "Intent created");
+//
+//                    sockIntent.putExtra("serverAddr", url.toString());
+//                    //TODO: Reactivate after I've done testing with the example log
+//                    //startService(sockIntent);
+//                    /**
+//                     * bindService kills the service upon unbinding
+//                     */
+//                    //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+//                } else {
+//                    Log.d(TAG, "Existing SocketService found");
+//                }
+//            }
         } else {
             showNoInternetDialog(MainActivity.this);
         }
@@ -194,20 +196,6 @@ public class MainActivity extends FragmentActivity {
         Log.d(TAG, "MainActivity resuming");
         Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
         super.onResume();
-        //DONE: Check to see what happens if all of the below code within this method is commented-out
-//        netStatus = new NetHelper(getApplicationContext()).isConnected();
-//        if(!socketServiceBound) {
-//            Intent sockIntent = new Intent(this, SocketService.class);
-//            if(url == null) {
-//                try {
-//                    url = new URL("http", strUrl, serverPort, "");
-//                } catch (MalformedURLException e) {
-//                    Log.e(TAG, e.toString());
-//                }
-//            }
-//            sockIntent.putExtra("serverAddr", url.toString());
-//            bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
-//        }
     }
 
     @Override
@@ -413,13 +401,11 @@ public class MainActivity extends FragmentActivity {
         Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));
         try {
             while (s.hasNext()) {
-                String word = s.next();
+                String word = s.next().trim(); //remove whitespaces from the line being read
                 String[] splitLine = word.split(","); //split the line from the log using the comma
                 Log.d(TAG, "Line from sample log = " + word + ", has " + Integer.toString(splitLine.length) + " elements.");
                 parseSBSMessage(splitLine);
             }
-//        } catch (InterruptedException e) {
-//            Log.e(TAG, e.toString());
         } finally {
             s.close();
         }
@@ -427,9 +413,15 @@ public class MainActivity extends FragmentActivity {
     }
 
     public void parseSBSMessage(String[] sbsMessageArray){
+
+        //sbsMessageArray[9] is the time the message was logged.
+        double delay = Double.parseDouble(sbsMessageArray[9].substring(6));
         //By checking for 22 fields, we don't get thrown off by transmission messages without
         //that amount of fields
-        Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
+        if(aircraftArrayList != null)
+            Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
+        else
+            Log.d(TAG, "AircraftArrayList is empty");
         if(sbsMessageArray[0].equals("MSG") && sbsMessageArray.length == 22){
             //sbsMessageArray[1] is the type of transmission message
             switch(Integer.parseInt(sbsMessageArray[1])) {
@@ -467,13 +459,13 @@ public class MainActivity extends FragmentActivity {
             //Checks if an aircraft with a given ICAO hex code is found in the list
             boolean hexIdentFound = false;
             if(aircraftArrayList.size() != 0){
-                for(Aircraft aircraft : aircraftArrayList){
+                for(Aircraft aircraft : aircraftArrayList) {
                     //The ICAO hex code is the 5th element of the message
                     hexIdentFound = aircraft.getIcaoHexAddr().equals(sbsMessageArray[4]);
-                    if(hexIdentFound)
-                        switch(Integer.parseInt(sbsMessageArray[1])) {
+                    if (hexIdentFound) {
+                        switch (Integer.parseInt(sbsMessageArray[1])) {
                             case 1:
-                                aircraft.setRegCode(sbsMessageArray[10]);
+                                aircraft.setCallsign(sbsMessageArray[10]);
                                 break;
                             case 2:
                                 aircraft.setAltitude(Integer.parseInt(sbsMessageArray[11]));
@@ -486,22 +478,46 @@ public class MainActivity extends FragmentActivity {
                                 aircraft.setLongitude(Double.parseDouble(sbsMessageArray[15]));
                                 break;
                             case 4:
-                                //TODO: Add ground speed and track
+                                //TODO: Add track
+                                aircraft.setgSpeed(Integer.parseInt(sbsMessageArray[12]));
+                                aircraft.setTrack(Integer.parseInt(sbsMessageArray[13]));
                                 break;
-                            case 5|6|7:
+                            case 5 | 6 | 7:
                                 aircraft.setAltitude(Integer.parseInt(sbsMessageArray[11]));
                                 break;
                             case 8:
                                 break;
                         }
+                        Log.d(TAG, "Aircraft status: " + aircraft.getIcaoHexAddr() + ", " +
+                                aircraft.getCallsign() + ", " +
+                                Integer.toString(aircraft.getAltitude()) + ", " +
+                                Integer.toString(aircraft.getgSpeed()) + ", " +
+                                Integer.toString(aircraft.getTrack()) + ", " +
+                                Double.toString(aircraft.getLatitude()) + ", " +
+                                Double.toString(aircraft.getLongitude()));
                         break; //No need to keep checking the list
+                    }
+                    else {
+                        aircraftArrayList.add(new Aircraft(sbsMessageArray[4],
+                                sbsMessageArray[10], //callsign
+                                Integer.parseInt(sbsMessageArray[11]), //altitude
+                                Integer.parseInt(sbsMessageArray[12]), //ground speed
+                                Integer.parseInt(sbsMessageArray[13]), //track
+                                Double.parseDouble(sbsMessageArray[14]), //latitude
+                                Double.parseDouble(sbsMessageArray[15]))); //longitude
+                    }
                 }
             } else {
-                //Add the newly-found aircraft
-                aircraftArrayList.add(new Aircraft(sbsMessageArray[4], sbsMessageArray[10],
-                        Integer.parseInt(sbsMessageArray[11]),
-                        Double.parseDouble(sbsMessageArray[14]),
-                        Double.parseDouble(sbsMessageArray[15])));
+                //No aircraft in aircraftArrayList, now adding the first one to be discovered
+                Log.d(TAG, "No aircraft found in list, now adding a new aircraft.");
+                //TODO: NumberFormatException
+                aircraftArrayList.add(new Aircraft(sbsMessageArray[4],
+                        sbsMessageArray[10], //callsign
+                        Integer.parseInt(sbsMessageArray[11]), //altitude
+                        Integer.parseInt(sbsMessageArray[12]), //ground speed
+                        Integer.parseInt(sbsMessageArray[13]), //track
+                        Double.parseDouble(sbsMessageArray[14]), //latitude
+                        Double.parseDouble(sbsMessageArray[15]))); //longitude
             }
         } else {
             Log.d(TAG, "Not a transmission message, it's a " + sbsMessageArray[0] + " instead.");

@@ -9,5 +9,5 @@
     android:layout_marginLeft="16dp"
     android:layout_marginRight="16dp"
     app:layoutManager="LinearLayoutManager"
-    tools:context="com.example.se415017.maynoothskyradar.fragments.FlightFragment"
+    tools:context=".fragments.AircraftListFragment"
     tools:listitem="@layout/fragment_flight" />
