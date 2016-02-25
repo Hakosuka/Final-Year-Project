@@ -23,6 +23,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -92,6 +94,10 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.server_status)
     TextView ServerStat;
 
+    //TODO: Test if I can actually use ButterKnife's @Bind annotations on toolbars
+    @Bind(R.id.activity_toolbar)
+    Toolbar activityToolbar;
+
     //Redundant
     @OnClick(R.id.button_gps_activation)
     public void activateGPS(View view){
@@ -124,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setSupportActionBar(activityToolbar);
+        ButterKnife.bind(this);
 
         final SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         strUrl = sharedPref.getString(SERVER_PREF, "");
@@ -133,7 +141,6 @@ public class MainActivity extends AppCompatActivity {
         fragManager = getSupportFragmentManager();
         //FragmentTransaction fragmentTransaction = fragManager.beginTransaction();
 
-        ButterKnife.bind(this);
         Fragment currentFragment;
 
         final NetHelper netHelper = new NetHelper(getApplicationContext());
@@ -249,8 +256,13 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch(id){
+            case R.id.action_settings:
+                Log.d(TAG, "Settings selected");
+                return true;
+            case R.id.action_about:
+                Log.d(TAG, "This is where I would open a dialog to say what this app's about...IF I HAD ONE.");
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -416,12 +428,13 @@ public class MainActivity extends AppCompatActivity {
 
         //sbsMessageArray[9] is the time the message was logged.
         double delay = Double.parseDouble(sbsMessageArray[9].substring(6));
-        //By checking for 22 fields, we don't get thrown off by transmission messages without
-        //that amount of fields
+
         if(aircraftArrayList != null)
             Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
         else
             Log.d(TAG, "AircraftArrayList is empty");
+        //By checking for 22 fields, we don't get thrown off by transmission messages without
+        //that amount of fields
         if(sbsMessageArray[0].equals("MSG") && sbsMessageArray.length == 22){
             //sbsMessageArray[1] is the type of transmission message
             switch(Integer.parseInt(sbsMessageArray[1])) {
@@ -478,7 +491,6 @@ public class MainActivity extends AppCompatActivity {
                                 aircraft.setLongitude(Double.parseDouble(sbsMessageArray[15]));
                                 break;
                             case 4:
-                                //TODO: Add track
                                 aircraft.setgSpeed(Integer.parseInt(sbsMessageArray[12]));
                                 aircraft.setTrack(Integer.parseInt(sbsMessageArray[13]));
                                 break;

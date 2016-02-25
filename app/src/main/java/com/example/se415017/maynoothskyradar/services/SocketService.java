@@ -227,6 +227,7 @@ public class SocketService extends Service {
         @Override
         public void handleMessage(Message msg){
             if (msg.what == MESSAGE) {
+                Log.d(TAG, "Reply to: " + msg.replyTo.toString());
                 replyMessenger = msg.replyTo;
             }
         }
