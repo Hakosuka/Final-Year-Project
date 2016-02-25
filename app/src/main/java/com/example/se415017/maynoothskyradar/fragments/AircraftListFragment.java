@@ -14,7 +14,7 @@ import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent.DummyItem;
 
 /**
- * A fragment representing a list of Items.
+ * A fragment representing a list of detected aircraft.
  * <p/>
  * Activities containing this fragment MUST implement the {@link OnListFragmentInteractionListener}
  * interface.

@@ -62,7 +62,7 @@ import butterknife.OnClick;
  * @version 11 November 2015
  * Parsing the GPS data supplied by Joe in his email.
  */
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends AppCompatActivity {
     //TODO: move all of the UI stuff out of the Activity and into Fragments
     //DONE: instead of using hard-coded values for the server's URL, make the user enter it
     String strUrl = ""; //Used to be "sbsrv1.cs.nuim.ie"; moving away from hard-coded value
