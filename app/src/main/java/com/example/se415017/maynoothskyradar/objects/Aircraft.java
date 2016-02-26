@@ -8,16 +8,16 @@ import io.realm.annotations.PrimaryKey;
  *
  *
  */
-public class Aircraft extends RealmObject {
+//TODO: Study object creation and usage in Android
+public class Aircraft {
     @PrimaryKey
-    private String icaoHexAddr;
-    //String flightNum; //Not much point in this, an aircraft would do multiple flight routes - now redundant thanks to callsign
+    public String icaoHexAddr = " ";
     //private String regCode = "TBD"; // registration code of the plane, I'll probably fetch this from a database
-    private String callsign = "TBD";
-    private int altitude; // Mode-C altitude (i.e. relative to 1.0132 bar), not it's actual distance above mean sea level
-    private int gSpeed; //Ground speed, not indicated airspeed
-    private int track; //Distinct from its heading, derived from its E/W and N/S velocities.
-    private double latitude, longitude;
+    public String callsign = "TBD"; // replaces FlightNum
+    public int altitude; // Mode-C altitude (i.e. relative to 1.0132 bar), not it's actual distance above mean sea level
+    public int gSpeed; //Ground speed, not indicated airspeed
+    public int track; //Distinct from its heading, derived from its E/W and N/S velocities.
+    public double latitude, longitude;
 
     //Default public constructor with no argument
     public Aircraft(){

@@ -429,13 +429,9 @@ public class MainActivity extends AppCompatActivity {
         //sbsMessageArray[9] is the time the message was logged.
         double delay = Double.parseDouble(sbsMessageArray[9].substring(6));
 
-        if(aircraftArrayList != null)
-            Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
-        else
-            Log.d(TAG, "AircraftArrayList is empty");
-        //By checking for 22 fields, we don't get thrown off by transmission messages without
-        //that amount of fields
-        if(sbsMessageArray[0].equals("MSG") && sbsMessageArray.length == 22){
+        Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
+        //By checking for 22 fields, we don't get thrown off by transmission messages without that amount of fields
+        if(sbsMessageArray[0].equals("MSG") && sbsMessageArray.length == 22) {
             //sbsMessageArray[1] is the type of transmission message
             switch(Integer.parseInt(sbsMessageArray[1])) {
                 case 1:
@@ -471,7 +467,7 @@ public class MainActivity extends AppCompatActivity {
             }
             //Checks if an aircraft with a given ICAO hex code is found in the list
             boolean hexIdentFound = false;
-            if(aircraftArrayList.size() != 0){
+            //if(aircraftArrayList.size() != 0){
                 for(Aircraft aircraft : aircraftArrayList) {
                     //The ICAO hex code is the 5th element of the message
                     hexIdentFound = aircraft.getIcaoHexAddr().equals(sbsMessageArray[4]);
@@ -500,39 +496,39 @@ public class MainActivity extends AppCompatActivity {
                             case 8:
                                 break;
                         }
-                        Log.d(TAG, "Aircraft status: " + aircraft.getIcaoHexAddr() + ", " +
-                                aircraft.getCallsign() + ", " +
-                                Integer.toString(aircraft.getAltitude()) + ", " +
-                                Integer.toString(aircraft.getgSpeed()) + ", " +
-                                Integer.toString(aircraft.getTrack()) + ", " +
-                                Double.toString(aircraft.getLatitude()) + ", " +
-                                Double.toString(aircraft.getLongitude()));
+                        Log.d(TAG, "Aircraft status: " + aircraft.icaoHexAddr + ", " +
+                                aircraft.callsign + ", " +
+                                Integer.toString(aircraft.altitude) + ", " +
+                                Integer.toString(aircraft.gSpeed) + ", " +
+                                Integer.toString(aircraft.track) + ", " +
+                                Double.toString(aircraft.latitude) + ", " +
+                                Double.toString(aircraft.longitude));
                         break; //No need to keep checking the list
                     }
                     else {
-                        aircraftArrayList.add(new Aircraft(sbsMessageArray[4],
-                                sbsMessageArray[10], //callsign
-                                Integer.parseInt(sbsMessageArray[11]), //altitude
-                                Integer.parseInt(sbsMessageArray[12]), //ground speed
-                                Integer.parseInt(sbsMessageArray[13]), //track
-                                Double.parseDouble(sbsMessageArray[14]), //latitude
-                                Double.parseDouble(sbsMessageArray[15]))); //longitude
+                        addAircraftToList(aircraftArrayList, sbsMessageArray);
                     }
                 }
-            } else {
+                 //else {
                 //No aircraft in aircraftArrayList, now adding the first one to be discovered
                 Log.d(TAG, "No aircraft found in list, now adding a new aircraft.");
                 //TODO: NumberFormatException
-                aircraftArrayList.add(new Aircraft(sbsMessageArray[4],
-                        sbsMessageArray[10], //callsign
-                        Integer.parseInt(sbsMessageArray[11]), //altitude
-                        Integer.parseInt(sbsMessageArray[12]), //ground speed
-                        Integer.parseInt(sbsMessageArray[13]), //track
-                        Double.parseDouble(sbsMessageArray[14]), //latitude
-                        Double.parseDouble(sbsMessageArray[15]))); //longitude
-            }
+                addAircraftToList(aircraftArrayList, sbsMessageArray);
+
         } else {
             Log.d(TAG, "Not a transmission message, it's a " + sbsMessageArray[0] + " instead.");
         }
+    }
+    public void addAircraftToList(ArrayList<Aircraft> aircraftArrayList, String[] sbsMessageArray){
+        String icaoHex = sbsMessageArray[4];
+        String callsign = sbsMessageArray[10];
+        //TODO: FIX NumberFormatException ASAP
+        aircraftArrayList.add(new Aircraft(sbsMessageArray[4], //Mode-S ICAO hexadecimal ID
+                sbsMessageArray[10], //callsign
+                Integer.parseInt(sbsMessageArray[11]), //altitude
+                Integer.parseInt(sbsMessageArray[12]), //ground speed
+                Integer.parseInt(sbsMessageArray[13]), //track
+                Double.parseDouble(sbsMessageArray[14]), //latitude
+                Double.parseDouble(sbsMessageArray[15]))); //longitude;
     }
 }
