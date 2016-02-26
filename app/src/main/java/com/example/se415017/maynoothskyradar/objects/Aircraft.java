@@ -13,7 +13,7 @@ public class Aircraft {
     @PrimaryKey
     public String icaoHexAddr = " ";
     //private String regCode = "TBD"; // registration code of the plane, I'll probably fetch this from a database
-    public String callsign = "TBD"; // replaces FlightNum
+    public String callsign = " "; // replaces FlightNum
     public int altitude; // Mode-C altitude (i.e. relative to 1.0132 bar), not it's actual distance above mean sea level
     public int gSpeed; //Ground speed, not indicated airspeed
     public int track; //Distinct from its heading, derived from its E/W and N/S velocities.
@@ -21,7 +21,14 @@ public class Aircraft {
 
     //Default public constructor with no argument
     public Aircraft(){
-        new Aircraft("", "TBD", 0, 0, 0, 0.0, 0.0);
+        new Aircraft(" ");
+    }
+
+    //Public constructor, used when detecting a new aircraft.
+    //The parameters besides icaoHexAddr are left blank, to be updated later upon receiving a new
+    //SBS-1 message from that aircraft.
+    public Aircraft(String icaoHexAddr) {
+        new Aircraft(icaoHexAddr, " ", 0, 0, 0, 0.0, 0.0);
     }
     /**
      * This is a basic constructor of the aircraft, it's for when it's been newly identified but

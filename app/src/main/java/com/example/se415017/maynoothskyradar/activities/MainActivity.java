@@ -474,24 +474,24 @@ public class MainActivity extends AppCompatActivity {
                     if (hexIdentFound) {
                         switch (Integer.parseInt(sbsMessageArray[1])) {
                             case 1:
-                                aircraft.setCallsign(sbsMessageArray[10]);
+                                aircraft.callsign = sbsMessageArray[10];
                                 break;
                             case 2:
-                                aircraft.setAltitude(Integer.parseInt(sbsMessageArray[11]));
-                                aircraft.setLatitude(Double.parseDouble(sbsMessageArray[14]));
-                                aircraft.setLongitude(Double.parseDouble(sbsMessageArray[15]));
+                                aircraft.altitude = Integer.parseInt(sbsMessageArray[11]);
+                                aircraft.latitude = Double.parseDouble(sbsMessageArray[14]);
+                                aircraft.longitude = Double.parseDouble(sbsMessageArray[15]);
                                 break;
                             case 3:
-                                aircraft.setAltitude(Integer.parseInt(sbsMessageArray[11]));
-                                aircraft.setLatitude(Double.parseDouble(sbsMessageArray[14]));
-                                aircraft.setLongitude(Double.parseDouble(sbsMessageArray[15]));
+                                aircraft.altitude = Integer.parseInt(sbsMessageArray[11]);
+                                aircraft.latitude = Double.parseDouble(sbsMessageArray[14]);
+                                aircraft.longitude = Double.parseDouble(sbsMessageArray[15]);
                                 break;
                             case 4:
-                                aircraft.setgSpeed(Integer.parseInt(sbsMessageArray[12]));
-                                aircraft.setTrack(Integer.parseInt(sbsMessageArray[13]));
+                                aircraft.gSpeed = Integer.parseInt(sbsMessageArray[12]);
+                                aircraft.track = Integer.parseInt(sbsMessageArray[13]);
                                 break;
                             case 5 | 6 | 7:
-                                aircraft.setAltitude(Integer.parseInt(sbsMessageArray[11]));
+                                aircraft.altitude = Integer.parseInt(sbsMessageArray[11]);
                                 break;
                             case 8:
                                 break;
@@ -520,15 +520,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     public void addAircraftToList(ArrayList<Aircraft> aircraftArrayList, String[] sbsMessageArray){
-        String icaoHex = sbsMessageArray[4];
-        String callsign = sbsMessageArray[10];
         //TODO: FIX NumberFormatException ASAP
-        aircraftArrayList.add(new Aircraft(sbsMessageArray[4], //Mode-S ICAO hexadecimal ID
-                sbsMessageArray[10], //callsign
-                Integer.parseInt(sbsMessageArray[11]), //altitude
-                Integer.parseInt(sbsMessageArray[12]), //ground speed
-                Integer.parseInt(sbsMessageArray[13]), //track
-                Double.parseDouble(sbsMessageArray[14]), //latitude
-                Double.parseDouble(sbsMessageArray[15]))); //longitude;
+        //When we first discover a plane, we don't know what is the type of message that we first
+        //get from it. Its details are to be updated later.
+        aircraftArrayList.add(new Aircraft(sbsMessageArray[4])); //longitude;
     }
 }
