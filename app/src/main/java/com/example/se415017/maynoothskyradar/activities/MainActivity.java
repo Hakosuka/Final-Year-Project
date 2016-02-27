@@ -452,15 +452,15 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
                     Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
                     break;
-                case 5:
+                case 5 | 6 | 7:
                     Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
                     break;
-                case 6:
-                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                    break;
-                case 7:
-                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                    break;
+//                case 6:
+//                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+//                    break;
+//                case 7:
+//                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+//                    break;
                 case 8:
                     Log.d(TAG, "Is this plane on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
                     break;
@@ -523,6 +523,31 @@ public class MainActivity extends AppCompatActivity {
         //TODO: FIX NumberFormatException ASAP
         //When we first discover a plane, we don't know what is the type of message that we first
         //get from it. Its details are to be updated later.
-        aircraftArrayList.add(new Aircraft(sbsMessageArray[4])); //longitude;
+        Aircraft aircraftToAdd = new Aircraft(sbsMessageArray[4]); //longitude;
+        switch (Integer.parseInt(sbsMessageArray[1])) {
+            case 1:
+                aircraftToAdd.callsign = sbsMessageArray[10];
+                break;
+            case 2:
+                aircraftToAdd.altitude = Integer.parseInt(sbsMessageArray[11]);
+                aircraftToAdd.latitude = Double.parseDouble(sbsMessageArray[14]);
+                aircraftToAdd.longitude = Double.parseDouble(sbsMessageArray[15]);
+                break;
+            case 3:
+                aircraftToAdd.altitude = Integer.parseInt(sbsMessageArray[11]);
+                aircraftToAdd.latitude = Double.parseDouble(sbsMessageArray[14]);
+                aircraftToAdd.longitude = Double.parseDouble(sbsMessageArray[15]);
+                break;
+            case 4:
+                aircraftToAdd.gSpeed = Integer.parseInt(sbsMessageArray[12]);
+                aircraftToAdd.track = Integer.parseInt(sbsMessageArray[13]);
+                break;
+            case 5 | 6 | 7:
+                aircraftToAdd.altitude = Integer.parseInt(sbsMessageArray[11]);
+                break;
+            case 8:
+                break;
+        }
+        aircraftArrayList.add(aircraftToAdd);
     }
 }
