@@ -53,6 +53,7 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Scanner;
 
 import butterknife.Bind;
@@ -413,7 +414,7 @@ public class MainActivity extends AppCompatActivity {
         Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));
         try {
             while (s.hasNext()) {
-                String word = s.next().trim(); //remove whitespaces from the line being read
+                String word = s.next(); //.trim(); //remove whitespaces from the line being read
                 String[] splitLine = word.split(","); //split the line from the log using the comma
                 Log.d(TAG, "Line from sample log = " + word + ", has " + Integer.toString(splitLine.length) + " elements.");
                 parseSBSMessage(splitLine);
@@ -425,129 +426,100 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void parseSBSMessage(String[] sbsMessageArray){
-
+        Aircraft aircraftToAddOrModify = new Aircraft();
         //sbsMessageArray[9] is the time the message was logged.
-        double delay = Double.parseDouble(sbsMessageArray[9].substring(6));
+        //This check just protects against out of bound errors - probably REDUNDANT now
+//        if (sbsMessageArray.length == 22){
+//            if(sbsMessageArray[9].length() > 6) {
+//                double delay = Double.parseDouble(sbsMessageArray[9].substring(6));
+//            } else {
+//                return; //Break out of this method, it's taking in an invalid string
+//            }
+//        }
 
         Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
         //By checking for 22 fields, we don't get thrown off by transmission messages without that amount of fields
-        if(sbsMessageArray[0].equals("MSG") && sbsMessageArray.length == 22) {
+        if(sbsMessageArray.length == 22) {
             //sbsMessageArray[1] is the type of transmission message
-            switch(Integer.parseInt(sbsMessageArray[1])) {
-                case 1:
-                    Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
+            aircraftToAddOrModify.icaoHexAddr = sbsMessageArray[4];
+            switch (sbsMessageArray[0]) {
+                case "MSG":
+                    switch (Integer.parseInt(sbsMessageArray[1])) {
+                        case 1:
+                            Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
+                            aircraftToAddOrModify.callsign = sbsMessageArray[10];
+                            break;
+                        case 2:
+                            Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                            Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
+                            Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
+                            Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
+                            aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+                            aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
+                            aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
+                            aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
+                            break;
+                        case 3:
+                            Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                            Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
+                            Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
+                            aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+                            aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
+                            aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
+                            break;
+                        case 4:
+                            Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
+                            Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
+                            aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
+                            aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
+                            break;
+                        case 5 | 6 | 7:
+                            Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                            aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+                            break;
+                        case 8:
+                            Log.d(TAG, "Is this plane on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
+                            break;
+                    }
                     break;
-                case 2:
-                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                    Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-                    Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-                    Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-                    break;
-                case 3:
-                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                    Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-                    Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-                    break;
-                case 4:
-                    Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-                    Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
-                    break;
-                case 5 | 6 | 7:
-                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                    break;
-//                case 6:
-//                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-//                    break;
-//                case 7:
-//                    Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-//                    break;
-                case 8:
-                    Log.d(TAG, "Is this plane on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
+                default:
                     break;
             }
             //Checks if an aircraft with a given ICAO hex code is found in the list
             boolean hexIdentFound = false;
-            //if(aircraftArrayList.size() != 0){
-                for(Aircraft aircraft : aircraftArrayList) {
-                    //The ICAO hex code is the 5th element of the message
-                    hexIdentFound = aircraft.getIcaoHexAddr().equals(sbsMessageArray[4]);
+
+            //There's no point iterating through an empty list.
+            if (aircraftArrayList.size() > 0) {
+                //foreach loops were causing ConcurrentModificationExceptions
+                for (int i = 0; i < aircraftArrayList.size(); i++) {
+                    //This Aircraft object is just something to compare newly-discovered ones against
+                    Aircraft aircraftToCompare = aircraftArrayList.get(i);
+                    hexIdentFound = aircraftToCompare.icaoHexAddr.equals(aircraftToAddOrModify.icaoHexAddr);
+                    Log.d(TAG, "Has an aircraft been re-discovered? " + Boolean.toString(hexIdentFound));
                     if (hexIdentFound) {
-                        switch (Integer.parseInt(sbsMessageArray[1])) {
-                            case 1:
-                                aircraft.callsign = sbsMessageArray[10];
-                                break;
-                            case 2:
-                                aircraft.altitude = Integer.parseInt(sbsMessageArray[11]);
-                                aircraft.latitude = Double.parseDouble(sbsMessageArray[14]);
-                                aircraft.longitude = Double.parseDouble(sbsMessageArray[15]);
-                                break;
-                            case 3:
-                                aircraft.altitude = Integer.parseInt(sbsMessageArray[11]);
-                                aircraft.latitude = Double.parseDouble(sbsMessageArray[14]);
-                                aircraft.longitude = Double.parseDouble(sbsMessageArray[15]);
-                                break;
-                            case 4:
-                                aircraft.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-                                aircraft.track = Integer.parseInt(sbsMessageArray[13]);
-                                break;
-                            case 5 | 6 | 7:
-                                aircraft.altitude = Integer.parseInt(sbsMessageArray[11]);
-                                break;
-                            case 8:
-                                break;
-                        }
-                        Log.d(TAG, "Aircraft status: " + aircraft.icaoHexAddr + ", " +
-                                aircraft.callsign + ", " +
-                                Integer.toString(aircraft.altitude) + ", " +
-                                Integer.toString(aircraft.gSpeed) + ", " +
-                                Integer.toString(aircraft.track) + ", " +
-                                Double.toString(aircraft.latitude) + ", " +
-                                Double.toString(aircraft.longitude));
+                        //TODO: New aircraft are being added
+                        Log.d(TAG, "Modified aircraft status: " + aircraftToAddOrModify.icaoHexAddr + ", " +
+                                aircraftToAddOrModify.callsign + ", " +
+                                Integer.toString(aircraftToAddOrModify.altitude) + ", " +
+                                Integer.toString(aircraftToAddOrModify.gSpeed) + ", " +
+                                Integer.toString(aircraftToAddOrModify.track) + ", " +
+                                Double.toString(aircraftToAddOrModify.latitude) + ", " +
+                                Double.toString(aircraftToAddOrModify.longitude));
+                        aircraftArrayList.set(i, aircraftToAddOrModify); //Add the modified Aircraft object to the ArrayList
                         break; //No need to keep checking the list
                     }
-                    else {
-                        addAircraftToList(aircraftArrayList, sbsMessageArray);
-                    }
                 }
-                 //else {
+                //We've iterated through the entire Aircraft list and haven't found aircraftToAddOrModify,
+                //so we'll add it to the list.
+                if (!hexIdentFound) {
+                    Log.d(TAG, "Adding new aircraft to list");
+                    aircraftArrayList.add(aircraftToAddOrModify);
+                }
+            } else {
                 //No aircraft in aircraftArrayList, now adding the first one to be discovered
                 Log.d(TAG, "No aircraft found in list, now adding a new aircraft.");
-                //TODO: NumberFormatException
-                addAircraftToList(aircraftArrayList, sbsMessageArray);
-
-        } else {
-            Log.d(TAG, "Not a transmission message, it's a " + sbsMessageArray[0] + " instead.");
+                aircraftArrayList.add(aircraftToAddOrModify);
+            }
         }
-    }
-    public void addAircraftToList(ArrayList<Aircraft> aircraftArrayList, String[] sbsMessageArray){
-        //TODO: FIX NumberFormatException ASAP
-        //When we first discover a plane, we don't know what is the type of message that we first
-        //get from it. Its details are to be updated later.
-        Aircraft aircraftToAdd = new Aircraft(sbsMessageArray[4]); //longitude;
-        switch (Integer.parseInt(sbsMessageArray[1])) {
-            case 1:
-                aircraftToAdd.callsign = sbsMessageArray[10];
-                break;
-            case 2:
-                aircraftToAdd.altitude = Integer.parseInt(sbsMessageArray[11]);
-                aircraftToAdd.latitude = Double.parseDouble(sbsMessageArray[14]);
-                aircraftToAdd.longitude = Double.parseDouble(sbsMessageArray[15]);
-                break;
-            case 3:
-                aircraftToAdd.altitude = Integer.parseInt(sbsMessageArray[11]);
-                aircraftToAdd.latitude = Double.parseDouble(sbsMessageArray[14]);
-                aircraftToAdd.longitude = Double.parseDouble(sbsMessageArray[15]);
-                break;
-            case 4:
-                aircraftToAdd.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-                aircraftToAdd.track = Integer.parseInt(sbsMessageArray[13]);
-                break;
-            case 5 | 6 | 7:
-                aircraftToAdd.altitude = Integer.parseInt(sbsMessageArray[11]);
-                break;
-            case 8:
-                break;
-        }
-        aircraftArrayList.add(aircraftToAdd);
     }
 }
