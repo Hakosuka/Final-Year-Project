@@ -73,11 +73,14 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREFS = "UserPreferences";
     public static final String SERVER_PREF = "serverAddress";
     URL url;
+
+    public SBSDecoder sbsDecoder;
+
     public SocketService socketService;
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
     boolean socketServiceBound = false;
     final String TAG = "MainActivity";
-    ArrayList<Aircraft> aircraftArrayList;
+    public ArrayList<Aircraft> aircraftArrayList;
 
     public static FragmentManager fragManager;
 
@@ -137,6 +140,9 @@ public class MainActivity extends AppCompatActivity {
         final SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         strUrl = sharedPref.getString(SERVER_PREF, "");
 
+        if(sbsDecoder == null){
+            sbsDecoder = new SBSDecoder();
+        }
         aircraftArrayList = new ArrayList<Aircraft>();
 
         fragManager = getSupportFragmentManager();
@@ -147,47 +153,47 @@ public class MainActivity extends AppCompatActivity {
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
         if(netHelper.isConnected()) {
-//            if(strUrl.equalsIgnoreCase("")) {
-//                //TODO: Take the user to the setup activity
-//                Log.d(TAG, "No user-saved URL detected");
-//                //showNoServerAddressDialog(MainActivity.this);
-//                Toast.makeText(MainActivity.this, "Server address not found", Toast.LENGTH_LONG)
-//                        .show();
-//                Intent setUpIntent = new Intent(this, SetUpActivity.class);
-//
-//                //Stops the app from returning to the MainActivity if I press the back button while
-//                //in the SetUpActivity
-//                setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-//                startActivity(setUpIntent);
-//            } else {
-//                Log.d(TAG, "User-saved URL detected");
-//                //If all else fails, use sbsrv1.cs.nuim.ie as the default string
-//                strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie");
-//
-//                if(!doesSocketServiceExist(SocketService.class)) {
-//                    Log.d(TAG, "No existing SocketService found");
-//                    try {
-//                        //Now is not the time to add the port, that comes later
-//                        url = new URL("http", strUrl, "");
-//                        Log.d(TAG, "URL created: " + url.toString());
-//                    } catch (MalformedURLException e) {
-//                        Log.e(TAG, e.toString());
-//                        showMalformedURLDialog(MainActivity.this);
-//                    }
-//                    Intent sockIntent = new Intent(this, SocketService.class);
-//                    Log.d(TAG, "Intent created");
-//
-//                    sockIntent.putExtra("serverAddr", url.toString());
-//                    //TODO: Reactivate after I've done testing with the example log
-//                    //startService(sockIntent);
-//                    /**
-//                     * bindService kills the service upon unbinding
-//                     */
-//                    //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
-//                } else {
-//                    Log.d(TAG, "Existing SocketService found");
-//                }
-//            }
+            if(strUrl.equalsIgnoreCase("")) {
+                //TODO: Take the user to the setup activity
+                Log.d(TAG, "No user-saved URL detected");
+                //showNoServerAddressDialog(MainActivity.this);
+                Toast.makeText(MainActivity.this, "Server address not found", Toast.LENGTH_LONG)
+                        .show();
+                Intent setUpIntent = new Intent(this, SetUpActivity.class);
+
+                //Stops the app from returning to the MainActivity if I press the back button while
+                //in the SetUpActivity
+                setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(setUpIntent);
+            } else {
+                Log.d(TAG, "User-saved URL detected");
+                //If all else fails, use sbsrv1.cs.nuim.ie as the default string
+                strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie");
+
+                if(!doesSocketServiceExist(SocketService.class)) {
+                    Log.d(TAG, "No existing SocketService found");
+                    try {
+                        //Now is not the time to add the port, that comes later
+                        url = new URL("http", strUrl, "");
+                        Log.d(TAG, "URL created: " + url.toString());
+                    } catch (MalformedURLException e) {
+                        Log.e(TAG, e.toString());
+                        showMalformedURLDialog(MainActivity.this);
+                    }
+                    Intent sockIntent = new Intent(this, SocketService.class);
+                    Log.d(TAG, "Intent created");
+
+                    sockIntent.putExtra("serverAddr", url.toString());
+                    //TODO: Reactivate after I've done testing with the example log
+                    //startService(sockIntent);
+                    /**
+                     * bindService kills the service upon unbinding
+                     */
+                    //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+                } else {
+                    Log.d(TAG, "Existing SocketService found");
+                }
+            }
         } else {
             showNoInternetDialog(MainActivity.this);
         }
@@ -411,115 +417,207 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public String readFromTextFile(Context context) {
+        int count = 0;
         Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));
         try {
             while (s.hasNext()) {
+                count++;
                 String word = s.next(); //.trim(); //remove whitespaces from the line being read
                 String[] splitLine = word.split(","); //split the line from the log using the comma
-                Log.d(TAG, "Line from sample log = " + word + ", has " + Integer.toString(splitLine.length) + " elements.");
-                parseSBSMessage(splitLine);
+                Log.d(TAG, "Line #" + Integer.toString(count) + " from sample log = " + word +
+                        ", has " + Integer.toString(splitLine.length) + " elements.");
+                //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
+                if(splitLine.length == 22)
+                    sbsDecoder.searchThroughAircraftList(aircraftArrayList, sbsDecoder.parseSBSMessage(splitLine), Integer.parseInt(splitLine[1]));
+                else
+                    Log.d(TAG, "Insufficient amount of fields in message from " + splitLine[4]);
             }
         } finally {
+            Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
+                    " aircraft detected.");
             s.close();
+            for(Aircraft a : aircraftArrayList){
+                Log.d(TAG, "Detected: " + a.toString());
+            }
         }
         return s.toString();
     }
+/**
+ * The below code has all been copied into SBSDecoder for easier re-usability
+ */
 
-    public void parseSBSMessage(String[] sbsMessageArray){
-        Aircraft aircraftToAddOrModify = new Aircraft();
-        //sbsMessageArray[9] is the time the message was logged.
-        //This check just protects against out of bound errors - probably REDUNDANT now
-//        if (sbsMessageArray.length == 22){
-//            if(sbsMessageArray[9].length() > 6) {
-//                double delay = Double.parseDouble(sbsMessageArray[9].substring(6));
-//            } else {
-//                return; //Break out of this method, it's taking in an invalid string
-//            }
+//    public void parseSBSMessage(String[] sbsMessageArray){
+//        Aircraft aircraftToAddOrModify = new Aircraft();
+//        Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
+//        //By checking for 22 fields, we don't get thrown off by transmission messages without that amount of fields
+//        //if(sbsMessageArray.length == 22) {
+//        //The above is redundant thanks to the array length checking done in readFromTextFile()
+//        //sbsMessageArray[1] is the type of transmission message
+//        aircraftToAddOrModify.icaoHexAddr = sbsMessageArray[4];
+//        switch (sbsMessageArray[0]) {
+//            case "MSG":
+//                switch (Integer.parseInt(sbsMessageArray[1])) {
+//                    case 1:
+//                        Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
+//                        aircraftToAddOrModify.callsign = sbsMessageArray[10];
+//                        break;
+//                    case 2:
+//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+//                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
+//                        Log.d(TAG, "Track = " + sbsMessageArray + "\u00b0");
+//                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
+//                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
+//                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+//                        aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
+//                        aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
+//                        aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
+//                        aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
+//                        break;
+//                    case 3:
+//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+//                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
+//                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
+//                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+//                        aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
+//                        aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
+//                        break;
+//                    case 4:
+//                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
+//                        Log.d(TAG, "Track = " + sbsMessageArray[13] + "\u00b0");
+//                        Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
+//                        aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
+//                        aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
+//                        break;
+//                    //"OR" operators in switch statements was a bad idea
+//                    case 5:
+//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+//                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+//                        break;
+//                    case 6:
+//                        Log.d(TAG, "Squawk = " + sbsMessageArray[17]);
+//                        break;
+//                    case 7:
+//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+//                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+//                        break;
+//                    case 8:
+//                        //Log.d(TAG, "Is " + sbsMessageArray[4] + " on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
+//                        break;
+//                }
+//                break;
+//            default:
+//                break;
 //        }
-
-        Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
-        //By checking for 22 fields, we don't get thrown off by transmission messages without that amount of fields
-        if(sbsMessageArray.length == 22) {
-            //sbsMessageArray[1] is the type of transmission message
-            aircraftToAddOrModify.icaoHexAddr = sbsMessageArray[4];
-            switch (sbsMessageArray[0]) {
-                case "MSG":
-                    switch (Integer.parseInt(sbsMessageArray[1])) {
-                        case 1:
-                            Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
-                            aircraftToAddOrModify.callsign = sbsMessageArray[10];
-                            break;
-                        case 2:
-                            Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                            Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-                            Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-                            Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-                            aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-                            aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-                            aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
-                            aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
-                            break;
-                        case 3:
-                            Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                            Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-                            Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-                            aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-                            aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
-                            aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
-                            break;
-                        case 4:
-                            Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-                            Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
-                            aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-                            aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
-                            break;
-                        case 5 | 6 | 7:
-                            Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                            aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-                            break;
-                        case 8:
-                            Log.d(TAG, "Is this plane on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
-                            break;
-                    }
-                    break;
-                default:
-                    break;
-            }
-            //Checks if an aircraft with a given ICAO hex code is found in the list
-            boolean hexIdentFound = false;
-
-            //There's no point iterating through an empty list.
-            if (aircraftArrayList.size() > 0) {
-                //foreach loops were causing ConcurrentModificationExceptions
-                for (int i = 0; i < aircraftArrayList.size(); i++) {
-                    //This Aircraft object is just something to compare newly-discovered ones against
-                    Aircraft aircraftToCompare = aircraftArrayList.get(i);
-                    hexIdentFound = aircraftToCompare.icaoHexAddr.equals(aircraftToAddOrModify.icaoHexAddr);
-                    Log.d(TAG, "Has an aircraft been re-discovered? " + Boolean.toString(hexIdentFound));
-                    if (hexIdentFound) {
-                        //TODO: New aircraft are being added
-                        Log.d(TAG, "Modified aircraft status: " + aircraftToAddOrModify.icaoHexAddr + ", " +
-                                aircraftToAddOrModify.callsign + ", " +
-                                Integer.toString(aircraftToAddOrModify.altitude) + ", " +
-                                Integer.toString(aircraftToAddOrModify.gSpeed) + ", " +
-                                Integer.toString(aircraftToAddOrModify.track) + ", " +
-                                Double.toString(aircraftToAddOrModify.latitude) + ", " +
-                                Double.toString(aircraftToAddOrModify.longitude));
-                        aircraftArrayList.set(i, aircraftToAddOrModify); //Add the modified Aircraft object to the ArrayList
-                        break; //No need to keep checking the list
-                    }
-                }
-                //We've iterated through the entire Aircraft list and haven't found aircraftToAddOrModify,
-                //so we'll add it to the list.
-                if (!hexIdentFound) {
-                    Log.d(TAG, "Adding new aircraft to list");
-                    aircraftArrayList.add(aircraftToAddOrModify);
-                }
-            } else {
-                //No aircraft in aircraftArrayList, now adding the first one to be discovered
-                Log.d(TAG, "No aircraft found in list, now adding a new aircraft.");
-                aircraftArrayList.add(aircraftToAddOrModify);
-            }
-        }
-    }
+//        Log.d(TAG, "Aircraft status = "+ sbsMessageArray[1] + ", " + aircraftToAddOrModify.toString());
+//        searchThroughAircraftArrayList(aircraftToAddOrModify, Integer.parseInt(sbsMessageArray[1]));
+//    }
+//
+//    /**
+//     *
+//     * @param aircraftToSearchFor The Aircraft object that we're searching through the ArrayList for
+//     * @param transMessageType The type of transmission message received from an aircraft
+//     */
+//    public void searchThroughAircraftArrayList(Aircraft aircraftToSearchFor, int transMessageType) {
+//        //Checks if an aircraft with a given ICAO hex code is found in the list
+//        boolean hexIdentFound = false;
+//
+//        //There's no point iterating through an empty list.
+//        if (aircraftArrayList.size() > 0) {
+//            //foreach loops were causing ConcurrentModificationExceptions
+//            for (int i = 0; i < aircraftArrayList.size(); i++) {
+//                //This Aircraft object is just something to compare newly-discovered ones against
+//                Aircraft aircraftToCompare = aircraftArrayList.get(i);
+//                hexIdentFound = aircraftToCompare.icaoHexAddr.equals(aircraftToSearchFor.icaoHexAddr);
+//                if (hexIdentFound) {
+//                    Log.d(TAG, "Updating " + aircraftToSearchFor.icaoHexAddr + ", current status: "
+//                            + aircraftToCompare.toString());
+//                    /**
+//                     * Some fields aren't included in different transmission message types. So,
+//                     * if we receive subsequent messages from an aircraft, we fill in missing
+//                     * fields in messages using its last known values for each field.
+//                     *
+//                     * For example, MSG,1 just has the callsign of an aircraft. We get its
+//                     * altitude, ground speed, track, latitude & longitude from the
+//                     * corresponding Aircraft object.
+//                     */
+//                    switch (transMessageType){
+//                        case 1:
+//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 1");
+//                            aircraftToSearchFor.altitude = aircraftToCompare.altitude;
+//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
+//                            aircraftToSearchFor.track = aircraftToCompare.track;
+//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
+//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+//                            break;
+//                        case 2:
+//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 2");
+//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
+//                            aircraftToSearchFor.track = aircraftToCompare.track;
+//                            break;
+//                        case 3:
+//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 3");
+//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
+//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
+//                            aircraftToSearchFor.track = aircraftToCompare.track;
+//                            break;
+//                        case 4:
+//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 4");
+//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
+//                            aircraftToSearchFor.altitude = aircraftToCompare.altitude;
+//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
+//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+//                            break;
+//                        case 5:
+//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 5");
+//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
+//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
+//                            aircraftToSearchFor.track = aircraftToCompare.track;
+//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
+//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+//                            break;
+//                        case 6:
+//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 6");
+//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
+//                            aircraftToSearchFor.altitude = aircraftToCompare.altitude;
+//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
+//                            aircraftToSearchFor.track = aircraftToCompare.track;
+//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
+//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+//                            break;
+//                        case 7:
+//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 7");
+//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
+//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
+//                            aircraftToSearchFor.track = aircraftToCompare.track;
+//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
+//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+//                            break;
+//                        case 8:
+//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 8");
+//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
+//                            aircraftToSearchFor.altitude = aircraftToCompare.altitude;
+//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
+//                            aircraftToSearchFor.track = aircraftToCompare.track;
+//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
+//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+//                            break;
+//                    }
+//                    //TODO: New aircraft are being added
+//                    Log.d(TAG, "Modified aircraft status: " + aircraftToSearchFor.toString());
+//                    aircraftArrayList.set(i, aircraftToSearchFor); //Add the modified Aircraft object to the ArrayList
+//                    break; //No need to keep checking the list
+//                }
+//            }
+//            //We've iterated through the entire Aircraft list and haven't found aircraftToSearchFor,
+//            //so we'll add it to the list.
+//            if (!hexIdentFound) {
+//                Log.d(TAG, "Adding new aircraft to list: " + aircraftToSearchFor.toString());
+//                aircraftArrayList.add(aircraftToSearchFor);
+//            }
+//        } else {
+//            //No aircraft in aircraftArrayList, now adding the first one to be discovered
+//            Log.d(TAG, "No aircraft found in list, now adding a new aircraft.");
+//            aircraftArrayList.add(aircraftToSearchFor);
+//        }
+//    }
 }

@@ -1,5 +1,7 @@
 package com.example.se415017.maynoothskyradar.objects;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
@@ -8,7 +10,8 @@ import io.realm.annotations.PrimaryKey;
  *
  *
  */
-//TODO: Study object creation and usage in Android
+//TODO: Decide whether I should store every variable in Aircraft as a String - it might cut down
+// on the amount of conversion of data types I'd need to do*/
 public class Aircraft {
     @PrimaryKey
     public String icaoHexAddr = " ";
@@ -18,6 +21,7 @@ public class Aircraft {
     public int gSpeed; //Ground speed, not indicated airspeed
     public int track; //Distinct from its heading, derived from its E/W and N/S velocities.
     public double latitude, longitude;
+    public int climbRate; //
 
     //Default public constructor with no argument
     public Aircraft(){
@@ -72,4 +76,21 @@ public class Aircraft {
 
     public double getLongitude()    { return longitude; }
     public void setLongitude(double longitude)  { this.longitude = longitude; }
+
+    //Returns all of the attributes of the aircraft in a single string
+    public String toString() {
+        return icaoHexAddr + ", " + callsign + ", " + Integer.toString(altitude) + "ft, " +
+                Integer.toString(gSpeed) + "kts, " + Integer.toString(track) + "\u00b0, " +
+                Double.toString(latitude) + ", " + Double.toString(longitude);
+    }
+
+    //Returns the coordinates of the aircraft in a LatLng object
+    public LatLng getPosition() {
+        return new LatLng(latitude, longitude);
+    }
+
+    //Returns the coordinates of the aircraft as a string
+    public String getPosString() {
+        return Double.toString(latitude) + ", " + Double.toString(longitude);
+    }
 }
