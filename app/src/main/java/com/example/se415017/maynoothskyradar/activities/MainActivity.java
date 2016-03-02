@@ -14,6 +14,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -29,6 +30,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,10 +40,12 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment;
 import com.example.se415017.maynoothskyradar.fragments.EnterURLFragment;
+import com.example.se415017.maynoothskyradar.helpers.DistanceCalculator;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
 import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 import com.example.se415017.maynoothskyradar.services.SocketService;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.BufferedReader;
@@ -67,9 +71,9 @@ import butterknife.OnClick;
  * Parsing the GPS data supplied by Joe in his email.
  */
 public class MainActivity extends AppCompatActivity {
-    //TODO: move all of the UI stuff out of the Activity and into Fragments
+    //TODO: (almost done) move all of the UI stuff out of the Activity and into Fragments
     //DONE: instead of using hard-coded values for the server's URL, make the user enter it
-    String strUrl = ""; //Used to be "sbsrv1.cs.nuim.ie"; moving away from hard-coded value
+    String strUrl = ""; //Used to be "sbsrv1.cs.nuim.ie"; moved away from using hard-coded values
     int serverPort = 30003; //redundant
     public static final String PREFS = "UserPreferences";
     public static final String SERVER_PREF = "serverAddress";
@@ -78,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
     URL url;
 
     public SBSDecoder sbsDecoder;
+    public DistanceCalculator distCalc;
 
     public SocketService socketService;
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
@@ -101,11 +106,11 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.server_status)
     TextView ServerStat;
 
-    //TODO: Test if I can actually use ButterKnife's @Bind annotations on toolbars
-    @Bind(R.id.activity_toolbar)
+    //DONE: Test if I can actually use ButterKnife's @Bind annotations on toolbars - I can!
+    @Bind(R.id.activity_main_toolbar)
     Toolbar activityToolbar;
 
-    @OnClick(R.id.activity_toolbar)
+    @OnClick(R.id.activity_main_toolbar)
     public void toolbarClicked(View view){
         Log.d(TAG, "Toolbar clicked");
     }
@@ -116,9 +121,9 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "activateGPS button pressed");
         SharedPreferences sharedPref = getSharedPreferences(PREFS, MODE_PRIVATE);
         String latStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LAT_PREF, 0)));
-        GpsLat.setText(latStringFromPref);
+        GpsLat.setText("Latitude: " + latStringFromPref);
         String lonStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LON_PREF, 0)));
-        GpsLon.setText(lonStringFromPref);
+        GpsLon.setText("Longitude: " + lonStringFromPref);
     }
 
     @OnClick(R.id.read_sample_log_button)
@@ -129,17 +134,7 @@ public class MainActivity extends AppCompatActivity {
     boolean netStatus = false;
     boolean serverStatus = false;
 
-    // using the data supplied in Joe's email from 10 November
-//    String[] dummyData = {
-//            "$GPGGA,103102.557,5323.0900,N,00636.1283,W,1,08,1.0,49.1,M,56.5,M,,0000*7E",
-//            "$GPGSA,A,3,01,11,08,19,28,32,03,18,,,,,1.7,1.0,1.3*37",
-//            "$GPGSV,3,1,10,08,70,154,34,11,61,270,26,01,47,260,48,22,40,062,*7E",
-//            "$GPGSV,3,2,10,19,40,297,46,32,39,184,32,28,28,314,43,03,11,205,41*7C",
-//            "$GPGSV,3,3,10,18,07,044,35,30,03,276,42*75",
-//            "$GPRMC,103102.557,A,5323.0900,N,00636.1283,W,000.0,308.8,101115,,,A*79",
-//            "$GPVTG,308.8,T,,M,000.0,N,000.0,K,A*0E"
-//    };
-    //TODO: Research WifiLocks and determine if I need them in my app
+    //TODO: Research WifiLocks and determine if I need them in my app (I probably don't)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -156,8 +151,6 @@ public class MainActivity extends AppCompatActivity {
         aircraftArrayList = new ArrayList<Aircraft>();
 
         fragManager = getSupportFragmentManager();
-        //FragmentTransaction fragmentTransaction = fragManager.beginTransaction();
-
         Fragment currentFragment;
 
         final NetHelper netHelper = new NetHelper(getApplicationContext());
@@ -171,8 +164,7 @@ public class MainActivity extends AppCompatActivity {
                         .show();
                 Intent setUpIntent = new Intent(this, SetUpActivity.class);
 
-                //Stops the app from returning to the MainActivity if I press the back button while
-                //in the SetUpActivity
+                //Stops the app from returning to the MainActivity if I press the back button while in the SetUpActivity
                 setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(setUpIntent);
             } else {
@@ -203,8 +195,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Log.d(TAG, "Existing SocketService found");
                 }
-                fragManager.beginTransaction()
-                        .add(R.id.content_main, new AircraftListFragment()).commit();
+                //fragManager.beginTransaction()
+                //        .add(R.id.content_main, new AircraftListFragment()).commit();
             }
         } else {
             showNoInternetDialog(MainActivity.this);
@@ -310,36 +302,6 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
     /**
-     * This method parses lines of NMEA data to check if they contain latitude
-     * and longitude data.
-     * param sentence - a line of NMEA data
-     *
-     * 2 March 2016 - Now redundant.
-     */
-//    public void decodeNMEA(String sentence) {
-//        String tag = "Decoding NMEA";
-//        if (sentence.startsWith("$GPRMC")) {
-//            String[] rmcValues = sentence.split(",");
-//            double nmeaLatitude = Double.parseDouble(rmcValues[3]);
-//            double nmeaLatMin = nmeaLatitude % 100; //get minutes from latitude value
-//            nmeaLatitude /= 100;
-//            if (rmcValues[4].charAt(0) == 'S') {
-//                nmeaLatitude = -nmeaLatitude;
-//            }
-//            double nmeaLongitude = Double.parseDouble(rmcValues[5]);
-//            double nmeaLonMin = nmeaLongitude % 100; //get minutes from longitude value
-//            nmeaLongitude /= 100;
-//            if (rmcValues[6].charAt(0) == 'W') {
-//                nmeaLongitude = -nmeaLongitude;
-//            }
-//
-//            Log.d(tag + ": lat", Double.toString(nmeaLatitude));
-//            GpsLat.setText("Latitude: " + Double.toString(nmeaLatitude));
-//            Log.d(tag + ": lon", Double.toString(nmeaLongitude));
-//            GpsLon.setText("Longitude: " + Double.toString(nmeaLongitude));
-//        }
-//    }
-    /**
      * Shows the alert dialog which notifies the user that they've entered a malformed URL.
      * @param activity
      * @return MaterialDialog
@@ -431,17 +393,42 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Line #" + Integer.toString(count) + " from sample log = " + word +
                         ", has " + Integer.toString(splitLine.length) + " elements.");
                 //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
-                if(splitLine.length == 22)
-                    sbsDecoder.searchThroughAircraftList(aircraftArrayList, sbsDecoder.parseSBSMessage(splitLine), Integer.parseInt(splitLine[1]));
-                else
+                if(splitLine.length == 22) {
+                    Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
+                    Log.d(TAG, "Aircraft status = " + newAircraft.toString());
+                    sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
+                } else {
                     Log.d(TAG, "Insufficient amount of fields in message from " + splitLine[4]);
+                }
             }
         } finally {
             Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
                     " aircraft detected.");
             s.close();
+            ArrayList<Aircraft> aircraftListToCompare = new ArrayList<Aircraft>();
             for(Aircraft a : aircraftArrayList){
                 Log.d(TAG, "Detected: " + a.toString());
+                if(a.altitude != null && a.longitude != null && a.latitude != null){
+                    aircraftListToCompare.add(a);
+                }
+            }
+            for(Aircraft a : aircraftListToCompare){
+                Log.d(TAG, "Valid aircraft detected: " + a.toString());
+                Aircraft nearestAircraft = new Aircraft();
+                double lowest2DDist = 99999.9;
+                double lowest3DDist = 99999.9;
+                for(Aircraft b : aircraftListToCompare){
+                    //Stops us from comparing the same Aircraft against itself
+                    if(!a.equals(b)){
+                        double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
+                        double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
+                        Log.d(TAG, "2D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(twoDDist) + "km");
+                        Log.d(TAG, "3D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(threeDDist) + "km");
+                        if(twoDDist < lowest2DDist && threeDDist < lowest3DDist)
+                            nearestAircraft = b;
+                    }
+                }
+                Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
             }
         }
         return s.toString();
@@ -606,7 +593,6 @@ public class MainActivity extends AppCompatActivity {
 //                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
 //                            break;
 //                    }
-//                    //TODO: New aircraft are being added
 //                    Log.d(TAG, "Modified aircraft status: " + aircraftToSearchFor.toString());
 //                    aircraftArrayList.set(i, aircraftToSearchFor); //Add the modified Aircraft object to the ArrayList
 //                    break; //No need to keep checking the list
@@ -624,4 +610,45 @@ public class MainActivity extends AppCompatActivity {
 //            aircraftArrayList.add(aircraftToSearchFor);
 //        }
 //    }
+
+    /**
+     * This method parses lines of NMEA data to check if they contain latitude
+     * and longitude data.
+     * param sentence - a line of NMEA data
+     *
+     * 2 March 2016 - Now redundant.
+     */
+//    public void decodeNMEA(String sentence) {
+//        String tag = "Decoding NMEA";
+//        if (sentence.startsWith("$GPRMC")) {
+//            String[] rmcValues = sentence.split(",");
+//            double nmeaLatitude = Double.parseDouble(rmcValues[3]);
+//            double nmeaLatMin = nmeaLatitude % 100; //get minutes from latitude value
+//            nmeaLatitude /= 100;
+//            if (rmcValues[4].charAt(0) == 'S') {
+//                nmeaLatitude = -nmeaLatitude;
+//            }
+//            double nmeaLongitude = Double.parseDouble(rmcValues[5]);
+//            double nmeaLonMin = nmeaLongitude % 100; //get minutes from longitude value
+//            nmeaLongitude /= 100;
+//            if (rmcValues[6].charAt(0) == 'W') {
+//                nmeaLongitude = -nmeaLongitude;
+//            }
+//
+//            Log.d(tag + ": lat", Double.toString(nmeaLatitude));
+//            GpsLat.setText("Latitude: " + Double.toString(nmeaLatitude));
+//            Log.d(tag + ": lon", Double.toString(nmeaLongitude));
+//            GpsLon.setText("Longitude: " + Double.toString(nmeaLongitude));
+//        }
+//    }
+    // using the data supplied in Joe's email from 10 November
+//    String[] dummyData = {
+//            "$GPGGA,103102.557,5323.0900,N,00636.1283,W,1,08,1.0,49.1,M,56.5,M,,0000*7E",
+//            "$GPGSA,A,3,01,11,08,19,28,32,03,18,,,,,1.7,1.0,1.3*37",
+//            "$GPGSV,3,1,10,08,70,154,34,11,61,270,26,01,47,260,48,22,40,062,*7E",
+//            "$GPGSV,3,2,10,19,40,297,46,32,39,184,32,28,28,314,43,03,11,205,41*7C",
+//            "$GPGSV,3,3,10,18,07,044,35,30,03,276,42*75",
+//            "$GPRMC,103102.557,A,5323.0900,N,00636.1283,W,000.0,308.8,101115,,,A*79",
+//            "$GPVTG,308.8,T,,M,000.0,N,000.0,K,A*0E"
+//    };
 }

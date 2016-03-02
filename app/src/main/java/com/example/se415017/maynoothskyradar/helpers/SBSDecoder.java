@@ -13,6 +13,8 @@ import java.util.ArrayList;
 
 /**
  * Created by se415017 on 09/11/2015.
+ * 2 March 2016 - all of the variables in Aircraft are now Strings, as a result I've changed the
+ *                process for instantiating them.
  */
 public class SBSDecoder {
     //TODO: Sockets sorted out, this is kind of useless
@@ -52,16 +54,6 @@ public class SBSDecoder {
     }
 
     /**
-     * This method takes in the Mode-S code and converts it to the aircraft's callsign
-     * @param modeSString
-     * @return callsign - the callsign of the aircraft
-     */
-    public String modeSToCallsign(String modeSString) {
-        String callsign = "";
-        return callsign;
-    }
-
-    /**
      * Parses the SBS-1 message and uses that data to create an Aircraft object.
      * @param sbsMessageArray The array of strings created when splitting the SBS-1 messages
      * @return aircraftToAddOrModify The Aircraft object created by the aforementioned array of strings
@@ -77,47 +69,61 @@ public class SBSDecoder {
             case "MSG":
                 switch (Integer.parseInt(sbsMessageArray[1])) {
                     case 1:
-                        Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
+                        //2 March 2016 - The commented-out logs below aren't really necessary at
+                        //               this point any more
+                        //Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
                         aircraftToAddOrModify.callsign = sbsMessageArray[10];
                         break;
                     case 2:
-                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-                        Log.d(TAG, "Track = " + sbsMessageArray + "\u00b0");
-                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-                        aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-                        aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
-                        aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
-                        aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
+//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+//                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
+//                        Log.d(TAG, "Track = " + sbsMessageArray + "\u00b0");
+//                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
+//                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
+                        //aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+                        //aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
+                        //aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
+                        //aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
+                        //aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
+                        aircraftToAddOrModify.altitude = sbsMessageArray[11];
+                        aircraftToAddOrModify.gSpeed = sbsMessageArray[12];
+                        aircraftToAddOrModify.track = sbsMessageArray[13];
+                        aircraftToAddOrModify.latitude = sbsMessageArray[14];
+                        aircraftToAddOrModify.longitude = sbsMessageArray[15];
                         break;
                     case 3:
-                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-                        aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
-                        aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
+//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+//                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
+//                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
+                        //aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+                        //aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
+                        //aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
+                        aircraftToAddOrModify.altitude = sbsMessageArray[11];
+                        aircraftToAddOrModify.latitude = sbsMessageArray[14];
+                        aircraftToAddOrModify.longitude = sbsMessageArray[15];
                         break;
                     case 4:
-                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-                        Log.d(TAG, "Track = " + sbsMessageArray[13] + "\u00b0");
-                        Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
-                        aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-                        aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
+//                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
+//                        Log.d(TAG, "Track = " + sbsMessageArray[13] + "\u00b0");
+//                        Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
+                        //aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
+                        //aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
+                        aircraftToAddOrModify.gSpeed = sbsMessageArray[12];
+                        aircraftToAddOrModify.track = sbsMessageArray[13];
                         break;
                     //"OR" operators in switch statements was a bad idea
                     case 5:
-                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                        //aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+                        aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         break;
                     case 6:
                         Log.d(TAG, "Squawk = " + sbsMessageArray[17]);
                         break;
                     case 7:
-                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
+                        //aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
+                        aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         break;
                     case 8:
                         //Log.d(TAG, "Is " + sbsMessageArray[4] + " on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
@@ -127,7 +133,7 @@ public class SBSDecoder {
             default:
                 break;
         }
-        Log.d(TAG, "Aircraft status = " + sbsMessageArray[1] + ", " + aircraftToAddOrModify.toString() + " ******");
+        //Log.d(TAG, "Aircraft status = " + sbsMessageArray[1] + ", " + aircraftToAddOrModify.toString() + " ******");
         return aircraftToAddOrModify;
     }
 
