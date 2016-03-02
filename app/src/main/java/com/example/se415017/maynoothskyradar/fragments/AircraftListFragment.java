@@ -67,10 +67,10 @@ public class AircraftListFragment extends Fragment {
             } else {
                 recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
             }
-            /*  TODO: the constructor MyFlightRecyclerViewAdapter can't be applied here, because
+            /*  TODO: the constructor FlightViewAdapter can't be applied here, because
                 AircraftListFragment's OnListFragmentInteractionListener can't be converted to
                 ItemFragment's OnListFragmentInteractionListener. */
-            //recyclerView.setAdapter(new MyFlightRecyclerViewAdapter(DummyContent.ITEMS, mListener));
+            //recyclerView.setAdapter(new FlightViewAdapter(DummyContent.ITEMS, mListener));
         }
         return view;
     }

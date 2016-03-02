@@ -17,12 +17,12 @@ import java.util.List;
  * specified {@link OnListFragmentInteractionListener}.
  * TODO: Replace the implementation with code for your data type.
  */
-public class MyFlightRecyclerViewAdapter extends RecyclerView.Adapter<MyFlightRecyclerViewAdapter.ViewHolder> {
+public class FlightViewAdapter extends RecyclerView.Adapter<FlightViewAdapter.ViewHolder> {
 
     private final List<DummyItem> mValues;
     private final OnListFragmentInteractionListener mListener;
 
-    public MyFlightRecyclerViewAdapter(List<DummyItem> items, OnListFragmentInteractionListener listener) {
+    public FlightViewAdapter(List<DummyItem> items, OnListFragmentInteractionListener listener) {
         mValues = items;
         mListener = listener;
     }

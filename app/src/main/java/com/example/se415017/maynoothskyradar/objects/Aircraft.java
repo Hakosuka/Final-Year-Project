@@ -10,8 +10,8 @@ import io.realm.annotations.PrimaryKey;
  *
  *
  */
-//TODO: Decide whether I should store every variable in Aircraft as a String - it might cut down
-// on the amount of conversion of data types I'd need to do*/
+/*  TODO: Decide whether I should store every variable in Aircraft as a String - it might cut down
+    on the amount of conversion of data types I'd need to do    */
 public class Aircraft {
     @PrimaryKey
     public String icaoHexAddr = " ";
