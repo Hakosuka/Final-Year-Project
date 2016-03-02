@@ -17,6 +17,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityManagerCompat;
@@ -60,6 +61,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
+import java.util.logging.Handler;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -432,6 +434,17 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return s.toString();
+    }
+
+    class IncomingHandler extends android.os.Handler {
+        @Override
+        public void handleMessage(Message msg){
+            if(msg.what == SocketService.MESSAGE){
+                Log.d(TAG, "Message from SocketService = " + msg.getData().getString("sbsMessage"));
+            } else {
+                Log.d(TAG, "Invalid message from SocketService");
+            }
+        }
     }
 /**
  * The below code has all been copied into SBSDecoder for easier re-usability

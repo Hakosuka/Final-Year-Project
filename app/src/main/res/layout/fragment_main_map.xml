@@ -5,7 +5,7 @@
     tools:context="com.example.se415017.maynoothskyradar.fragments.MainMapFragment">
 
     <fragment
-        android:="@+id/main_map"
+        android:id="@+id/main_map"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         class="com.google.android.gms.maps.MapFragment" />

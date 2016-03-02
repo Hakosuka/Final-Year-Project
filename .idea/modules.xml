@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MaynoothSkyRadar.iml" filepath="$PROJECT_DIR$/MaynoothSkyRadar.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/se415017.iml" filepath="$PROJECT_DIR$/se415017.iml" />
     </modules>
   </component>
 </project>

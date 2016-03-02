@@ -32,6 +32,7 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 
 import io.realm.annotations.PrimaryKey;
 
@@ -50,7 +51,7 @@ public class SocketService extends Service {
      *  listen on port 30003.
      */
     static final int PORT = 30003; //redundant
-    static final int MESSAGE = 1;
+    public static final int MESSAGE = 1;
     static final String SERVER = "sbsrv1.cs.nuim.ie"; //redundant
     static final String TAG = "SocketService";
     static final String PREFS = "UserPreferences";
@@ -59,6 +60,8 @@ public class SocketService extends Service {
     Intent bindingIntent;
     IBinder myBinder = new SimpleLocalBinder();
     Messenger messenger = new Messenger(new IncomingHandler());
+
+    ArrayList<Messenger> messengerClientList = new ArrayList<>(); //keeps track of client classes
     Messenger replyMessenger;
     Message message;
 
@@ -201,14 +204,15 @@ public class SocketService extends Service {
                 line = reader.readLine();
                 builder.append(line);
                 Log.d(TAG, "String from BufferedReader = " + line);
-                if(replyMessenger != null){
-                    try {
-                        message.obj = line;
-                        replyMessenger.send(message);
-                    } catch (RemoteException e) {
-                        Log.e(TAG, e.toString());
-                    }
-                }
+                sendMessageToClients(line);
+//                if(replyMessenger != null){
+//                    try {
+//                        message.obj = line;
+//                        replyMessenger.send(message);
+//                    } catch (RemoteException e) {
+//                        Log.e(TAG, e.toString());
+//                    }
+//                }
             }
         } catch (IOException e) {
             Log.e(TAG, "readFromInputStream error: " + e.toString());
@@ -223,12 +227,32 @@ public class SocketService extends Service {
         return builder.toString();
     }
 
+    /**
+     * This sends the SBS-1 messages relayed to the app by the server to any client classes.
+     * @param message The SBS-1 message picked up by the server.
+     */
+    private void sendMessageToClients(String message){
+        for(Messenger messenger : messengerClientList){
+            try {
+                Bundle bundle = new Bundle();
+                bundle.putString("sbsMessage", message);
+                Message msg = Message.obtain(null, MESSAGE);
+                msg.setData(bundle);
+                messenger.send(msg);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString());
+                messengerClientList.remove(messenger);
+            }
+        }
+    }
+
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg){
             if (msg.what == MESSAGE) {
                 Log.d(TAG, "Reply to: " + msg.replyTo.toString());
                 replyMessenger = msg.replyTo;
+                messengerClientList.add(msg.replyTo);
             }
         }
     }
