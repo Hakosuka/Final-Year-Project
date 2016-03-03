@@ -24,7 +24,10 @@ import android.support.v4.app.ActivityManagerCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -38,10 +41,13 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.astuetz.PagerSlidingTabStrip;
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment;
 import com.example.se415017.maynoothskyradar.fragments.EnterURLFragment;
+import com.example.se415017.maynoothskyradar.fragments.MainMapFragment;
 import com.example.se415017.maynoothskyradar.helpers.DistanceCalculator;
+import com.example.se415017.maynoothskyradar.helpers.MainTabPagerAdapter;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
 import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
@@ -94,6 +100,11 @@ public class MainActivity extends AppCompatActivity {
 
     public static FragmentManager fragManager;
 
+    @Bind(R.id.activity_main_tabs)
+    PagerSlidingTabStrip mainTabs;
+    @Bind(R.id.activity_main_pager)
+    ViewPager mainPager;
+
     @Bind(R.id.button_gps_activation)
     Button GpsActivationButton;
     @Bind(R.id.read_sample_log_button)
@@ -144,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(activityToolbar);
         ButterKnife.bind(this);
 
+
         final SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         strUrl = sharedPref.getString(SERVER_PREF, "");
 
@@ -154,6 +166,8 @@ public class MainActivity extends AppCompatActivity {
 
         fragManager = getSupportFragmentManager();
         Fragment currentFragment;
+        mainPager.setAdapter(new MainTabPagerAdapter(fragManager));
+        mainTabs.setViewPager(mainPager);
 
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
@@ -411,6 +425,7 @@ public class MainActivity extends AppCompatActivity {
             for(Aircraft a : aircraftArrayList){
                 Log.d(TAG, "Detected: " + a.toString());
                 if(a.altitude != null && a.longitude != null && a.latitude != null){
+                    Log.d(TAG, "Adding aircraft " + a.icaoHexAddr);
                     aircraftListToCompare.add(a);
                 }
             }
@@ -420,6 +435,7 @@ public class MainActivity extends AppCompatActivity {
                 double lowest2DDist = 99999.9;
                 double lowest3DDist = 99999.9;
                 for(Aircraft b : aircraftListToCompare){
+                    Log.d(TAG, "Comparing against aircraft: " + b.toString());
                     //Stops us from comparing the same Aircraft against itself
                     if(!a.equals(b)){
                         double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);

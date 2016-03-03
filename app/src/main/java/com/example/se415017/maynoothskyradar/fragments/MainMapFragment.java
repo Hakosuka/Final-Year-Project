@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
@@ -34,11 +36,12 @@ import java.util.ArrayList;
  *
  * This Fragment is meant to show all of the Aircraft that have been detected on a map.
  */
-public class MainMapFragment extends MapFragment {
+public class MainMapFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    private String TAG = getClass().getSimpleName();
 
     public static final String PREFS = "UserPreferences";
     public static final String SERVER_PREF = "serverAddress";
@@ -50,6 +53,7 @@ public class MainMapFragment extends MapFragment {
     private static Double latitude, longitude;
 
     ArrayList<Aircraft> aircrafts;
+    ArrayList<Marker> aircraftMarkers;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -65,18 +69,11 @@ public class MainMapFragment extends MapFragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
      * @return A new instance of fragment MainMapFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static MainMapFragment newInstance(String param1, String param2) {
-        MainMapFragment fragment = new MainMapFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
+    public static MainMapFragment newInstance() {
+        return new MainMapFragment();
     }
 
     @Override
@@ -98,12 +95,27 @@ public class MainMapFragment extends MapFragment {
         if(container == null)
             return null;
         view = (RelativeLayout) inflater.inflate(R.layout.fragment_main_map, container, false);
+        setUpMapIfNeeded();
+        Log.d(TAG, "Lat & Lon: " + Double.toString(latitude) + Double.toString(longitude));
         return view;
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState){
+        if(map != null)
+            setUpMap();
+
+        if(map == null){
+            map = ((SupportMapFragment) MainActivity.fragManager.findFragmentById(R.id.main_map)).getMap();
+            if (map != null)
+                setUpMap();
+        }
     }
 
     //Sets up the map if it hasn't been set up already
     public static void setUpMapIfNeeded() {
         if (map == null){
+
             map = ((SupportMapFragment) MainActivity.fragManager.findFragmentById(R.id.main_map)).getMap();
 //                    .getMapAsync(new OnMapReadyCallback() {
 //                        @Override
@@ -120,8 +132,10 @@ public class MainMapFragment extends MapFragment {
 
 
     private static void setUpMap() {
+        map.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         //map.setMyLocationEnabled(true); Maybe wait until I have the pointing function worked out
-        map.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude))).setTitle("My server is here");
+        map.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)))
+                .setTitle("My server is here");
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 9.0f));
     }
 

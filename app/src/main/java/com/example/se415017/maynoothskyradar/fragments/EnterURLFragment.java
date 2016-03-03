@@ -128,8 +128,7 @@ public class EnterURLFragment extends Fragment {
      */
     // TODO: Rename and change types and number of parameters
     public static EnterURLFragment newInstance() {
-        EnterURLFragment fragment = new EnterURLFragment();
-        return fragment;
+        return new EnterURLFragment();
     }
     // TODO: Check if I really need onCreate()
 //    @Override
