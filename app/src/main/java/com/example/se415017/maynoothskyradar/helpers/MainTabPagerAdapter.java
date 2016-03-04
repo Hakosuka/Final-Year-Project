@@ -1,5 +1,6 @@
 package com.example.se415017.maynoothskyradar.helpers;
 
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -7,6 +8,8 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment;
 import com.example.se415017.maynoothskyradar.fragments.MainMapFragment;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
+
+import java.util.ArrayList;
 
 /**
  * Created by se415017 on 03/03/2016.
@@ -16,10 +19,14 @@ import com.example.se415017.maynoothskyradar.objects.Aircraft;
  */
 public class MainTabPagerAdapter extends FragmentStatePagerAdapter {
     private final String[] TAB_TITLES = {"Map", "List of planes"};
+    public final String AIR_KEY = "aircraftKey";
     FragmentManager fragMgr;
+    public Bundle bundle;
+    ArrayList<Aircraft> aircraftArrayList;
 
-    public MainTabPagerAdapter(FragmentManager fm) {
+    public MainTabPagerAdapter(FragmentManager fm, ArrayList<Aircraft> aircraftArrayList) {
         super(fm);
+        this.aircraftArrayList = aircraftArrayList;
         fragMgr = fm;
     }
 
@@ -37,9 +44,9 @@ public class MainTabPagerAdapter extends FragmentStatePagerAdapter {
     public Fragment getItem(int position){
         switch(position){
             case 0:
-                return MainMapFragment.newInstance();
+                return MainMapFragment.newInstance(aircraftArrayList);
             case 1:
-                return AircraftListFragment.newInstance(1);
+                return AircraftListFragment.newInstance(1, aircraftArrayList);
         }
         return null;
     }

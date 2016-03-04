@@ -7,19 +7,13 @@
     android:id="@+id/activity_main"
     android:fitsSystemWindows="true"
     tools:context="com.example.se415017.maynoothskyradar.activities.MainActivity">
-    <android.support.design.widget.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
-
-        <android.support.v7.widget.Toolbar
+    <android.support.v7.widget.Toolbar
             android:id="@+id/activity_main_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
 
-    </android.support.design.widget.AppBarLayout>
     <com.astuetz.PagerSlidingTabStrip
         android:id="@+id/activity_main_tabs"
         android:layout_width="match_parent"

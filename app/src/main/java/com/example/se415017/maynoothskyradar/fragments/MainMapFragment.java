@@ -18,13 +18,18 @@ import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -48,7 +53,11 @@ public class MainMapFragment extends Fragment {
     public static final String LAT_PREF = "latitude";
     public static final String LON_PREF = "longitude";
 
+    public static final String AIR_KEY = "aircraftKey";
+
     private static View view;
+    @Bind(R.id.main_mapview)
+    MapView mapView;
     private static GoogleMap map;
     private static Double latitude, longitude;
 
@@ -68,20 +77,34 @@ public class MainMapFragment extends Fragment {
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
-     *
+     * @param aircraftArrayList The list of aircraft detected by the app so far.
      * @return A new instance of fragment MainMapFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static MainMapFragment newInstance() {
-        return new MainMapFragment();
+    public static MainMapFragment newInstance(ArrayList<Aircraft> aircraftArrayList) {
+        MainMapFragment fragment = new MainMapFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(AIR_KEY, aircraftArrayList);
+        fragment.setArguments(bundle);
+        return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            //Need to populate the ArrayList of Aircraft somehow
+            if(getArguments().getSerializable(AIR_KEY) instanceof ArrayList<?>) {
+                ArrayList<?> unknownTypeList = (ArrayList<?>) getArguments().getSerializable(AIR_KEY);
+                if(unknownTypeList != null && unknownTypeList.size() > 0) {
+                    for (int i = 0; i < unknownTypeList.size(); i++) {
+                        Object unknownTypeObject = unknownTypeList.get(i);
+                        if(unknownTypeObject instanceof Aircraft){
+                            aircrafts.add((Aircraft) unknownTypeObject);
+                        }
+                    }
+                }
+            }
         }
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         latitude = Double.longBitsToDouble(sharedPreferences.getLong(LAT_PREF, 0));
@@ -95,6 +118,11 @@ public class MainMapFragment extends Fragment {
         if(container == null)
             return null;
         view = (RelativeLayout) inflater.inflate(R.layout.fragment_main_map, container, false);
+        ButterKnife.bind(this, view);
+
+        for(Aircraft a : aircrafts){
+            Log.d(TAG, "Loading from bundle " + a.toString());
+        }
         setUpMapIfNeeded();
         Log.d(TAG, "Lat & Lon: " + Double.toString(latitude) + Double.toString(longitude));
         return view;
@@ -106,7 +134,8 @@ public class MainMapFragment extends Fragment {
             setUpMap();
 
         if(map == null){
-            map = ((SupportMapFragment) MainActivity.fragManager.findFragmentById(R.id.main_map)).getMap();
+            //map = ((SupportMapFragment) MainActivity.fragManager.findFragmentById(R.id.main_map)).getMap();
+            map = mapView.getMap();
             if (map != null)
                 setUpMap();
         }
@@ -136,6 +165,7 @@ public class MainMapFragment extends Fragment {
         //map.setMyLocationEnabled(true); Maybe wait until I have the pointing function worked out
         map.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)))
                 .setTitle("My server is here");
+        //TODO: Add custom markers for the planes
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 9.0f));
     }
 
@@ -175,6 +205,7 @@ public class MainMapFragment extends Fragment {
      */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+        public void onFragmentInteraction(Uri uri);
+        //public void onFragmentSetAircraft(ArrayList<Aircraft> aircraftArrayList);
     }
 }

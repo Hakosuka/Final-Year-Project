@@ -7,26 +7,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.res.AssetManager;
 import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
-import android.os.Build;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityManagerCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -34,7 +24,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,30 +33,20 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.astuetz.PagerSlidingTabStrip;
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment;
-import com.example.se415017.maynoothskyradar.fragments.EnterURLFragment;
 import com.example.se415017.maynoothskyradar.fragments.MainMapFragment;
 import com.example.se415017.maynoothskyradar.helpers.DistanceCalculator;
 import com.example.se415017.maynoothskyradar.helpers.MainTabPagerAdapter;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
 import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
+import com.example.se415017.maynoothskyradar.helpers.TextFileReader;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 import com.example.se415017.maynoothskyradar.services.SocketService;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Scanner;
-import java.util.logging.Handler;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -78,7 +57,9 @@ import butterknife.OnClick;
  * @version 11 November 2015
  * Parsing the GPS data supplied by Joe in his email.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        MainMapFragment.OnFragmentInteractionListener,
+        AircraftListFragment.OnListFragmentInteractionListener {
     //TODO: (almost done) move all of the UI stuff out of the Activity and into Fragments
     //DONE: instead of using hard-coded values for the server's URL, make the user enter it
     String strUrl = ""; //Used to be "sbsrv1.cs.nuim.ie"; moved away from using hard-coded values
@@ -91,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
     public SBSDecoder sbsDecoder;
     public DistanceCalculator distCalc;
+    public TextFileReader textFileReader;
 
     public SocketService socketService;
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
@@ -162,13 +144,15 @@ public class MainActivity extends AppCompatActivity {
         if(sbsDecoder == null){
             sbsDecoder = new SBSDecoder();
         }
-        aircraftArrayList = new ArrayList<Aircraft>();
-
-        fragManager = getSupportFragmentManager();
-        Fragment currentFragment;
-        mainPager.setAdapter(new MainTabPagerAdapter(fragManager));
-        mainTabs.setViewPager(mainPager);
-
+        if(distCalc == null){
+            distCalc = new DistanceCalculator();
+        }
+        if(textFileReader == null){
+            textFileReader = new TextFileReader();
+        }
+        if(aircraftArrayList == null) {
+            aircraftArrayList = new ArrayList<Aircraft>();
+        }
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
         if(netHelper.isConnected()) {
@@ -211,13 +195,14 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Log.d(TAG, "Existing SocketService found");
                 }
-                //fragManager.beginTransaction()
-                //        .add(R.id.content_main, new AircraftListFragment()).commit();
             }
         } else {
             showNoInternetDialog(MainActivity.this);
         }
-
+        fragManager = getSupportFragmentManager();
+        Fragment currentFragment;
+        mainPager.setAdapter(new MainTabPagerAdapter(fragManager, aircraftArrayList));
+        mainTabs.setViewPager(mainPager);
     }
 
     @Override
@@ -450,6 +435,16 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return s.toString();
+    }
+
+    @Override
+    public void onFragmentInteraction(Uri uri){
+        //Leaving this method empty is OK
+    }
+
+    @Override
+    public void onListFragmentInteraction(Aircraft dummyItem){
+
     }
 
     class IncomingHandler extends android.os.Handler {

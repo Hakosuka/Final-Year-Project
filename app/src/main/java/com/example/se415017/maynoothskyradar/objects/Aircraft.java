@@ -1,5 +1,8 @@
 package com.example.se415017.maynoothskyradar.objects;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.google.android.gms.maps.model.LatLng;
 
 import io.realm.RealmObject;
@@ -10,9 +13,8 @@ import io.realm.annotations.PrimaryKey;
  * 2 March 2016
  *
  */
-public class Aircraft {
-    @PrimaryKey
-    public String icaoHexAddr = " ";
+public class Aircraft { //implements Parcelable {
+    @PrimaryKey public String icaoHexAddr = " ";
     //private String regCode = "TBD"; // registration code of the plane, I'll probably fetch this from a database
     public String callsign = " "; // replaces FlightNum
     public String altitude; // Mode-C altitude (i.e. relative to 1.0132 bar), not it's actual distance above mean sea level
@@ -54,6 +56,14 @@ public class Aircraft {
         this.latitude = latitude;
         this.longitude = longitude;
     }
+//TODO: Implement OnItemClickListener
+//    public Aircraft(Parcel in){
+//        this.icaoHexAddr = in.readString();
+//    }
+//
+//    public int describeContents(){
+//        return 0;
+//    }
 
 //  Redundant as of 2 March as I can just access attributes of Aircraft objects like "Aircraft.latitude"
 //  rather than "Aircraft.getLatitude()". Besides, it's more resource-intensive to use getters and setters.
@@ -84,6 +94,8 @@ public class Aircraft {
                 gSpeed + "kts, " + track + "\u00b0, " +
                 latitude + ", " + longitude;
     }
+
+
 
     //Returns the coordinates of the aircraft in a LatLng object
     public LatLng getPosition() {

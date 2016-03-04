@@ -130,7 +130,7 @@ public class EnterURLFragment extends Fragment {
     public static EnterURLFragment newInstance() {
         return new EnterURLFragment();
     }
-    // TODO: Check if I really need onCreate()
+    // DONE: Check if I really need onCreate()
 //    @Override
 //    public void onCreate(Bundle savedInstanceState) {
 //        super.onCreate(savedInstanceState);

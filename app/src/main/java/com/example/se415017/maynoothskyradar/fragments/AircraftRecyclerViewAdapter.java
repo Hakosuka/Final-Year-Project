@@ -1,5 +1,7 @@
 package com.example.se415017.maynoothskyradar.fragments;
 
+import android.content.Context;
+import android.support.v4.content.res.TypedArrayUtils;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,9 +9,12 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
-import com.example.se415017.maynoothskyradar.fragments.ItemFragment.OnListFragmentInteractionListener;
+//TODO: Implement THIS
+import com.example.se415017.maynoothskyradar.fragments.AircraftListItem.OnListFragmentInteractionListener;
 import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent.DummyItem;
+import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,31 +22,33 @@ import java.util.List;
  * specified {@link OnListFragmentInteractionListener}.
  * TODO: Replace the implementation with code for your data type.
  */
-public class FlightViewAdapter extends RecyclerView.Adapter<FlightViewAdapter.ViewHolder> {
+public class AircraftRecyclerViewAdapter extends
+        RecyclerView.Adapter<AircraftRecyclerViewAdapter.ViewHolder> {
 
-    private final List<DummyItem> mValues;
-    private final OnListFragmentInteractionListener mListener;
+    private ArrayList<Aircraft> aircraftList;
+    private final AircraftListFragment.OnListFragmentInteractionListener mListener;
 
-    public FlightViewAdapter(List<DummyItem> items, OnListFragmentInteractionListener listener) {
-        mValues = items;
+    private Context context;
+    private boolean useList = true;
+
+    public AircraftRecyclerViewAdapter(Context context, List<Aircraft> items) {
+        this.context = context;
+        this.aircraftList = (ArrayList) items;
         mListener = listener;
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        //TODO: Create fragment_item layout file
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.flight_item_layout, parent, false);
+                .inflate(R.layout.fragment_aircraft, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
-        holder.mItem = mValues.get(position);
-        //TODO: this is just placeholder code right now. Make this code relevant to the app.
-        //TODO: can't find symbol variable id, content
-        //holder.mIdView.setText(mValues.get(position).id);
-        //holder.mContentView.setText(mValues.get(position).content);
+        holder.mItem = aircraftList.get(position);
+        holder.mIdView.setText(aircraftList.get(position).icaoHexAddr);
+        holder.mContentView.setText(aircraftList.get(position).getPosString());
 
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -49,8 +56,7 @@ public class FlightViewAdapter extends RecyclerView.Adapter<FlightViewAdapter.Vi
                 if (null != mListener) {
                     // Notify the active callbacks interface (the activity, if the
                     // fragment is attached to one) that an item has been selected.
-                    // TODO: this method needs a URI, not a DummyItem
-                    // mListener.onListFragmentInteraction(holder.mItem);
+                    mListener.onListFragmentInteraction(holder.mItem);
                 }
             }
         });
@@ -58,14 +64,14 @@ public class FlightViewAdapter extends RecyclerView.Adapter<FlightViewAdapter.Vi
 
     @Override
     public int getItemCount() {
-        return mValues.size();
+        return aircraftList.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         public final View mView;
         public final TextView mIdView;
         public final TextView mContentView;
-        public DummyItem mItem;
+        public Aircraft mItem;
 
         public ViewHolder(View view) {
             super(view);

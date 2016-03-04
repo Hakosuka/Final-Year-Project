@@ -45,10 +45,11 @@ public class DistanceCalculator {
          *
          * Also, as this calculates the distance between aircraft in metres, and the Aircraft
          * object's altitude is in feet, the difference in altitude between two of them is
-         * multiplied by 0.3048 (as 0.3048m = 1ft)
+         * multiplied by 0.3048 (as 0.3048m = 1ft), and THEN multiplied by 0.001 to give the
+         * result in kilometres.
          */
         return Math.sqrt(Math.pow(twoDDistance, 2) +
                 Math.pow((Double.parseDouble(aircraft1.altitude) -
-                                Double.parseDouble(aircraft2.altitude))*0.3048, 2));
+                                Double.parseDouble(aircraft2.altitude))*0.3048*0.001, 2));
     }
 }
