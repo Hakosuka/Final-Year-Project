@@ -12,7 +12,7 @@ import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
 //TODO: Check if I need to implement THIS
-//import com.example.se415017.maynoothskyradar.fragments.AircraftListItem.OnListFragmentInteractionListener;
+import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment.OnListFragmentInteractionListener;
 import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent.DummyItem;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
@@ -32,12 +32,13 @@ public class AircraftRecyclerViewAdapter extends
 
     private ArrayList<Aircraft> aircraftList;
     private List<AircraftListItem> aircraftListItems;
-    //private final AircraftListFragment.OnListFragmentInteractionListener mListener;
+    private final AircraftListFragment.OnListFragmentInteractionListener mListener;
 
     private Context context;
     private boolean useList = true;
 
-    public AircraftRecyclerViewAdapter(Context context, List<Aircraft> items) {
+    public AircraftRecyclerViewAdapter(Context context, List<Aircraft> items,
+                                       AircraftListFragment.OnListFragmentInteractionListener listener) {
         this.context = context;
         if (items != null) {
             if(items.size() > 0) {
@@ -51,7 +52,7 @@ public class AircraftRecyclerViewAdapter extends
                 }
             }
         }
-        //mListener = listener;
+        mListener = listener;
     }
 
     @Override
