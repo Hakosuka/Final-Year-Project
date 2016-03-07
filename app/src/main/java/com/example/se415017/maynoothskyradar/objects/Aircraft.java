@@ -13,7 +13,7 @@ import io.realm.annotations.PrimaryKey;
  * 2 March 2016
  *
  */
-public class Aircraft { //implements Parcelable {
+public class Aircraft implements Parcelable {
     @PrimaryKey public String icaoHexAddr = " ";
     //private String regCode = "TBD"; // registration code of the plane, I'll probably fetch this from a database
     public String callsign = " "; // replaces FlightNum
@@ -21,7 +21,7 @@ public class Aircraft { //implements Parcelable {
     public String gSpeed; //Ground speed, not indicated airspeed
     public String track; //Distinct from its heading, derived from its E/W and N/S velocities.
     public String latitude, longitude;
-    public int climbRate; //
+    public int climbRate = 0; //
 
     //Default public constructor with no argument
     public Aircraft(){
@@ -57,13 +57,43 @@ public class Aircraft { //implements Parcelable {
         this.longitude = longitude;
     }
 //TODO: Implement OnItemClickListener
-//    public Aircraft(Parcel in){
-//        this.icaoHexAddr = in.readString();
-//    }
-//
-//    public int describeContents(){
-//        return 0;
-//    }
+
+    //This code below is to allow for the use of Parcelables, which are at least 10x quicker than Serializables
+    //Values are read in the same order they were written to the Parcelable.
+    public Aircraft(Parcel in){
+        this.icaoHexAddr = in.readString();
+        this.callsign = in.readString();
+        this.altitude = in.readString();
+        this.gSpeed = in.readString();
+        this.track = in.readString();
+        this.latitude = in.readString();
+        this.longitude = in.readString();
+        this.climbRate = in.readInt();
+    }
+
+    public int describeContents(){
+        return 0;
+    }
+
+    public void writeToParcel(Parcel dest, int flags){
+        dest.writeString(icaoHexAddr);
+        dest.writeString(callsign);
+        dest.writeString(altitude);
+        dest.writeString(gSpeed);
+        dest.writeString(track);
+        dest.writeString(latitude);
+        dest.writeString(longitude);
+        dest.writeInt(climbRate);
+    }
+
+    public static final Parcelable.Creator<Aircraft> CREATOR = new Parcelable.Creator<Aircraft>(){
+        public Aircraft createFromParcel(Parcel in){
+            return new Aircraft(in);
+        }
+        public Aircraft[] newArray(int size){
+            return new Aircraft[size];
+        }
+    };
 
 //  Redundant as of 2 March as I can just access attributes of Aircraft objects like "Aircraft.latitude"
 //  rather than "Aircraft.getLatitude()". Besides, it's more resource-intensive to use getters and setters.
@@ -95,7 +125,12 @@ public class Aircraft { //implements Parcelable {
                 latitude + ", " + longitude;
     }
 
-
+    //This is just to make it easier to write all of the attributes of the aircraft into a Parcelable
+    private String toPlainString() {
+        return icaoHexAddr + ", " + callsign + ", " + altitude + ", " +
+                gSpeed + ", " + track + ", " +
+                latitude + ", " + longitude;
+    }
 
     //Returns the coordinates of the aircraft in a LatLng object
     public LatLng getPosition() {

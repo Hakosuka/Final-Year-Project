@@ -9,8 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
-//TODO: Implement THIS
-import com.example.se415017.maynoothskyradar.fragments.AircraftListItem.OnListFragmentInteractionListener;
+import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment.OnListFragmentInteractionListener;
 import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent.DummyItem;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
@@ -31,7 +30,8 @@ public class AircraftRecyclerViewAdapter extends
     private Context context;
     private boolean useList = true;
 
-    public AircraftRecyclerViewAdapter(Context context, List<Aircraft> items) {
+    public AircraftRecyclerViewAdapter(Context context, List<Aircraft> items,
+                                       AircraftListFragment.OnListFragmentInteractionListener listener) {
         this.context = context;
         this.aircraftList = (ArrayList) items;
         mListener = listener;

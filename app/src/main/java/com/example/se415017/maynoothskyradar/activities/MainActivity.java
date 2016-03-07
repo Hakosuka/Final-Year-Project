@@ -200,7 +200,6 @@ public class MainActivity extends AppCompatActivity implements
             showNoInternetDialog(MainActivity.this);
         }
         fragManager = getSupportFragmentManager();
-        Fragment currentFragment;
         mainPager.setAdapter(new MainTabPagerAdapter(fragManager, aircraftArrayList));
         mainTabs.setViewPager(mainPager);
     }

@@ -63,7 +63,10 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        //Just in case aircraftArrayList hasn't been initialised yet
+        if (aircraftArrayList == null) {
+            aircraftArrayList = new ArrayList<Aircraft>();
+        }
         if (getArguments() != null) {
             mColumnCount = getArguments().getInt(ARG_COLUMN_COUNT);
             //Need to populate the ArrayList of Aircraft somehow
@@ -95,7 +98,7 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
             } else {
                 recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
             }
-            recyclerView.setAdapter(new AircraftRecyclerViewAdapter(context, aircraftArrayList)); //, mListener));
+            recyclerView.setAdapter(new AircraftRecyclerViewAdapter(context, aircraftArrayList, mListener)); //, mListener));
         }
         return view;
     }

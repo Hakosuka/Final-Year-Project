@@ -20,14 +20,14 @@ import java.util.ArrayList;
 public class MainTabPagerAdapter extends FragmentStatePagerAdapter {
     private final String[] TAB_TITLES = {"Map", "List of planes"};
     public final String AIR_KEY = "aircraftKey";
-    FragmentManager fragMgr;
+    public static FragmentManager fragMgr;
     public Bundle bundle;
     ArrayList<Aircraft> aircraftArrayList;
 
     public MainTabPagerAdapter(FragmentManager fm, ArrayList<Aircraft> aircraftArrayList) {
         super(fm);
-        this.aircraftArrayList = aircraftArrayList;
         fragMgr = fm;
+        this.aircraftArrayList = aircraftArrayList;
     }
 
     @Override

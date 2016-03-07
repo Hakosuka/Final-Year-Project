@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +14,7 @@ import android.widget.RelativeLayout;
 
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.activities.MainActivity;
+import com.example.se415017.maynoothskyradar.helpers.MainTabPagerAdapter;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -65,8 +67,6 @@ public class MainMapFragment extends Fragment {
     ArrayList<Marker> aircraftMarkers;
 
     // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
 
     private OnFragmentInteractionListener mListener;
 
@@ -92,6 +92,10 @@ public class MainMapFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Just in case aircrafts hasn't been initialised yet
+        if (aircrafts == null) {
+            aircrafts = new ArrayList<Aircraft>();
+        }
         if (getArguments() != null) {
             //Need to populate the ArrayList of Aircraft somehow
             if(getArguments().getSerializable(AIR_KEY) instanceof ArrayList<?>) {
@@ -142,23 +146,15 @@ public class MainMapFragment extends Fragment {
     }
 
     //Sets up the map if it hasn't been set up already
-    public static void setUpMapIfNeeded() {
+    public void setUpMapIfNeeded() {
         if (map == null){
-
-            map = ((SupportMapFragment) MainActivity.fragManager.findFragmentById(R.id.main_map)).getMap();
-//                    .getMapAsync(new OnMapReadyCallback() {
-//                        @Override
-//                        public void onMapReady(GoogleMap googleMap) {
-//                            map = googleMap;
-//
-//                        }
-//                    });
+            map = ((SupportMapFragment) MainActivity.fragManager.findFragmentById(R.id.main_map))
+                    .getMap();
             //Check if the map was obtained successfully
             if (map != null)
                 setUpMap();
         }
     }
-
 
     private static void setUpMap() {
         map.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
