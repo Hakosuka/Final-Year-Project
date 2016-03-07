@@ -10,15 +10,22 @@ import com.example.se415017.maynoothskyradar.objects.Aircraft;
 public class AircraftListItem {
     private Aircraft aircraft;
 
-    private String hexContent;
-    private String callsignContent;
-    private String altitudeContent;
-    private String latitudeContent;
-    private String longitudeContent;
+    public String hexContent;
+    public String callsignContent;
+    public String altitudeContent;
+    public String latitudeContent;
+    public String longitudeContent;
+
+    public int icon;
 
     //Constructor method
     public AircraftListItem(Aircraft aircraft){
         this.aircraft = aircraft;
+        hexContent = aircraft.icaoHexAddr;
+        callsignContent = aircraft.callsign;
+        altitudeContent = aircraft.altitude;
+        latitudeContent = aircraft.latitude;
+        longitudeContent = aircraft.longitude;
     }
 
     public String getHexContent() {

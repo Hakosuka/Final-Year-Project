@@ -20,6 +20,7 @@ import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -39,6 +40,7 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     private int mColumnCount = 1;
     private OnListFragmentInteractionListener mListener;
     private ArrayList<Aircraft> aircraftArrayList;
+    List<AircraftListItem> aircraftListItems;
     @Bind(android.R.id.list)
     ListView aircraftListView;
 

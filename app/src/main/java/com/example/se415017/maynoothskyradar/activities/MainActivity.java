@@ -269,6 +269,11 @@ public class MainActivity extends AppCompatActivity implements
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState){
+        super.onSaveInstanceState(outState);
+    }
+
     // Necessary callbacks for service binding
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
