@@ -19,7 +19,7 @@ public class Aircraft implements Parcelable {
     public String callsign = " "; // replaces FlightNum
     public String altitude; // Mode-C altitude (i.e. relative to 1.0132 bar), not it's actual distance above mean sea level
     public String gSpeed; //Ground speed, not indicated airspeed
-    public String track; //Distinct from its heading, derived from its E/W and N/S velocities.
+    public String track = "0"; //Distinct from its heading, derived from its E/W and N/S velocities.
     public String latitude, longitude;
     public int climbRate = 0; //
 

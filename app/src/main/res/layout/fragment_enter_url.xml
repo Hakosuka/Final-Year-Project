@@ -49,7 +49,7 @@
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/longi"
+        android:hint="@string/lati"
         android:inputType="number|numberDecimal|numberSigned"
         android:textColorHint="#cccccc"
         android:id="@+id/latitude_edit_field"
@@ -60,7 +60,7 @@
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/lati"
+        android:hint="@string/longi"
         android:inputType="number|numberDecimal|numberSigned"
         android:textColorHint="#cccccc"
         android:id="@+id/longitude_edit_field"

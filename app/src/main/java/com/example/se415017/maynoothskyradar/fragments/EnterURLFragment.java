@@ -130,13 +130,6 @@ public class EnterURLFragment extends Fragment {
     public static EnterURLFragment newInstance() {
         return new EnterURLFragment();
     }
-    // DONE: Check if I really need onCreate()
-//    @Override
-//    public void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        if(inputHelper == null)
-//            inputHelper = new InputHelper();
-//    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,

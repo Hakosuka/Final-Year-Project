@@ -137,7 +137,6 @@ public class MainActivity extends AppCompatActivity implements
         setSupportActionBar(activityToolbar);
         ButterKnife.bind(this);
 
-
         final SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         strUrl = sharedPref.getString(SERVER_PREF, "");
 
@@ -261,9 +260,12 @@ public class MainActivity extends AppCompatActivity implements
         switch(id){
             case R.id.action_settings:
                 Log.d(TAG, "Settings selected");
+                Intent settingsIntent = new Intent(this, SettingsActivity.class);
+                //TODO: Work on SettingsActivity
+                startActivity(settingsIntent);
                 return true;
             case R.id.action_about:
-                Log.d(TAG, "This is where I would open a dialog to say what this app's about...IF I HAD ONE.");
+                showAboutDialog();
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -331,6 +333,7 @@ public class MainActivity extends AppCompatActivity implements
                 })
                 .show();
     }
+
     /**
      * Shows the alert dialog which notifies the user that they have no Internet connection.
      * @param activity
@@ -359,7 +362,7 @@ public class MainActivity extends AppCompatActivity implements
     }
     /**
      * Shows the alert dialog which notifies the user that they haven't saved the address of their server.
-     * Now redundant.
+     * Now redundant thanks to EnterURLFragment.
      * @param activity
      * @return MaterialDialog
      */
@@ -384,6 +387,20 @@ public class MainActivity extends AppCompatActivity implements
                         editor.apply();
                     }
                 })
+                .show();
+    }
+
+    /**
+     * Just a dialog that gives some basic details about the app.
+     * @return MaterialDialog which gives some basic details about the app.
+     */
+    public MaterialDialog showAboutDialog(){
+        return new MaterialDialog.Builder(this)
+                .title(R.string.app_name)
+                .content("Developed by Ciaran Cumiskey at Maynooth University.\n\n" +
+                        "This is MaynoothSkyRadar. This app streams data from a server which uses " +
+                        "dump1090 to receive messages from nearby aircraft and then forwards them " +
+                        "on to clients.")
                 .show();
     }
 

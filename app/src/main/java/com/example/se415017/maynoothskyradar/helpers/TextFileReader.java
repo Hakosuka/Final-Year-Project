@@ -9,6 +9,7 @@ import com.example.se415017.maynoothskyradar.objects.Aircraft;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+//TODO: Convert this to a Service, just like SocketService
 /**
  * Created by se415017 on 03/03/2016.
  *
@@ -25,6 +26,8 @@ public class TextFileReader {
         distCalc = new DistanceCalculator();
     }
 
+    //TODO: Add a Thread to use to read the text file, and then simulate the gaps between each
+    //message being received by the server by making that Thread sleep for that time.
     public String readFromTextFile(Context context, ArrayList<Aircraft> aircraftArrayList) {
         int count = 0;
         Scanner s = new Scanner(context.getResources().openRawResource(R.raw.samplelog));

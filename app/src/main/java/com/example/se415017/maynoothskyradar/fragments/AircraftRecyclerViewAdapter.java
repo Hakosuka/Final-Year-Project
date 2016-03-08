@@ -30,7 +30,6 @@ public class AircraftRecyclerViewAdapter extends
         RecyclerView.Adapter<AircraftRecyclerViewAdapter.ViewHolder> {
 
     private ArrayList<Aircraft> aircraftList;
-    private final AircraftListFragment.OnListFragmentInteractionListener mListener;
     private List<AircraftListItem> aircraftListItems;
     private final AircraftListFragment.OnListFragmentInteractionListener mListener;
 
@@ -40,6 +39,12 @@ public class AircraftRecyclerViewAdapter extends
     public AircraftRecyclerViewAdapter(Context context, List<Aircraft> items,
                                        AircraftListFragment.OnListFragmentInteractionListener listener) {
         this.context = context;
+        if (aircraftList == null){
+            aircraftList = new ArrayList<Aircraft>();
+        }
+        if (aircraftListItems == null){
+            aircraftListItems = new ArrayList<AircraftListItem>();
+        }
         if (items != null) {
             if(items.size() > 0) {
                 for (int i = 0; i < items.size(); i++) {

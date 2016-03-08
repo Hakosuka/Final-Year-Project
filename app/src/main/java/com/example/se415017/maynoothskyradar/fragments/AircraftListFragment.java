@@ -42,7 +42,7 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     private ArrayList<Aircraft> aircraftArrayList;
     List<AircraftListItem> aircraftListItems;
     @Bind(android.R.id.list)
-    ListView aircraftListView;
+    RecyclerView aircraftListView;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
