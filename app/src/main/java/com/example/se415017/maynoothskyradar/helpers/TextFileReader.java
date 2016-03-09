@@ -20,6 +20,7 @@ public class TextFileReader {
     String TAG = getClass().getSimpleName();
     SBSDecoder sbsDecoder;
     DistanceCalculator distCalc;
+    double delay = 0.0; //Simulates the time between each message being received.
     //Basic constructor class
     public TextFileReader(){
         sbsDecoder = new SBSDecoder();
@@ -41,6 +42,9 @@ public class TextFileReader {
                 //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
                 if(splitLine.length == 22) {
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
+                    if(splitLine[7].length() > 6){
+                        delay = Double.parseDouble(splitLine[7].substring(6)) - delay;
+                    }
                     Log.d(TAG, "Aircraft status = " + newAircraft.toString());
                     sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
                 } else {

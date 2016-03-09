@@ -14,27 +14,29 @@
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
 
-    <com.astuetz.PagerSlidingTabStrip
-        android:id="@+id/activity_main_tabs"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:background="#eeeeee"
-        app:pstsIndicatorColor="#33ccee"
-        app:pstsIndicatorHeight="4dp"
-        app:pstsUnderlineColor="#33ccee"
-        app:pstsUnderlineHeight="2dp"
-        app:pstsShouldExpand="true"/>
+
     <android.support.v4.view.ViewPager
         android:id="@+id/activity_main_pager"
         android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:layout_below="@id/activity_main_tabs"
-        android:background="#eeeeee"/>
+        android:background="#eeeeee">
+        <com.astuetz.PagerSlidingTabStrip
+            android:id="@+id/activity_main_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#eeeeee"
+            app:pstsIndicatorColor="#33ccee"
+            app:pstsIndicatorHeight="4dp"
+            app:pstsUnderlineColor="#33ccee"
+            app:pstsUnderlineHeight="2dp"
+            app:pstsShouldExpand="true"/>
+    </android.support.v4.view.ViewPager>
+
 
     <include layout="@layout/content_main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/activity_main_toolbar"/>
+        android:layout_below="@id/activity_main_tabs"/>
 
     <!--fix for flickering-->
     <SurfaceView

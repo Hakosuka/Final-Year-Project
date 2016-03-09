@@ -6,6 +6,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
 import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment;
+import com.example.se415017.maynoothskyradar.fragments.EnterURLFragment;
 import com.example.se415017.maynoothskyradar.fragments.MainMapFragment;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
@@ -17,6 +18,7 @@ import java.util.ArrayList;
  * This is just a way for me to put all of the methods for creating a PagerAdapter for my
  * MainActivity into their own class.
  */
+//TODO: Stop the MapFragment from taking up the whole screen
 public class MainTabPagerAdapter extends FragmentStatePagerAdapter {
     private final String[] TAB_TITLES = {"Map", "List of planes"};
     public final String AIR_KEY = "aircraftKey";
