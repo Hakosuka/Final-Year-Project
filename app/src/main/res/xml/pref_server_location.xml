@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:singleLine="true"
+        android:maxLines="1"
+        android:inputType="number|numberDecimal|numberSigned"
+        android:title="Latitude"
+        android:hint="Enter the latitude of your server's location"
+        android:key="latitude" />
+    <EditTextPreference
+        android:singleLine="true"
+        android:maxLines="1"
+        android:inputType="number|numberDecimal|numberSigned"
+        android:title="Longitude"
+        android:hint="Enter the longitude of your server's location"
+        android:key="longitude"/>
+</PreferenceScreen>

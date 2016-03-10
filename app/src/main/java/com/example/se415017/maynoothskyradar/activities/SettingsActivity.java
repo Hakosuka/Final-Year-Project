@@ -18,6 +18,7 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 
 import com.example.se415017.maynoothskyradar.R;
@@ -37,15 +38,23 @@ import java.util.List;
  */
 //TODO: Make this relevant to the app
 public class SettingsActivity extends AppCompatPreferenceActivity {
+
+    public static final String SERVER_PREF = "serverAddress";
+    public static final String LAT_PREF = "latitude";
+    public static final String LON_PREF = "longitude";
+
+    private final String TAG = getClass().getSimpleName();
+
     /**
      * A preference value change listener that updates the preference's summary
      * to reflect its new value.
      */
-    private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {
+    private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener =
+            new Preference.OnPreferenceChangeListener() {
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
             String stringValue = value.toString();
-
+            Log.d("SettingsActivity", "Preference changed to: " + stringValue);
             if (preference instanceof ListPreference) {
                 // For list preferences, look up the correct display value in
                 // the preference's 'entries' list.
@@ -53,10 +62,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 int index = listPreference.findIndexOfValue(stringValue);
 
                 // Set the summary to reflect the new value.
-                preference.setSummary(
-                        index >= 0
-                                ? listPreference.getEntries()[index]
-                                : null);
+                preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
 
             } else if (preference instanceof RingtonePreference) {
                 // For ringtone preferences, look up the correct display value
@@ -164,6 +170,30 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 || NotificationPreferenceFragment.class.getName().equals(fragmentName);
     }
 
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class ServerAddressPreferenceFragment extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_server_address);
+            setHasOptionsMenu(true);
+
+            bindPreferenceSummaryToValue(findPreference(SERVER_PREF));
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class ServerLocationPreferenceFragment extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_server_location);
+            setHasOptionsMenu(true);
+
+            bindPreferenceSummaryToValue(findPreference(LAT_PREF));
+            bindPreferenceSummaryToValue(findPreference(LON_PREF));
+        }
+    }
     /**
      * This fragment shows general preferences only. It is used when the
      * activity is showing a two-pane settings UI.

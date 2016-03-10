@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--TODO: Check if this actually does limit me to entering a web address-->
+    <EditTextPreference
+        android:inputType="textWebEditText"
+        android:key="serverAddress"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:title="Server address"
+        android:hint="Enter your server's address"/>
+</PreferenceScreen>

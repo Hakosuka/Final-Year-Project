@@ -130,7 +130,9 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         }
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         latitude = Double.longBitsToDouble(sharedPreferences.getLong(LAT_PREF, 0));
+        //latitude = Double.parseDouble(sharedPreferences.getString(LAT_PREF, "0.0"));
         Log.d(TAG, "Latitude from sharedPreferences = " + Double.toString(latitude));
+        //longitude = Double.parseDouble(sharedPreferences.getString(LON_PREF, "0.0"));
         longitude = Double.longBitsToDouble(sharedPreferences.getLong(LON_PREF, 0));
         Log.d(TAG, "Longitude from sharedPreferences = " + Double.toString(longitude));
         Log.d(TAG, "Is the map initialised? " + Boolean.toString(googleMap != null));

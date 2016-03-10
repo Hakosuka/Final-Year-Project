@@ -1,5 +1,6 @@
 package com.example.se415017.maynoothskyradar.activities;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ComponentName;

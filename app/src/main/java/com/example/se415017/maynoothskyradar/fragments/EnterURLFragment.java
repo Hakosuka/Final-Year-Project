@@ -180,6 +180,10 @@ public class EnterURLFragment extends Fragment {
         long lonFromEditor = Double.doubleToRawLongBits(
                 Double.parseDouble(longitudeEditor.getText().toString()));
         editor.putString(SERVER_PREF, editorText);
+        //TODO: Refactor this so that LAT_PREF and LON_PREF are stored as Strings, to cut down on
+        //variable type conversion from String -> Double -> Long -> Double.
+        //editor.putString(LAT_PREF, latitudeEditor.getText().toString()));
+        //editor.putString(LON_PREF, longitudeEditor.getText().toString()));
         editor.putLong(LAT_PREF, latFromEditor);
         editor.putLong(LON_PREF, lonFromEditor);
         editor.apply();
