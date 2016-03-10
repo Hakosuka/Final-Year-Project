@@ -141,6 +141,8 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     public interface OnListFragmentInteractionListener {
         // TODO: Update argument type and name
         void onListFragmentInteraction(Aircraft item);
+        //TODO: Implement this in MainActivity to show more detail on the Aircraft
+        //public void onListItemSelection(int position);
     }
 
     @Override

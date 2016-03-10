@@ -13,22 +13,26 @@
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
-    <com.astuetz.PagerSlidingTabStrip
-        android:id="@+id/activity_main_tabs"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:background="#eeeeee"
-        app:pstsIndicatorColor="#33ccee"
-        app:pstsIndicatorHeight="4dp"
-        app:pstsUnderlineColor="#33ccee"
-        app:pstsUnderlineHeight="2dp"
-        app:pstsShouldExpand="true"/>
+
     <android.support.v4.view.ViewPager
         android:id="@+id/activity_main_pager"
         android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:background="#eeeeee"/>
-
+        android:background="#eeeeee">
+        <com.astuetz.PagerSlidingTabStrip
+            android:id="@+id/activity_main_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_gravity="top"
+            android:background="#eeeeee"
+            android:paddingBottom="4dp"
+            android:paddingTop="4dp"
+            app:pstsIndicatorColor="#33ccee"
+            app:pstsIndicatorHeight="4dp"
+            app:pstsUnderlineColor="#33ccee"
+            app:pstsUnderlineHeight="2dp"
+            app:pstsShouldExpand="true"/>
+    </android.support.v4.view.ViewPager>
     <!--TODO: Test if this part is necessary
     <include layout="@layout/content_main"-->
         <!--android:layout_width="match_parent"-->
@@ -39,5 +43,4 @@
     <SurfaceView
         android:layout_width="0px"
         android:layout_height="0px" />
-
 </android.support.design.widget.CoordinatorLayout>

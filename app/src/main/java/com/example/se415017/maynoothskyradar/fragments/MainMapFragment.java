@@ -60,7 +60,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
 
     public static final String AIR_KEY = "aircraftKey";
 
-    private static View view;
+    static View view;
 
 //    @Bind(R.id.map_container)
 //    RelativeLayout mapContainer;
@@ -145,12 +145,16 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             return null;
         view = inflater.inflate(R.layout.fragment_main_map, container, false);
         ButterKnife.bind(this, view);
+
         mainMapFrag = (SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.main_map);
         mainMapFrag.getMapAsync(this);
+
         for(Aircraft a : aircrafts){
             Log.d(TAG, "Loading from bundle " + a.toString());
         }
+
         setUpMapIfNeeded();
+
         Log.d(TAG, "Lat & Lon: " + Double.toString(latitude) + ", " + Double.toString(longitude));
         if(googleMap != null) {
             for(Aircraft a : aircrafts) {

@@ -9,7 +9,9 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
@@ -17,13 +19,18 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -87,19 +94,19 @@ public class MainActivity extends AppCompatActivity implements
     @Bind(R.id.activity_main_pager)
     ViewPager mainPager;
 
-    @Bind(R.id.button_gps_activation)
-    Button GpsActivationButton;
-    @Bind(R.id.read_sample_log_button)
-    Button ReadSampleLogButton;
-
-    //These are the GPS coordinates of the server
-    @Bind(R.id.gps_latitude)
-    TextView GpsLat;
-    @Bind(R.id.gps_longitude)
-    TextView GpsLon;
-
-    @Bind(R.id.server_status)
-    TextView ServerStat;
+//    @Bind(R.id.button_gps_activation)
+//    Button GpsActivationButton;
+//    @Bind(R.id.read_sample_log_button)
+//    Button ReadSampleLogButton;
+//
+//    //These are the GPS coordinates of the server
+//    @Bind(R.id.gps_latitude)
+//    TextView GpsLat;
+//    @Bind(R.id.gps_longitude)
+//    TextView GpsLon;
+//
+//    @Bind(R.id.server_status)
+//    TextView ServerStat;
 
     //DONE: Test if I can actually use ButterKnife's @Bind annotations on toolbars - I can!
     @Bind(R.id.activity_main_toolbar)
@@ -111,20 +118,20 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     //Redundant
-    @OnClick(R.id.button_gps_activation)
-    public void activateGPS(View view){
-        Log.d(TAG, "activateGPS button pressed");
-        SharedPreferences sharedPref = getSharedPreferences(PREFS, MODE_PRIVATE);
-        String latStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LAT_PREF, 0)));
-        GpsLat.setText("Latitude: " + latStringFromPref);
-        String lonStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LON_PREF, 0)));
-        GpsLon.setText("Longitude: " + lonStringFromPref);
-    }
+//    @OnClick(R.id.button_gps_activation)
+//    public void activateGPS(View view){
+//        Log.d(TAG, "activateGPS button pressed");
+//        SharedPreferences sharedPref = getSharedPreferences(PREFS, MODE_PRIVATE);
+//        String latStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LAT_PREF, 0)));
+//        GpsLat.setText("Latitude: " + latStringFromPref);
+//        String lonStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LON_PREF, 0)));
+//        GpsLon.setText("Longitude: " + lonStringFromPref);
+//    }
 
-    @OnClick(R.id.read_sample_log_button)
-    public void readSampleLog(View view) {
-        Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
-    }
+//    @OnClick(R.id.read_sample_log_button)
+//    public void readSampleLog(View view) {
+//        Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
+//    }
 
     boolean netStatus = false;
     boolean serverStatus = false;
@@ -134,8 +141,9 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        setSupportActionBar(activityToolbar);
-        ButterKnife.bind(this);
+//        setSupportActionBar(activityToolbar);
+        cleanUpActionBar();
+        ButterKnife.bind(this); //DONE: Unable to bind views - I'd forgot to comment-out the Buttons and TextViews.
 
         final SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         strUrl = sharedPref.getString(SERVER_PREF, "");
@@ -295,6 +303,22 @@ public class MainActivity extends AppCompatActivity implements
         }
     };
 
+    private void cleanUpActionBar() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = this.getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.setStatusBarColor(getResources().getColor(R.color.colorPrimary));
+        }
+        ActionBar actionBar = getSupportActionBar();
+        if(actionBar != null){
+            actionBar.setElevation(0);
+            actionBar.setTitle(getTitle());
+            actionBar.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
+            actionBar.setHomeAsUpIndicator(ContextCompat.getDrawable(this, R.drawable.left_48));
+        }
+    }
+
     /**
      * Checks if an instance of a particular service exists
      * @param serviceClass - the Service I want to look for
@@ -405,6 +429,7 @@ public class MainActivity extends AppCompatActivity implements
                 .show();
     }
 
+    //TODO: Get TextFileReader working so that this stuff becomes irrelevant
     public String readFromTextFile(Context context) {
         int count = 0;
         Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));
