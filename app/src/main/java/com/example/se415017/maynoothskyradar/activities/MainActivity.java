@@ -1,6 +1,5 @@
 package com.example.se415017.maynoothskyradar.activities;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ComponentName;
@@ -20,8 +19,8 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -32,8 +31,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
@@ -43,7 +40,6 @@ import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment;
 import com.example.se415017.maynoothskyradar.fragments.MainMapFragment;
 import com.example.se415017.maynoothskyradar.helpers.DistanceCalculator;
-import com.example.se415017.maynoothskyradar.helpers.MainTabPagerAdapter;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
 import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
 import com.example.se415017.maynoothskyradar.helpers.TextFileReader;
@@ -504,6 +500,46 @@ public class MainActivity extends AppCompatActivity implements
                 Log.d(TAG, "Invalid message from SocketService");
             }
         }
+    }
+
+    /**
+     * 11 March 2016 - moved MainTabPagerAdapter inside MainActivity because, well, it's my app's
+     * main activity.
+     */
+    private class MainTabPagerAdapter extends FragmentStatePagerAdapter {
+        final String[] TAB_TITLES = {"Map", "List of planes"};
+        final String AIR_KEY = "aircraftKey";
+        FragmentManager fragMgr;
+        public Bundle bundle;
+        ArrayList<Aircraft> aircraftArrayList;
+
+        public MainTabPagerAdapter(FragmentManager fm, ArrayList<Aircraft> aircraftArrayList) {
+            super(fm);
+            fragMgr = fm;
+            this.aircraftArrayList = aircraftArrayList;
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position){
+            return TAB_TITLES[position];
+        }
+
+        @Override
+        public int getCount() {
+            return TAB_TITLES.length;
+        }
+
+        @Override
+        public Fragment getItem(int position){
+            switch(position){
+                case 0:
+                    return MainMapFragment.newInstance(aircraftArrayList);
+                case 1:
+                    return AircraftListFragment.newInstance(1, aircraftArrayList);
+            }
+            return null;
+        }
+
     }
 /**
  * The below code has all been copied into SBSDecoder for easier re-usability

@@ -64,9 +64,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingLeft="@dimen/content_margin"
-        android:layout_alignBottom="@id/latitude_content"
-        android:layout_toRightOf="@id/latitude_content"
-        android:layout_toEndOf="@id/latitude_content"/>
+        android:layout_alignBottom="@id/latitude_title"
+        android:layout_toRightOf="@id/latitude_title"
+        android:layout_toEndOf="@id/latitude_title"/>
 
     <TextView
         android:id="@+id/longitude_title"

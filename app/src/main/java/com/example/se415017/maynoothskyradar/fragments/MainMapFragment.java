@@ -4,25 +4,17 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.example.se415017.maynoothskyradar.R;
-import com.example.se415017.maynoothskyradar.activities.MainActivity;
-import com.example.se415017.maynoothskyradar.helpers.MainTabPagerAdapter;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -31,11 +23,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import butterknife.Bind;
 import butterknife.ButterKnife;
 
 /**
@@ -254,7 +244,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onInfoWindowClick(Marker marker) {
                 //Show the Aircraft's location if its Marker is clicked
-                if(marker.getTitle().startsWith("Mode-S")){
+                if (marker.getTitle().startsWith("Mode-S")) {
                     Toast.makeText(getContext(), marker.getSnippet(), Toast.LENGTH_LONG).show();
                 }
             }

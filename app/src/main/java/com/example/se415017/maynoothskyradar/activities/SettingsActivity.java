@@ -44,6 +44,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     public static final String LON_PREF = "longitude";
 
     private final String TAG = getClass().getSimpleName();
+    private static Context context;
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -54,7 +55,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
             String stringValue = value.toString();
-            Log.d("SettingsActivity", "Preference changed to: " + stringValue);
+            Log.d("SettingsActivity", preference.getTitle() + " changed to: " + stringValue);
             if (preference instanceof ListPreference) {
                 // For list preferences, look up the correct display value in
                 // the preference's 'entries' list.
@@ -88,7 +89,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
             } else {
                 // For all other preferences, set the summary to the value's
-                // simple string representation.
+                // simple string representation - unless it's latitude or longitude
+                if(preference.getTitle().equals("latitude") || preference.getTitle().equals("longitude")){
+                    sBindPreferenceSummaryToValueListener.onPreferenceChange(preference,
+                            PreferenceManager.getDefaultSharedPreferences(context));
+                    Long prefToBeStored = Double.doubleToRawLongBits(Double.parseDouble(stringValue));
+
+                }
                 preference.setSummary(stringValue);
             }
             return true;
@@ -128,6 +135,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        context = getApplicationContext();
         setupActionBar();
     }
 
@@ -167,7 +175,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || GeneralPreferenceFragment.class.getName().equals(fragmentName)
                 || DataSyncPreferenceFragment.class.getName().equals(fragmentName)
-                || NotificationPreferenceFragment.class.getName().equals(fragmentName);
+                || NotificationPreferenceFragment.class.getName().equals(fragmentName)
+                || ServerAddressPreferenceFragment.class.getName().equals(fragmentName)
+                || ServerLocationPreferenceFragment.class.getName().equals(fragmentName);
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
