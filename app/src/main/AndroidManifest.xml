@@ -12,8 +12,8 @@
     <!-- Creating permission to receive Google Maps -->
     <uses-permission
         android:name="com.example.se415017.permssion.MAPS_RECEIVE"
-        android:protectionLevel="signature"/>
-    <uses-permission android:name="com.example.se415017.permission.MAPS_RECEIVE"/>
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.example.se415017.permission.MAPS_RECEIVE" />
 
     <!-- Needed for Maps -->
     <uses-feature
@@ -53,11 +53,15 @@
         <activity
             android:name=".activities.SettingsActivity"
             android:label="@string/title_activity_settings" />
-
         <activity
             android:name=".activities.SetUpActivity"
             android:label="@string/title_activity_setup"
-            android:theme="@style/AppTheme.NoActionBar"/>
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <service
+            android:name=".services.TextFileReaderService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
