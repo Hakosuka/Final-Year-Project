@@ -1,0 +1,78 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.se415017.maynoothskyradar.fragments.AircraftDetailFragment">
+
+    <!-- TODO: Investigate bottom sheets -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_icao_title"
+        android:text="@string/modeS"
+        android:textStyle="bold" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_icao_content"
+        android:padding="@dimen/content_margin"
+        android:layout_alignBottom="@id/detail_icao_title"
+        android:layout_alignEnd="@id/detail_icao_title"
+        android:layout_alignRight="@id/detail_icao_title" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_callsign_content"
+        android:padding="@dimen/activity_vertical_margin"
+        android:layout_alignBottom="@id/detail_icao_content"
+        android:layout_alignEnd="@id/detail_icao_content"
+        android:layout_alignRight="@id/detail_icao_content" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_lat_title"
+        android:text="@string/lati"
+        android:textStyle="bold"
+        android:layout_below="@id/detail_icao_title"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_lat_content"
+        android:padding="@dimen/content_margin"
+        android:layout_alignBottom="@id/detail_lat_title"
+        android:layout_alignEnd="@id/detail_lat_title"
+        android:layout_alignRight="@id/detail_lat_title"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_lon_title"
+        android:text="@string/longi"
+        android:textStyle="bold"
+        android:layout_below="@id/detail_lat_title"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_lon_content"
+        android:padding="@dimen/content_margin"
+        android:layout_alignBottom="@id/detail_lon_title"
+        android:layout_alignEnd="@id/detail_lon_title"
+        android:layout_alignRight="@id/detail_lon_title"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_alt_title"
+        android:text="@string/alt"
+        android:textStyle="bold"
+        android:layout_below="@id/detail_lon_title"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/detail_alt_content"
+        android:padding="@dimen/content_margin"
+        android:layout_alignBottom="@id/detail_alt_title"
+        android:layout_alignEnd="@id/detail_alt_title"
+        android:layout_alignRight="@id/detail_alt_title"/>
+</RelativeLayout>
