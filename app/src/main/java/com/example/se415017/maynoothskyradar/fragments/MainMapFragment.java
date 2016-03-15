@@ -2,8 +2,12 @@ package com.example.se415017.maynoothskyradar.fragments;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -227,7 +231,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         googleMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)))
                 .setTitle("My server is here");
         //DONE: Add custom markers for the planes - see onCreateView()
-        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 8.0f));
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 7.0f));
         Log.d(TAG, "Map has been set up");
         Log.d(TAG, "Number of planes to set up: " + aircrafts.size());
         for(Aircraft a : aircrafts) {
@@ -245,13 +249,21 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             public void onInfoWindowClick(Marker marker) {
                 //Show the Aircraft's location if its Marker is clicked
                 if (marker.getTitle().startsWith("Mode-S")) {
+                    //TODO: Replace the below line with a SnackBar with a button that creates a
+                    //Fragment which shows the Aircraft in more detail.
                     Toast.makeText(getContext(), marker.getSnippet(), Toast.LENGTH_LONG).show();
                 }
             }
+            //Such a method doesn't exist for the Google Maps API.
+//            public void onLongInfoWindowClick(Marker marker) {
+//                if (marker.getTitle().startsWith("Mode-S")) {
+//                    Toast.makeText(getContext(), marker.getSnippet(), Toast.LENGTH_LONG).show();
+//                }
+//            }
         });
     }
-
     /**
+     * TODO:
      * Adds a new Aircraft marker when a new aircraft has been discovered.
      * @param newAircraft The newly discovered aircraft to be added to the map.
      */

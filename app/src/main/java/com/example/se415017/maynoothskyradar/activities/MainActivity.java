@@ -91,44 +91,17 @@ public class MainActivity extends AppCompatActivity implements
     @Bind(R.id.activity_main_pager)
     ViewPager mainPager;
 
-//    @Bind(R.id.button_gps_activation)
-//    Button GpsActivationButton;
-//    @Bind(R.id.read_sample_log_button)
-//    Button ReadSampleLogButton;
-//
-//    //These are the GPS coordinates of the server
-//    @Bind(R.id.gps_latitude)
-//    TextView GpsLat;
-//    @Bind(R.id.gps_longitude)
-//    TextView GpsLon;
-//
-//    @Bind(R.id.server_status)
-//    TextView ServerStat;
-
     //DONE: Test if I can actually use ButterKnife's @Bind annotations on toolbars - I can!
-    @Bind(R.id.activity_main_toolbar)
-    Toolbar activityToolbar;
-
-    @OnClick(R.id.activity_main_toolbar)
-    public void toolbarClicked(View view){
-        Log.d(TAG, "Toolbar clicked");
-    }
-
-    //Redundant
-//    @OnClick(R.id.button_gps_activation)
-//    public void activateGPS(View view){
-//        Log.d(TAG, "activateGPS button pressed");
-//        SharedPreferences sharedPref = getSharedPreferences(PREFS, MODE_PRIVATE);
-//        String latStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LAT_PREF, 0)));
-//        GpsLat.setText("Latitude: " + latStringFromPref);
-//        String lonStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LON_PREF, 0)));
-//        GpsLon.setText("Longitude: " + lonStringFromPref);
+    //Redundant as of 15 March
+    //TODO: Try to show the SlidingTabPagerStrip under the Toolbar
+//    @Bind(R.id.activity_main_toolbar)
+//    Toolbar activityToolbar;
+//
+//    @OnClick(R.id.activity_main_toolbar)
+//    public void toolbarClicked(View view){
+//        Log.d(TAG, "Toolbar clicked");
 //    }
 
-//    @OnClick(R.id.read_sample_log_button)
-//    public void readSampleLog(View view) {
-//        Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
-//    }
 
     boolean netStatus = false;
     boolean serverStatus = false;
@@ -759,4 +732,33 @@ public class MainActivity extends AppCompatActivity implements
 //            "$GPRMC,103102.557,A,5323.0900,N,00636.1283,W,000.0,308.8,101115,,,A*79",
 //            "$GPVTG,308.8,T,,M,000.0,N,000.0,K,A*0E"
 //    };
+    //Redundant
+    //@Bind(R.id.button_gps_activation)
+//    Button GpsActivationButton;
+//    @Bind(R.id.read_sample_log_button)
+//    Button ReadSampleLogButton;
+//
+//    //These are the GPS coordinates of the server
+//    @Bind(R.id.gps_latitude)
+//    TextView GpsLat;
+//    @Bind(R.id.gps_longitude)
+//    TextView GpsLon;
+//
+//    @Bind(R.id.server_status)
+//    TextView ServerStat;
+
+//    @OnClick(R.id.button_gps_activation)
+//    public void activateGPS(View view){
+//        Log.d(TAG, "activateGPS button pressed");
+//        SharedPreferences sharedPref = getSharedPreferences(PREFS, MODE_PRIVATE);
+//        String latStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LAT_PREF, 0)));
+//        GpsLat.setText("Latitude: " + latStringFromPref);
+//        String lonStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LON_PREF, 0)));
+//        GpsLon.setText("Longitude: " + lonStringFromPref);
+//    }
+
+//    @OnClick(R.id.read_sample_log_button)
+//    public void readSampleLog(View view) {
+//        Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
+//    }
 }

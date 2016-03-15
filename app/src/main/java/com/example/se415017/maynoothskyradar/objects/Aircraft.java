@@ -5,6 +5,8 @@ import android.os.Parcelable;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.List;
+
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
@@ -22,6 +24,7 @@ public class Aircraft implements Parcelable {
     public String track = "0"; //Distinct from its heading, derived from its E/W and N/S velocities.
     public String latitude, longitude;
     public int climbRate = 0; //
+    public List<LatLng> path; //The path that the Aircraft has followed
 
     //Default public constructor with no argument
     public Aircraft(){
