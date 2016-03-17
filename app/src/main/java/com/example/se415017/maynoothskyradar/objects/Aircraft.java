@@ -5,6 +5,7 @@ import android.os.Parcelable;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.realm.RealmObject;
@@ -24,7 +25,7 @@ public class Aircraft implements Parcelable {
     public String track = "0"; //Distinct from its heading, derived from its E/W and N/S velocities.
     public String latitude, longitude;
     public int climbRate = 0; //
-    public List<LatLng> path; //The path that the Aircraft has followed
+    public ArrayList<LatLng> path; //The path that the Aircraft has followed
 
     //Default public constructor with no argument
     public Aircraft(){
@@ -128,6 +129,17 @@ public class Aircraft implements Parcelable {
                 latitude + ", " + longitude;
     }
 
+    //Returns the path of the aircraft as a String
+    public String pathToString() {
+        String pathString = "";
+        for (int i = 0; i < path.size(); i++){
+            pathString.concat("Pt" + Integer.toString(i+1) + ": "
+                    + Double.toString(path.get(i).latitude)
+                    + ", "
+                    + Double.toString(path.get(i).longitude));
+        }
+        return pathString;
+    }
     //This is just to make it easier to write all of the attributes of the aircraft into a Parcelable
     private String toPlainString() {
         return icaoHexAddr + ", " + callsign + ", " + altitude + ", " +

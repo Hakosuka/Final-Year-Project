@@ -3,6 +3,7 @@ package com.example.se415017.maynoothskyradar.helpers;
 import android.util.Log;
 
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
+import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,10 +18,10 @@ import java.util.ArrayList;
  *                process for instantiating them.
  */
 public class SBSDecoder {
-    //TODO: Sockets sorted out, this is kind of useless
-    private Socket socket;
-    private int port = 9999; // default
-    private String drBrownsServer = "192.168.1.1"; // default
+    //DONE: Sockets sorted out, this is kind of useless
+//    private Socket socket;
+//    private int port = 9999; // default
+//    private String drBrownsServer = "192.168.1.1"; // default
     String TAG = getClass().getSimpleName();
     OutputStream out = null;
     InputStream in = null;
@@ -60,6 +61,7 @@ public class SBSDecoder {
      */
     public Aircraft parseSBSMessage(String[] sbsMessageArray) {
         Aircraft aircraftToAddOrModify = new Aircraft();
+        aircraftToAddOrModify.path = new ArrayList<>();
         //By checking for 22 fields, we don't get thrown off by transmission messages without that amount of fields
         //if(sbsMessageArray.length == 22) {
         //The above is redundant thanks to the array length checking done in readFromTextFile()
@@ -90,6 +92,11 @@ public class SBSDecoder {
                         aircraftToAddOrModify.track = sbsMessageArray[13];
                         aircraftToAddOrModify.latitude = sbsMessageArray[14];
                         aircraftToAddOrModify.longitude = sbsMessageArray[15];
+                        //Log.d(TAG, "Current position: " + aircraftToAddOrModify.getPosString());
+                        //Add a new LatLng to the path of the Aircraft
+                        //DONE: Test if this works better than converting sbsMessageArray[14]&[15]
+                        //to doubles in creating new LatLng objects - IT DOESN'T
+                        aircraftToAddOrModify.path.add(aircraftToAddOrModify.getPosition());
                         break;
                     case 3:
 //                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
@@ -101,6 +108,8 @@ public class SBSDecoder {
                         aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         aircraftToAddOrModify.latitude = sbsMessageArray[14];
                         aircraftToAddOrModify.longitude = sbsMessageArray[15];
+                        //Add a new LatLng to the path of the Aircraft
+                        aircraftToAddOrModify.path.add(aircraftToAddOrModify.getPosition());
                         break;
                     case 4:
 //                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
@@ -153,7 +162,7 @@ public class SBSDecoder {
                                                          int transMessageType){
         //Checks if an aircraft with a given ICAO hex code is found in the list
         boolean hexIdentFound = false;
-
+        Log.d(TAG, "Path length = " + aircraftToSearchFor.path.size()/2);
         //There's no point iterating through an empty list.
         if (aircraftArrayList.size() > 0) {
             //foreach loops were causing ConcurrentModificationExceptions
@@ -181,17 +190,24 @@ public class SBSDecoder {
                             aircraftToSearchFor.track = aircraftToCompare.track;
                             aircraftToSearchFor.latitude = aircraftToCompare.latitude;
                             aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+                            aircraftToSearchFor.path = aircraftToCompare.path;
                             break;
                         case 2:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 2");
                             aircraftToSearchFor.callsign = aircraftToCompare.callsign;
                             aircraftToSearchFor.track = aircraftToCompare.track;
+                            aircraftToCompare.path.add(aircraftToSearchFor.getPosition());
+                            Log.d(TAG, aircraftToCompare.pathToString());
+                            aircraftToSearchFor.path = aircraftToCompare.path;
                             break;
                         case 3:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 3");
                             aircraftToSearchFor.callsign = aircraftToCompare.callsign;
                             aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
                             aircraftToSearchFor.track = aircraftToCompare.track;
+                            aircraftToCompare.path.add(aircraftToSearchFor.getPosition());
+                            Log.d(TAG, aircraftToCompare.pathToString());
+                            aircraftToSearchFor.path = aircraftToCompare.path;
                             break;
                         case 4:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 4");
@@ -199,6 +215,7 @@ public class SBSDecoder {
                             aircraftToSearchFor.altitude = aircraftToCompare.altitude;
                             aircraftToSearchFor.latitude = aircraftToCompare.latitude;
                             aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+                            aircraftToSearchFor.path = aircraftToCompare.path;
                             break;
                         case 5:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 5");
@@ -207,6 +224,7 @@ public class SBSDecoder {
                             aircraftToSearchFor.track = aircraftToCompare.track;
                             aircraftToSearchFor.latitude = aircraftToCompare.latitude;
                             aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+                            aircraftToSearchFor.path = aircraftToCompare.path;
                             break;
                         case 6:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 6");
@@ -216,6 +234,7 @@ public class SBSDecoder {
                             aircraftToSearchFor.track = aircraftToCompare.track;
                             aircraftToSearchFor.latitude = aircraftToCompare.latitude;
                             aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+                            aircraftToSearchFor.path = aircraftToCompare.path;
                             break;
                         case 7:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 7");
@@ -224,6 +243,7 @@ public class SBSDecoder {
                             aircraftToSearchFor.track = aircraftToCompare.track;
                             aircraftToSearchFor.latitude = aircraftToCompare.latitude;
                             aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+                            aircraftToSearchFor.path = aircraftToCompare.path;
                             break;
                         case 8:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 8");
@@ -233,10 +253,11 @@ public class SBSDecoder {
                             aircraftToSearchFor.track = aircraftToCompare.track;
                             aircraftToSearchFor.latitude = aircraftToCompare.latitude;
                             aircraftToSearchFor.longitude = aircraftToCompare.longitude;
+                            aircraftToSearchFor.path = aircraftToCompare.path;
                             break;
                     }
-                    //TODO: New aircraft are being added
                     Log.d(TAG, "Modified aircraft status: " + aircraftToSearchFor.toString());
+                    Log.d(TAG, "Modified aircraft path: " + aircraftToSearchFor.pathToString());
                     aircraftArrayList.set(i, aircraftToSearchFor); //Add the modified Aircraft object to the ArrayList
                     break; //No need to keep checking the list
                 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -26,9 +27,11 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import butterknife.ButterKnife;
 
@@ -270,13 +273,21 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     protected void onNewAircraftDiscovered(Aircraft newAircraft){
         aircrafts.add(newAircraft);
         if(googleMap != null) {
-            if(newAircraft.latitude != null && newAircraft.longitude != null)
+            if(newAircraft.latitude != null && newAircraft.longitude != null) {
                 googleMap.addMarker(new MarkerOptions().position(newAircraft.getPosition())
                         .title("Mode-S: " + newAircraft.icaoHexAddr)
                         .snippet("Coordinates: " + newAircraft.getPosString())
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
                         .flat(true)
                         .rotation(Float.parseFloat(newAircraft.track)));
+                Log.d(TAG, "Aircraft path = " + newAircraft.pathToString());
+                googleMap.addPolyline(new PolylineOptions()
+                        .width(1.0f)
+                        .color(R.color.colorAccent)
+                        .geodesic(true)
+                        .addAll(newAircraft.path));
+            }
+
         }
     }
 
