@@ -246,6 +246,11 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
                         .flat(true)
                         .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
+                googleMap.addPolyline(new PolylineOptions()
+                        .width(3.0f)
+                        .color(R.color.mapLine)
+                        .geodesic(true)
+                        .addAll(a.path));
         }
         googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
@@ -282,8 +287,8 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                         .rotation(Float.parseFloat(newAircraft.track)));
                 Log.d(TAG, "Aircraft path = " + newAircraft.pathToString());
                 googleMap.addPolyline(new PolylineOptions()
-                        .width(1.0f)
-                        .color(R.color.colorAccent)
+                        .width(3.0f)
+                        .color(R.color.mapLine)
                         .geodesic(true)
                         .addAll(newAircraft.path));
             }
