@@ -19,9 +19,6 @@ import java.util.ArrayList;
  */
 public class SBSDecoder {
     //DONE: Sockets sorted out, this is kind of useless
-//    private Socket socket;
-//    private int port = 9999; // default
-//    private String drBrownsServer = "192.168.1.1"; // default
     String TAG = getClass().getSimpleName();
     OutputStream out = null;
     InputStream in = null;
@@ -32,6 +29,7 @@ public class SBSDecoder {
     public SBSDecoder() {
 
     }
+    //This is a leftover from when I thought this class was going to handle data streaming, way back in November.
 //    public SBSDecoder(String serverURL, int serverPort){
 //        this.port = serverPort;
 //        this.drBrownsServer = serverURL;
@@ -73,20 +71,9 @@ public class SBSDecoder {
                     case 1:
                         //2 March 2016 - The commented-out logs below aren't really necessary at
                         //               this point any more
-                        //Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
                         aircraftToAddOrModify.callsign = sbsMessageArray[10];
                         break;
                     case 2:
-//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-//                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-//                        Log.d(TAG, "Track = " + sbsMessageArray + "\u00b0");
-//                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-//                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-                        //aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-                        //aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-                        //aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
-                        //aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
-                        //aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
                         aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         aircraftToAddOrModify.gSpeed = sbsMessageArray[12];
                         aircraftToAddOrModify.track = sbsMessageArray[13];
@@ -99,12 +86,6 @@ public class SBSDecoder {
                         aircraftToAddOrModify.path.add(aircraftToAddOrModify.getPosition());
                         break;
                     case 3:
-//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-//                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-//                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-                        //aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-                        //aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
-                        //aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
                         aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         aircraftToAddOrModify.latitude = sbsMessageArray[14];
                         aircraftToAddOrModify.longitude = sbsMessageArray[15];
@@ -112,26 +93,18 @@ public class SBSDecoder {
                         aircraftToAddOrModify.path.add(aircraftToAddOrModify.getPosition());
                         break;
                     case 4:
-//                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-//                        Log.d(TAG, "Track = " + sbsMessageArray[13] + "\u00b0");
-//                        Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
-                        //aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-                        //aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
                         aircraftToAddOrModify.gSpeed = sbsMessageArray[12];
                         aircraftToAddOrModify.track = sbsMessageArray[13];
                         break;
                     //"OR" operators in switch statements was a bad idea
                     case 5:
-//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                        //aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
                         aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         break;
                     case 6:
                         Log.d(TAG, "Squawk = " + sbsMessageArray[17]);
+                        aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         break;
                     case 7:
-//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-                        //aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
                         aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         break;
                     case 8:
@@ -162,7 +135,11 @@ public class SBSDecoder {
                                                          int transMessageType){
         //Checks if an aircraft with a given ICAO hex code is found in the list
         boolean hexIdentFound = false;
-        Log.d(TAG, "Path length = " + aircraftToSearchFor.path.size()/2);
+        Log.d(TAG, "Path length = " + aircraftToSearchFor.path.size());
+        if(aircraftToSearchFor.path.size() > 0){
+            Log.d(TAG, "Path = " + aircraftToSearchFor.getPosition());
+            Log.d(TAG, "Path = " + aircraftToSearchFor.path);
+        }
         //There's no point iterating through an empty list.
         if (aircraftArrayList.size() > 0) {
             //foreach loops were causing ConcurrentModificationExceptions
@@ -180,7 +157,8 @@ public class SBSDecoder {
                      *
                      * For example, MSG,1 just has the callsign of an aircraft. We get its
                      * altitude, ground speed, track, latitude & longitude from the
-                     * corresponding Aircraft object.
+                     * corresponding Aircraft object from the ArrayList of already-discovered
+                     * Aircraft objects.
                      */
                     switch (transMessageType){
                         case 1:
@@ -196,18 +174,22 @@ public class SBSDecoder {
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 2");
                             aircraftToSearchFor.callsign = aircraftToCompare.callsign;
                             aircraftToSearchFor.track = aircraftToCompare.track;
+                            /** Add the position of the Aircraft object generated by the parsed
+                             *  message to the corresponding object found in the existing ArrayList
+                             *  of Aircraft objects. */
                             aircraftToCompare.path.add(aircraftToSearchFor.getPosition());
-                            Log.d(TAG, aircraftToCompare.pathToString());
-                            aircraftToSearchFor.path = aircraftToCompare.path;
+                            Log.d(TAG, "New path = " + aircraftToCompare.pathToString());
                             break;
                         case 3:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 3");
                             aircraftToSearchFor.callsign = aircraftToCompare.callsign;
                             aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
                             aircraftToSearchFor.track = aircraftToCompare.track;
+                            /** Add the position of the Aircraft object generated by the parsed
+                             *  message to the corresponding object found in the existing ArrayList
+                             *  of Aircraft objects. */
                             aircraftToCompare.path.add(aircraftToSearchFor.getPosition());
-                            Log.d(TAG, aircraftToCompare.pathToString());
-                            aircraftToSearchFor.path = aircraftToCompare.path;
+                            Log.d(TAG, "New path = " + aircraftToCompare.pathToString());
                             break;
                         case 4:
                             Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 4");

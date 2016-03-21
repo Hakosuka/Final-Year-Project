@@ -24,7 +24,7 @@ public class Aircraft implements Parcelable {
     public String gSpeed; //Ground speed, not indicated airspeed
     public String track = "0"; //Distinct from its heading, derived from its E/W and N/S velocities.
     public String latitude, longitude;
-    public int climbRate = 0; //
+    public int climbRate = 0; //The rate of change in the Aircraft's altitude per minute
     public ArrayList<LatLng> path; //The path that the Aircraft has followed
 
     //Default public constructor with no argument
@@ -60,8 +60,8 @@ public class Aircraft implements Parcelable {
         this.latitude = latitude;
         this.longitude = longitude;
     }
-//TODO: Implement OnItemClickListener
 
+    //TODO: Implement OnItemClickListener
     //This code below is to allow for the use of Parcelables, which are at least 10x quicker than Serializables
     //Values are read in the same order they were written to the Parcelable.
     public Aircraft(Parcel in){
@@ -139,6 +139,14 @@ public class Aircraft implements Parcelable {
                     + Double.toString(path.get(i).longitude));
         }
         return pathString;
+    }
+
+    public ArrayList<LatLng> getPoints() {
+        return path;
+    }
+
+    public void setPoints(ArrayList<LatLng> path) {
+        this.path = path;
     }
     //This is just to make it easier to write all of the attributes of the aircraft into a Parcelable
     private String toPlainString() {

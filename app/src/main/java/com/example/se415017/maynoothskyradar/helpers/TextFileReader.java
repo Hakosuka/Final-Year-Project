@@ -42,6 +42,10 @@ public class TextFileReader {
                 //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
                 if(splitLine.length == 22) {
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
+                    if(newAircraft.latitude != null && newAircraft.longitude != null){
+                        Log.d(TAG, "New path = " + newAircraft.getPosString());
+                        newAircraft.path.add(newAircraft.getPosition());
+                    }
                     if(splitLine[7].length() > 6){
                         delay = Double.parseDouble(splitLine[7].substring(6)) - delay;
                     }
