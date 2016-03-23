@@ -159,31 +159,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         setUpMapIfNeeded();
 
         Log.d(TAG, "Lat & Lon: " + Double.toString(latitude) + ", " + Double.toString(longitude));
-        //During testing, googleMap was always null at this point
-//        if(googleMap != null) {
-//            for(Aircraft a : aircrafts) {
-//                //Check if the Aircraft object has latitude and longitude values yet
-//                //If not, don't add them to the map, there'd be no point adding them in
-//                if(a.latitude != null && a.longitude != null)
-//                    Log.d(TAG, "Position (onCreateView) = " + a.getPosition());
-//                    googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
-//                        .snippet("Coordinates: " + a.getPosString())
-//                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
-//                        .flat(true)
-//                        .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
-//            }
-//            googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-//                @Override
-//                public void onInfoWindowClick(Marker marker) {
-//                    //Show the Aircraft's location if its Marker is clicked
-//                    if(marker.getTitle().startsWith("Mode-S")){
-//                        Toast.makeText(getContext(), marker.getSnippet(), Toast.LENGTH_LONG).show();
-//                    }
-//                }
-//            });
-//        } else {
-//            Log.d(TAG, "onCreateView: Map is null");
-//        }
         return view;
     }
 
@@ -235,7 +210,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-    //TODO: This is being called 4 times!
     /** This is where markers, lines and listeners are added, and where the camera is moved.
      *  @param googleMap The GoogleMap object to be set up.
      */
@@ -320,25 +294,22 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public boolean onMarkerClick(Marker marker) {
                 Aircraft selected = markersAndAircraft.get(marker.getId());
-                //Sometimes some Markers weren't mapped to an Aircraft object, causing a NullPointerException.
+                //Sometimes some Markers weren't mapped to an Aircraft object, causing a
+                //NullPointerException - such as the Marker for the server's location.
                 if(selected != null) {
                     Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
                     //Show the Aircraft's location if its Marker is clicked
-                    if (marker.getTitle().startsWith("Mode-S")) {
-                        Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
-                                .setAction("OK", new View.OnClickListener() {
+                    Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
+                            .setAction("OK", new View.OnClickListener() {
                                     @Override
                                     public void onClick(View v) {
-                                        //TODO: Take the user to the AircraftDetailFragment
-                                        Log.d(TAG, "Snackbar button clicked.");
+                                //TODO: Take the user to the AircraftDetailFragment
+                                Log.d(TAG, "Snackbar button clicked.");
                                     }
                                 })
-                                .show();
-                    }
+                            .show();
                     //I need to add this too, otherwise the map won't centre on the Marker's location
-//                    googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(
-//                            selected.getPosition(), 8.0f, 0.0f, 0.0f)));
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(selected.getPosition(), 7.0f));
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(selected.getPosition(), 8.0f));
                 } else {
                     Log.d(TAG, "Marker doesn't correspond to any plane");
                 }
@@ -352,9 +323,10 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onInfoWindowClick(Marker marker) {
                 Aircraft selected = markersAndAircraft.get(marker.getId());
-                Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
-                //Show the Aircraft's location if its Marker is clicked
-                if (marker.getTitle().startsWith("Mode-S")) {
+                //Just in case it's the server's Marker
+                if(selected != null) {
+                    Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
+                    //Show the Aircraft's location if its Marker is clicked
                     Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
                             .setAction("OK", new View.OnClickListener() {
                                 @Override
@@ -366,12 +338,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                             .show();
                 }
             }
-            //Such a method doesn't exist for the Google Maps API.
-//            public void onLongInfoWindowClick(Marker marker) {
-//                if (marker.getTitle().startsWith("Mode-S")) {
-//                    Toast.makeText(getContext(), marker.getSnippet(), Toast.LENGTH_LONG).show();
-//                }
-//            }
         });
     }
 

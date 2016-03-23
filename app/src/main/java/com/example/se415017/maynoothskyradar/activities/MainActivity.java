@@ -24,9 +24,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
@@ -42,7 +40,7 @@ import com.example.se415017.maynoothskyradar.fragments.MainMapFragment;
 import com.example.se415017.maynoothskyradar.helpers.DistanceCalculator;
 import com.example.se415017.maynoothskyradar.helpers.NetHelper;
 import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
-import com.example.se415017.maynoothskyradar.helpers.TextFileReader;
+import com.example.se415017.maynoothskyradar.services.TextFileReaderService;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 import com.example.se415017.maynoothskyradar.services.SocketService;
 import com.google.android.gms.maps.model.LatLng;
@@ -50,12 +48,10 @@ import com.google.android.gms.maps.model.LatLng;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 /**
  * @author Ciaran Cumiskey se415017 #12342236
@@ -77,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements
 
     public SBSDecoder sbsDecoder;
     public DistanceCalculator distCalc;
-    public TextFileReader textFileReader;
+    public TextFileReaderService textFileReaderService;
 
     public SocketService socketService;
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
@@ -125,8 +121,8 @@ public class MainActivity extends AppCompatActivity implements
         if(distCalc == null){
             distCalc = new DistanceCalculator();
         }
-        if(textFileReader == null){
-            textFileReader = new TextFileReader();
+        if(textFileReaderService == null){
+            textFileReaderService = new TextFileReaderService();
         }
         if(aircraftArrayList == null) {
             aircraftArrayList = new ArrayList<Aircraft>();
@@ -400,7 +396,7 @@ public class MainActivity extends AppCompatActivity implements
                 .show();
     }
 
-    //TODO: Get TextFileReader working so that this stuff becomes irrelevant
+    //TODO: Get TextFileReaderService working so that this stuff becomes irrelevant
     public String readFromTextFile(Context context) {
         int count = 0;
         Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));

@@ -58,10 +58,6 @@
             android:label="@string/title_activity_setup"
             android:theme="@style/AppTheme.NoActionBar" />
 
-        <service
-            android:name=".services.TextFileReaderService"
-            android:enabled="true"
-            android:exported="true"></service>
     </application>
 
 </manifest>
