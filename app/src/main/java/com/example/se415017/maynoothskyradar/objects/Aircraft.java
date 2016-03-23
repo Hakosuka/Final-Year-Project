@@ -2,6 +2,7 @@ package com.example.se415017.maynoothskyradar.objects;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 

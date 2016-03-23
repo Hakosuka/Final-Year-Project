@@ -138,7 +138,7 @@ public class SBSDecoder {
         Log.d(TAG, "Path length = " + aircraftToSearchFor.path.size());
         if(aircraftToSearchFor.path.size() > 0){
             Log.d(TAG, "Path = " + aircraftToSearchFor.getPosition());
-            Log.d(TAG, "Path = " + aircraftToSearchFor.path);
+            Log.d(TAG, "Path = " + aircraftToSearchFor.icaoHexAddr + aircraftToSearchFor.path);
         }
         //There's no point iterating through an empty list.
         if (aircraftArrayList.size() > 0) {
@@ -239,7 +239,7 @@ public class SBSDecoder {
                             break;
                     }
                     Log.d(TAG, "Modified aircraft status: " + aircraftToSearchFor.toString());
-                    Log.d(TAG, "Modified aircraft path: " + aircraftToSearchFor.path);
+                    Log.d(TAG, "Modified aircraft path: " + aircraftToSearchFor.icaoHexAddr + aircraftToSearchFor.path);
                     aircraftArrayList.set(i, aircraftToSearchFor); //Add the modified Aircraft object to the ArrayList
                     break; //No need to keep checking the list
                 }

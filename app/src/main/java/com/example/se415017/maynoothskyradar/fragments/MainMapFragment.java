@@ -1,6 +1,8 @@
 package com.example.se415017.maynoothskyradar.fragments;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -32,6 +34,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.WeakHashMap;
 
 import butterknife.ButterKnife;
 
@@ -46,8 +49,6 @@ import butterknife.ButterKnife;
  * This Fragment is meant to show all of the Aircraft that have been detected on a map.
  */
 public class MainMapFragment extends Fragment implements OnMapReadyCallback {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private String TAG = getClass().getSimpleName();
 
     public static final String PREFS = "UserPreferences";
@@ -65,19 +66,19 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
 //    @Bind(R.id.main_mapview)
 //    MapView mapView;
 
-//DONE: Test if ButterKnife can work on MapFragments - IT CAN'T, @Bind fields must extend from View or be an interface
+    //DONE: Test if ButterKnife can work on MapFragments - IT CAN'T, @Bind fields must extend from View or be an interface
     SupportMapFragment mainMapFrag;
 
-//    private static GoogleMap googleMap;
     private GoogleMap googleMap;
     private static Double latitude, longitude;
-    private CameraPosition camPos;
+    private CameraPosition cameraPosition;
 
     ArrayList<Aircraft> aircrafts;
     ArrayList<Marker> aircraftMarkers;
-    HashMap<Marker, Aircraft> anyHash;
 
-    // TODO: Rename and change types of parameters
+    //A WeakHashMap allows for an object associated with a Marker to get garbage-collected with it
+    //The key is a String so that I can use the Marker's ID
+    WeakHashMap<String, Aircraft> markersAndAircraft = new WeakHashMap<>();
 
     private OnFragmentInteractionListener mListener;
 
@@ -91,7 +92,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
      * @param aircraftArrayList The list of aircraft detected by the app so far.
      * @return A new instance of fragment MainMapFragment.
      */
-    // TODO: Rename and change types and number of parameters
     public static MainMapFragment newInstance(ArrayList<Aircraft> aircraftArrayList) {
         MainMapFragment fragment = new MainMapFragment();
         Bundle bundle = new Bundle();
@@ -133,7 +133,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         longitude = Double.longBitsToDouble(sharedPreferences.getLong(LON_PREF, 0));
         Log.d(TAG, "Longitude from sharedPreferences = " + Double.toString(longitude));
         Log.d(TAG, "Is the map initialised? " + Boolean.toString(googleMap != null));
-
     }
 
     @Override
@@ -155,29 +154,31 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         setUpMapIfNeeded();
 
         Log.d(TAG, "Lat & Lon: " + Double.toString(latitude) + ", " + Double.toString(longitude));
-        if(googleMap != null) {
-            for(Aircraft a : aircrafts) {
-                //Check if the Aircraft object has latitude and longitude values yet
-                //If not, don't add them to the map, there'd be no point adding them in
-                if(a.latitude != null && a.longitude != null)
-                    googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
-                        .snippet("Coordinates: " + a.getPosString())
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
-                        .flat(true)
-                        .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
-            }
-            googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-                @Override
-                public void onInfoWindowClick(Marker marker) {
-                    //Show the Aircraft's location if its Marker is clicked
-                    if(marker.getTitle().startsWith("Mode-S")){
-                        Toast.makeText(getContext(), marker.getSnippet(), Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
-        } else {
-            Log.d(TAG, "onCreateView: Map is null");
-        }
+        //During testing, googleMap was always null at this point
+//        if(googleMap != null) {
+//            for(Aircraft a : aircrafts) {
+//                //Check if the Aircraft object has latitude and longitude values yet
+//                //If not, don't add them to the map, there'd be no point adding them in
+//                if(a.latitude != null && a.longitude != null)
+//                    Log.d(TAG, "Position (onCreateView) = " + a.getPosition());
+//                    googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
+//                        .snippet("Coordinates: " + a.getPosString())
+//                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
+//                        .flat(true)
+//                        .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
+//            }
+//            googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+//                @Override
+//                public void onInfoWindowClick(Marker marker) {
+//                    //Show the Aircraft's location if its Marker is clicked
+//                    if(marker.getTitle().startsWith("Mode-S")){
+//                        Toast.makeText(getContext(), marker.getSnippet(), Toast.LENGTH_LONG).show();
+//                    }
+//                }
+//            });
+//        } else {
+//            Log.d(TAG, "onCreateView: Map is null");
+//        }
         return view;
     }
 
@@ -198,7 +199,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     public void onPause() {
         super.onPause();
         if(googleMap != null)
-            camPos = googleMap.getCameraPosition();
+            cameraPosition = googleMap.getCameraPosition();
         googleMap = null;
     }
     @Override
@@ -206,18 +207,17 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         super.onResume();
         setUpMapIfNeeded();
         //Wait until googleMap is re-initialised
-        if(camPos != null & googleMap != null) {
-            googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camPos));
-            camPos = null;
+        if(cameraPosition != null & googleMap != null) {
+            googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+            cameraPosition = null;
         }
     }
 
     //Sets up the map if it hasn't been set up already
-    //Somehow it works just fine if I get rid of "static"
     protected void setUpMapIfNeeded() {
         if (googleMap == null){
             Log.d(TAG, "Map was null");
-            ((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.main_map)) //TODO: FIX THIS
+            ((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.main_map))
                     .getMapAsync(this);
             //Check if the map was obtained successfully
             if (googleMap != null)
@@ -225,41 +225,56 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    //TODO: This is being called 4 times!
     /** This is where markers, lines and listeners are added, and where the camera is moved.
      *  @param googleMap The GoogleMap object to be set up.
      */
     private void setUpMap(GoogleMap googleMap) {
         googleMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
-        //googleMap.setMyLocationEnabled(true); //TODO: Maybe wait until I have the pointing function worked out
+        //googleMap.setMyLocationEnabled(true); TODO: Maybe wait until I have the pointing function worked out
         googleMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)))
                 .setTitle("My server is here");
         //DONE: Add custom markers for the planes - see onCreateView()
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 7.0f));
         Log.d(TAG, "Map has been set up");
         Log.d(TAG, "Number of planes to set up: " + aircrafts.size());
+        int aircraftCount = 0;
         for(Aircraft a : aircrafts) {
+            aircraftCount++;
             //Check if the Aircraft object has latitude and longitude values yet
             //If not, don't add them to the map, there'd be no point adding them in
-            if(a.latitude != null && a.longitude != null)
-                googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
+            if(a.latitude != null && a.longitude != null) {
+                Log.d(TAG, "Marker for aircraft #" + aircraftCount);
+                Marker m = googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
                         .snippet("Coordinates: " + a.getPosString())
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
                         .flat(true)
                         .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
                 googleMap.addPolyline(new PolylineOptions()
-                        .width(3.0f)
-                        .color(R.color.mapLine)
-                        .geodesic(true)
+                        .width(5.0f)
+                        .color(Color.rgb(253, 95, 0)) //"Neon orange" colour
+                        .geodesic(true) //Draws lines on the map assuming it's a globe, not a flat map
                         .addAll(a.path));
+                markersAndAircraft.put(m.getId(), a);
+                Log.d(TAG, "Marker ID for " + a.icaoHexAddr + "= " + m.getId());
+            }
         }
         googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
+                Aircraft selected = markersAndAircraft.get(marker.getId());
+                Log.d(TAG, "Marker ID = " + marker.getId() + " selected.");
                 //Show the Aircraft's location if its Marker is clicked
                 if (marker.getTitle().startsWith("Mode-S")) {
-                    //TODO: Replace the below line with a SnackBar with a button that creates a
-                    //Fragment which shows the Aircraft in more detail.
-                    Toast.makeText(getContext(), marker.getSnippet(), Toast.LENGTH_LONG).show();
+                    Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
+                            .setAction("OK", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    //TODO: Take the user to the AircraftDetailFragment
+                                    Log.d(TAG, "Snackbar button clicked.");
+                                }
+                            })
+                            .show();
                 }
             }
             //Such a method doesn't exist for the Google Maps API.
@@ -279,7 +294,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         aircrafts.add(newAircraft);
         if(googleMap != null) {
             if(newAircraft.latitude != null && newAircraft.longitude != null) {
-                googleMap.addMarker(new MarkerOptions().position(newAircraft.getPosition())
+                Marker m = googleMap.addMarker(new MarkerOptions().position(newAircraft.getPosition())
                         .title("Mode-S: " + newAircraft.icaoHexAddr)
                         .snippet("Coordinates: " + newAircraft.getPosString())
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
@@ -288,9 +303,10 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                 Log.d(TAG, "Aircraft path = " + newAircraft.pathToString());
                 googleMap.addPolyline(new PolylineOptions()
                         .width(3.0f)
-                        .color(R.color.mapLine)
+                        .color(Color.rgb(253, 95, 0)) //"Neon orange" colour
                         .geodesic(true)
                         .addAll(newAircraft.path));
+                markersAndAircraft.put(m.getId(), newAircraft);
             }
 
         }
@@ -329,7 +345,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-//        if (googleMap != null) { //TODO: CANNOT PERFORM THIS ACTION AFTER ONSAVEINSTANCESTATE
+//        if (googleMap != null) { TODO: CANNOT PERFORM THIS ACTION AFTER ONSAVEINSTANCESTATE
 //            MainActivity.fragManager.beginTransaction()
 //                    .remove(MainActivity.fragManager.findFragmentById(R.id.main_map)).commit();
 //            googleMap = null;

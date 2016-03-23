@@ -106,6 +106,7 @@ public class AircraftRecyclerViewAdapter extends
             return super.toString() + " '" + hexContent.getText() + "'";
         }
 
+        //TODO: Take the user to the AircraftDetailFragment
         @Override
         public void onClick(View view){
             Log.d("AircraftRecycler", view.toString());
