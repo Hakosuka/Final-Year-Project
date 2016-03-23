@@ -184,13 +184,16 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState){
-        if(googleMap != null)
+        if(googleMap != null) {
+            Log.d(TAG, "setUpMap - onViewCreated 1");
             setUpMap(googleMap);
-        else { //It's null anyway
+        } else { //It's null anyway
             ((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.main_map)).getMapAsync(this);
             mainMapFrag.getMapAsync(this);
-            if (googleMap != null)
+            if (googleMap != null) {
+                Log.d(TAG, "setUpMap - onViewCreated 2");
                 setUpMap(googleMap);
+            }
         }
     }
 
@@ -220,8 +223,10 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             ((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.main_map))
                     .getMapAsync(this);
             //Check if the map was obtained successfully
-            if (googleMap != null)
+            if (googleMap != null) {
+                Log.d(TAG, "setUpMap - setUpMapIfNeeded");
                 setUpMap(googleMap);
+            }
         }
     }
 
@@ -315,6 +320,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(final GoogleMap gMap) {
         googleMap = gMap;
+        Log.d(TAG, "setUpMap - onMapReady");
         setUpMap(googleMap);
     }
 
