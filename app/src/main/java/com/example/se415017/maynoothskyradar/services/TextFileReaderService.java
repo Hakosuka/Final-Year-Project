@@ -1,5 +1,6 @@
 package com.example.se415017.maynoothskyradar.services;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -35,7 +36,7 @@ public class TextFileReaderService extends Service {
     DistanceCalculator distCalc;
     double delay = 0.0; //Simulates the time between each message being received.
 
-    public static final int MESSAGE = 2; //SocketService's MESSAGE value is 1
+    public static final int MSG_START_READING = 2; //SocketService's MESSAGE value is 1
     public static final int MSG_REG_CLIENT = 4;
     public static final int MSG_UNREG_CLIENT = 6;
 
@@ -46,7 +47,7 @@ public class TextFileReaderService extends Service {
     Intent bindingIntent;
     //Allows for communication with MainActivity
     IBinder myBinder = new TextFileBinder();
-    Messenger messenger = new Messenger(new IncomingHandler());
+    final Messenger messenger = new Messenger(new IncomingHandler());
     Messenger replyMessenger;
     ArrayList<Messenger> messageClientList = new ArrayList<>();
 
@@ -59,6 +60,7 @@ public class TextFileReaderService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "TextFileReaderService created");
         isRunning = true;
         myBinder = new Binder();
     }
@@ -66,8 +68,9 @@ public class TextFileReaderService extends Service {
     @Override
     public IBinder onBind(Intent intent){
         bindingIntent = intent;
-        Log.d(TAG, "Binding to MainActivity");
-        readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
+        Bundle extras = bindingIntent.getExtras();
+        if(extras != null)
+            Log.d(TAG, "Binding to " + extras.getString("origin"));
         return messenger.getBinder();
     }
 
@@ -156,7 +159,7 @@ public class TextFileReaderService extends Service {
             try {
                 Bundle bundle = new Bundle();
                 bundle.putString("sbsSampleLog", message); //As distinguished from "sbsMessage" from the SocketService
-                Message msg = Message.obtain(null, MESSAGE);
+                Message msg = Message.obtain(null, MSG_START_READING);
                 msg.setData(bundle);
                 messenger.send(msg);
             } catch (RemoteException e) {
@@ -172,12 +175,16 @@ public class TextFileReaderService extends Service {
         }
     }
 
+    @SuppressLint("HandlerLeak")
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg){
+            Log.d(TAG, "Message = " + msg);
+            Log.d(TAG, "Message origin = " + msg.replyTo);
             switch (msg.what) {
-                case MESSAGE:
+                case MSG_START_READING:
                     Log.d(TAG, "Message = " + msg.arg1);
+                    readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
                     break;
                 case MSG_REG_CLIENT:
                     messageClientList.add(msg.replyTo);

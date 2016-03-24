@@ -321,10 +321,13 @@ public class MainActivity extends AppCompatActivity implements
             Log.d(TAG, "onServiceConnected to " + name + "-" +service.toString());
             tfrsMsgr = new Messenger(service);
             try {
-                Message msg = Message.obtain(null, TextFileReaderService.MSG_REG_CLIENT);
-                msg.replyTo = tfrsMessenger;
-                Log.d(TAG, "Replying to: " + msg.replyTo.toString());
-                tfrsMsgr.send(msg);
+                Message firstMsg = Message.obtain(null, TextFileReaderService.MSG_REG_CLIENT);
+                Message secondMsg = Message.obtain(null, TextFileReaderService.MSG_START_READING);
+                firstMsg.replyTo = tfrsMessenger;
+                secondMsg.replyTo = tfrsMessenger;
+                Log.d(TAG, "Replying to: " + firstMsg.replyTo.toString());
+                tfrsMsgr.send(firstMsg);
+                tfrsMsgr.send(secondMsg);
             } catch (RemoteException e) {
                 Log.e(TAG, e.toString());
             }
@@ -397,6 +400,8 @@ public class MainActivity extends AppCompatActivity implements
     }
     void bindToTFRService(){
         Log.d(TAG, "Binding to TextFileReaderService");
+        Intent tfrsIntent = new Intent(this, TextFileReaderService.class);
+        tfrsIntent.putExtra("origin", "MainActivity");
         bindService(new Intent(this, TextFileReaderService.class), tfrsConnection, Context.BIND_AUTO_CREATE);
         tfrServiceBound = true;
     }
@@ -404,11 +409,11 @@ public class MainActivity extends AppCompatActivity implements
     //These next 2 methods unbind from SocketService and TextFileReaderService
     void unbindFromSocketService(){
         if(socketServiceBound) {
-            if(sockMessenger != null) {
+            if(sMsgr != null) {
                 try {
                     Message msg = Message.obtain(null, SocketService.MSG_UNREG_CLIENT);
                     msg.replyTo = sockMessenger;
-                    sockMessenger.send(msg);
+                    sMsgr.send(msg);
                 } catch (RemoteException e) {
                     Log.e(TAG, e.toString());
                 }
@@ -419,11 +424,11 @@ public class MainActivity extends AppCompatActivity implements
     }
     void unbindFromTFRService(){
         if(tfrServiceBound) {
-            if(tfrsMessenger != null) {
+            if(tfrsMsgr != null) {
                 try {
                     Message msg = Message.obtain(null, TextFileReaderService.MSG_UNREG_CLIENT);
                     msg.replyTo = tfrsMessenger;
-                    tfrsMessenger.send(msg);
+                    tfrsMsgr.send(msg);
                 } catch (RemoteException e) {
                     Log.e(TAG, e.toString());
                 }
@@ -612,7 +617,7 @@ public class MainActivity extends AppCompatActivity implements
         if(tfrServiceBound) {
             if(tfrsMessenger != null){
                 try {
-                    Message msg = Message.obtain(null, TextFileReaderService.MESSAGE, msgCode);
+                    Message msg = Message.obtain(null, TextFileReaderService.MSG_START_READING, msgCode);
                     msg.replyTo = tfrsMessenger;
                     tfrsMessenger.send(msg);
                 } catch (RemoteException e) {
@@ -628,7 +633,7 @@ public class MainActivity extends AppCompatActivity implements
         public void handleMessage(Message msg){
             if(msg.what == SocketService.MESSAGE){
                 Log.d(TAG, "Message from SocketService = " + msg.getData().getString("sbsMessage"));
-            } else if (msg.what == TextFileReaderService.MESSAGE) {
+            } else if (msg.what == TextFileReaderService.MSG_START_READING) {
                 Log.d(TAG, "Message from TextFileReaderService = " + msg.getData().getString("sbsSampleLog"));
             } else {
                 Log.d(TAG, "Invalid message from SocketService");
