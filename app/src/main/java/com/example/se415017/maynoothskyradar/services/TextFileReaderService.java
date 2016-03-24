@@ -43,6 +43,9 @@ public class TextFileReaderService extends Service {
     public static final String AIR_KEY = "aircraftKey";
 
     public static boolean isRunning = false;
+    boolean finishedReading = false; //This stops the text file from being read again upon the Activity re-binding to this Service
+    int lastSentenceRead = 0; //The last line of the text file which has been read
+    int lastSentenceReadBeforeUnbinding = 0;
 
     Intent bindingIntent;
     //Allows for communication with MainActivity
@@ -80,6 +83,14 @@ public class TextFileReaderService extends Service {
         return START_STICKY; //Keep going until explicitly stopped
     }
 
+    @Override
+    public boolean onUnbind(Intent unbindIntent){
+        super.onUnbind(unbindIntent);
+        lastSentenceReadBeforeUnbinding = lastSentenceRead;
+        return true;
+    }
+
+
     //TODO: Add a Thread to use to read the text file, and then simulate the gaps between each
     //message being received by the server by making that Thread sleep for that time.
     public void readFromTextFile(Context context, ArrayList<Aircraft> aircraftArrayList) {
@@ -88,8 +99,10 @@ public class TextFileReaderService extends Service {
         try {
             while (s.hasNext()) {
                 count++;
+                lastSentenceRead = count;
                 String word = s.next(); //.trim(); //remove whitespaces from the line being read
-                sendMessageToClients(word);
+                if(lastSentenceReadBeforeUnbinding <= count)
+                    sendMessageToClients(word);
                 String[] splitLine = word.split(","); //split the line from the log using the comma
                 //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
                 Log.d(TAG, "Line #" + count + " from sample log = " + word +
@@ -184,7 +197,10 @@ public class TextFileReaderService extends Service {
             switch (msg.what) {
                 case MSG_START_READING:
                     Log.d(TAG, "Message = " + msg.arg1);
-                    readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
+                    if(!finishedReading) {
+                        readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
+                    }
+                    finishedReading = true;
                     break;
                 case MSG_REG_CLIENT:
                     messageClientList.add(msg.replyTo);
