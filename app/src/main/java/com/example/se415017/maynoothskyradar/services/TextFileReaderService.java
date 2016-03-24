@@ -88,8 +88,9 @@ public class TextFileReaderService extends Service {
                 String word = s.next(); //.trim(); //remove whitespaces from the line being read
                 sendMessageToClients(word);
                 String[] splitLine = word.split(","); //split the line from the log using the comma
-                Log.d(TAG, "Line #" + Integer.toString(count) + " from sample log = " + word +
-                        ", has " + Integer.toString(splitLine.length) + " elements.");
+                //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
+                Log.d(TAG, "Line #" + count + " from sample log = " + word +
+                        ", has " + splitLine.length + " elements.");
                 //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
                 if(splitLine.length == 22) {
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);

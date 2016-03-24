@@ -1,5 +1,6 @@
 package com.example.se415017.maynoothskyradar.activities;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ComponentName;
@@ -77,8 +78,12 @@ public class MainActivity extends AppCompatActivity implements
 
     public SBSDecoder sbsDecoder;
     public DistanceCalculator distCalc;
-    Messenger sockMessenger = new Messenger(new IncomingHandler());
-    Messenger tfrsMessenger = new Messenger(new IncomingHandler());
+
+    Messenger sMsgr = null;
+    Messenger tfrsMsgr = null;
+
+    final Messenger sockMessenger = new Messenger(new IncomingHandler());
+    final Messenger tfrsMessenger = new Messenger(new IncomingHandler());
 
     public TextFileReaderService textFileReaderService;
     public SocketService socketService;
@@ -111,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements
     boolean netStatus = false;
     boolean serverStatus = false;
 
-    //DONT: Research WifiLocks and determine if I need them in my app (I don't)
+    //TODO: Research WifiLocks and determine if I need them in my app (I probably don't)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -154,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements
                 //If all else fails, use sbsrv1.cs.nuim.ie as the default string
                 strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie");
 
-                if(!doesSocketServiceExist(SocketService.class)) {
+                if(!doesThisServiceExist(SocketService.class)) {
                     Log.d(TAG, "No existing SocketService found");
                     try {
                         //Now is not the time to add the port, that comes later
@@ -176,11 +181,19 @@ public class MainActivity extends AppCompatActivity implements
                     //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
                     //Check if the TextFileReaderService is running, if not, it will start it
                     //startService() was stopping isTFRServiceRunning from being reached
-                    startService(new Intent(this, TextFileReaderService.class));
-                    Log.d(TAG, "Service started");
-                    isTFRServiceRunning();
+                    //startService(new Intent(this, TextFileReaderService.class));
+                    //Log.d(TAG, "Service started");
+                    //isSocketServiceRunning();
+                    Log.d(TAG, "Here's where I'd run isSocketServiceRunning()...if the server was working");
                 } else {
                     Log.d(TAG, "Existing SocketService found");
+                    bindToSocketService();
+                } if (!doesThisServiceExist(TextFileReaderService.class)) {
+                    Log.d(TAG, "No existing TextFileReaderService found");
+                    isTFRServiceRunning();
+                } else {
+                    Log.d(TAG, "Existing TextFileReaderService found");
+                    bindToTFRService();
                 }
             }
         } else {
@@ -200,7 +213,10 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         Log.d(TAG, "MainActivity resuming");
-        Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
+        Log.d(TAG, "SocketService found? " + Boolean.toString(doesThisServiceExist(SocketService.class)));
+        Log.d(TAG, "TextFileReaderService found? " + Boolean.toString(doesThisServiceExist(TextFileReaderService.class)));
+        if(doesThisServiceExist(TextFileReaderService.class))
+            bindToTFRService();
         super.onResume();
     }
 
@@ -212,18 +228,12 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        //TODO: Define the layouts in setContentView below
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
-            //setContentView(R.layout.landscapeView);
-        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            //setContentView(R.layout.portrait);
-        }
+        bindToTFRService();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -283,12 +293,15 @@ public class MainActivity extends AppCompatActivity implements
     private ServiceConnection sockConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service){
-            Log.d(TAG, "onServiceConnected to " + service.toString());
-            sockMessenger = new Messenger(service);
+            Log.d(TAG, "onServiceConnected to " + className + "-" + service.toString());
+            sMsgr = new Messenger(service);
+            //I was getting ClassCastException errors when trying to do this
+            //SocketService.SimpleLocalBinder binder = (SocketService.SimpleLocalBinder) service;
+            //socketService = binder.getService();
             try {
                 Message msg = Message.obtain(null, SocketService.MSG_REG_CLIENT);
                 msg.replyTo = sockMessenger;
-                sockMessenger.send(msg);
+                sMsgr.send(msg);
             } catch (RemoteException e) {
                 Log.e(TAG, e.toString());
             }
@@ -298,20 +311,20 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             socketServiceBound = false;
-            sockMessenger = null;
+            sMsgr = null;
         }
     };
 
     private ServiceConnection tfrsConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "onServiceConnected to " + service.toString());
-            tfrsMessenger = new Messenger(service);
+            Log.d(TAG, "onServiceConnected to " + name + "-" +service.toString());
+            tfrsMsgr = new Messenger(service);
             try {
                 Message msg = Message.obtain(null, TextFileReaderService.MSG_REG_CLIENT);
                 msg.replyTo = tfrsMessenger;
                 Log.d(TAG, "Replying to: " + msg.replyTo.toString());
-                tfrsMessenger.send(msg);
+                tfrsMsgr.send(msg);
             } catch (RemoteException e) {
                 Log.e(TAG, e.toString());
             }
@@ -320,7 +333,7 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void onServiceDisconnected(ComponentName name) {
             tfrServiceBound = false;
-            tfrsMessenger = null;
+            tfrsMsgr = null;
         }
     };
 
@@ -345,7 +358,7 @@ public class MainActivity extends AppCompatActivity implements
      * @param serviceClass - the Service I want to look for
      * @return boolean which tells me if an instance of that Service exists
      */
-    private boolean doesSocketServiceExist(Class<?> serviceClass) {
+    private boolean doesThisServiceExist(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
@@ -369,7 +382,9 @@ public class MainActivity extends AppCompatActivity implements
         if(TextFileReaderService.isRunning()){
             bindToTFRService();
         } else {
-            startService(new Intent(this, SocketService.class));
+            //Intent tfrsIntent = new Intent(this, TextFileReaderService.class);
+            //tfrsIntent.putExtra("MESSENGER", new Messenger(tfrsMessenger, new TextFileReaderService.TextFileBinder()));
+            startService(new Intent(this, TextFileReaderService.class));
             bindToTFRService();
         }
     }
@@ -423,7 +438,7 @@ public class MainActivity extends AppCompatActivity implements
      * @return MaterialDialog
      */
     public MaterialDialog showMalformedURLDialog(final Activity activity){
-        Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
+        Log.d(TAG, "SocketService found? " + Boolean.toString(doesThisServiceExist(SocketService.class)));
         return new MaterialDialog.Builder(this)
                 .title(R.string.malformed_url_title)
                 .content(R.string.malformed_url_content)
@@ -449,7 +464,7 @@ public class MainActivity extends AppCompatActivity implements
      * @return MaterialDialog
      */
     public MaterialDialog showNoInternetDialog(final Activity activity){
-        Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
+        Log.d(TAG, "SocketService found? " + Boolean.toString(doesThisServiceExist(SocketService.class)));
         return new MaterialDialog.Builder(this)
                 .title(R.string.conn_unavailable_title)
                 .content(R.string.conn_unavailable_content)
@@ -476,7 +491,7 @@ public class MainActivity extends AppCompatActivity implements
      * @return MaterialDialog
      */
     public MaterialDialog showNoServerAddressDialog(final Activity activity){
-        Log.d(TAG, "SocketService found? " + Boolean.toString(doesSocketServiceExist(SocketService.class)));
+        Log.d(TAG, "SocketService found? " + Boolean.toString(doesThisServiceExist(SocketService.class)));
         return new MaterialDialog.Builder(this)
                 .title(R.string.server_not_added)
                 .content(R.string.enter_address)
@@ -606,6 +621,8 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
     }
+
+    @SuppressLint("HandlerLeak")
     class IncomingHandler extends android.os.Handler {
         @Override
         public void handleMessage(Message msg){
