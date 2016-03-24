@@ -3,6 +3,7 @@ package com.example.se415017.maynoothskyradar.services;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,6 +17,8 @@ import com.example.se415017.maynoothskyradar.helpers.DistanceCalculator;
 import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -27,14 +30,22 @@ import java.util.Scanner;
  * re-use.
  */
 public class TextFileReaderService extends Service {
-    String TAG = getClass().getSimpleName();
+    private String TAG = getClass().getSimpleName();
     SBSDecoder sbsDecoder;
     DistanceCalculator distCalc;
     double delay = 0.0; //Simulates the time between each message being received.
-    final int MESSAGE = 1;
+
+    public static final int MESSAGE = 2; //SocketService's MESSAGE value is 1
+    public static final int MSG_REG_CLIENT = 4;
+    public static final int MSG_UNREG_CLIENT = 6;
+
+    public static final String AIR_KEY = "aircraftKey";
+
+    public static boolean isRunning = false;
 
     Intent bindingIntent;
     //Allows for communication with MainActivity
+    IBinder myBinder = new TextFileBinder();
     Messenger messenger = new Messenger(new IncomingHandler());
     Messenger replyMessenger;
     ArrayList<Messenger> messageClientList = new ArrayList<>();
@@ -46,20 +57,36 @@ public class TextFileReaderService extends Service {
     }
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        isRunning = true;
+        myBinder = new Binder();
+    }
+
+    @Override
     public IBinder onBind(Intent intent){
         bindingIntent = intent;
+        Log.d(TAG, "Binding to MainActivity");
+        readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
         return messenger.getBinder();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "Service started by " + startId + " because of " + intent);
+        return START_STICKY; //Keep going until explicitly stopped
     }
 
     //TODO: Add a Thread to use to read the text file, and then simulate the gaps between each
     //message being received by the server by making that Thread sleep for that time.
-    public String readFromTextFile(Context context, ArrayList<Aircraft> aircraftArrayList) {
+    public void readFromTextFile(Context context, ArrayList<Aircraft> aircraftArrayList) {
         int count = 0;
         Scanner s = new Scanner(context.getResources().openRawResource(R.raw.samplelog));
         try {
             while (s.hasNext()) {
                 count++;
                 String word = s.next(); //.trim(); //remove whitespaces from the line being read
+                sendMessageToClients(word);
                 String[] splitLine = word.split(","); //split the line from the log using the comma
                 Log.d(TAG, "Line #" + Integer.toString(count) + " from sample log = " + word +
                         ", has " + Integer.toString(splitLine.length) + " elements.");
@@ -67,7 +94,6 @@ public class TextFileReaderService extends Service {
                 if(splitLine.length == 22) {
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
                     if(newAircraft.latitude != null && newAircraft.longitude != null){
-                        Log.d(TAG, "New path = " + newAircraft.getPosString());
                         newAircraft.path.add(newAircraft.getPosition());
                     }
                     if(splitLine[7].length() > 6){
@@ -83,7 +109,7 @@ public class TextFileReaderService extends Service {
             Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
                     " aircraft detected.");
             s.close();
-            ArrayList<Aircraft> aircraftListToCompare = new ArrayList<Aircraft>();
+            ArrayList<Aircraft> aircraftListToCompare = new ArrayList<>();
             for(Aircraft a : aircraftArrayList){
                 Log.d(TAG, "Detected: " + a.toString());
                 if(a.altitude != null && a.longitude != null && a.latitude != null){
@@ -111,7 +137,12 @@ public class TextFileReaderService extends Service {
                 Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
             }
         }
-        return s.toString();
+        //return s.toString();
+    }
+
+    public static boolean isRunning() {
+        Log.d("TextFileReaderService", "Is this running? " + Boolean.toString(isRunning));
+        return isRunning;
     }
 
     /**
@@ -119,6 +150,7 @@ public class TextFileReaderService extends Service {
      * @param message - the String to be sent to the client class(es)
      */
     private void sendMessageToClients(String message){
+        Log.d(TAG, "Message to send: " + message + " to " +  messageClientList.size() + " clients.");
         for(Messenger messenger : messageClientList){
             try {
                 Bundle bundle = new Bundle();
@@ -132,12 +164,29 @@ public class TextFileReaderService extends Service {
             }
         }
     }
+
+    public class TextFileBinder extends Binder {
+        public TextFileReaderService getService(){
+            return TextFileReaderService.this;
+        }
+    }
+
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg){
-            if(msg.what == MESSAGE){
-                replyMessenger = msg.replyTo;
-                messageClientList.add(replyMessenger);
+            switch (msg.what) {
+                case MESSAGE:
+                    Log.d(TAG, "Message = " + msg.arg1);
+                    break;
+                case MSG_REG_CLIENT:
+                    messageClientList.add(msg.replyTo);
+                    break;
+                case MSG_UNREG_CLIENT:
+                    messageClientList.remove(msg.replyTo);
+                    break;
+                default:
+                    super.handleMessage(msg);
+                    break;
             }
         }
 

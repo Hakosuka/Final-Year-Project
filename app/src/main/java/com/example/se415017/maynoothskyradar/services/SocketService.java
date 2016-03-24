@@ -52,6 +52,11 @@ public class SocketService extends Service {
      */
     static final int PORT = 30003; //redundant
     public static final int MESSAGE = 1;
+    public static final int MSG_REG_CLIENT = 3;
+    public static final int MSG_UNREG_CLIENT = 5;
+
+    private static boolean isRunning = false;
+
     static final String SERVER = "sbsrv1.cs.nuim.ie"; //redundant
     static final String TAG = "SocketService";
     static final String PREFS = "UserPreferences";
@@ -110,6 +115,7 @@ public class SocketService extends Service {
     public void onCreate(){
         Log.d(TAG, "Service created");
         super.onCreate();
+        isRunning = true;
         myBinder = new Binder();
     }
 
@@ -146,6 +152,11 @@ public class SocketService extends Service {
         return START_NOT_STICKY; // Don't bother restarting the Service if the device has ran out of memory
     }
 
+    public static boolean isRunning() {
+        Log.d("SocketService", "Is this running? " + Boolean.toString(isRunning));
+        return isRunning;
+    }
+
     public class SimpleLocalBinder extends Binder{
         public SocketService getService() {
             Log.d(TAG, "Binder is returning service");
@@ -165,6 +176,7 @@ public class SocketService extends Service {
                 Log.e(TAG, e.toString());
             }
         }
+        isRunning = false;
     }
 
     @Override
@@ -249,10 +261,15 @@ public class SocketService extends Service {
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg){
-            if (msg.what == MESSAGE) {
-                Log.d(TAG, "Reply to: " + msg.replyTo.toString());
-                replyMessenger = msg.replyTo;
-                messengerClientList.add(msg.replyTo);
+            switch (msg.what) {
+                case MESSAGE:
+                    Log.d(TAG, msg.toString());
+                    break;
+                case MSG_REG_CLIENT:
+                    messengerClientList.add(msg.replyTo);
+                    break;
+                case MSG_UNREG_CLIENT:
+                    messengerClientList.remove(msg.replyTo);
             }
         }
     }

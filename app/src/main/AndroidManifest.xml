@@ -50,6 +50,11 @@
             android:enabled="true"
             android:exported="true" />
 
+        <service
+            android:name=".services.TextFileReaderService"
+            android:enabled="true"
+            android:exported="true" />
+
         <activity
             android:name=".activities.SettingsActivity"
             android:label="@string/title_activity_settings" />

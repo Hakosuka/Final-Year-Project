@@ -15,6 +15,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -45,6 +47,8 @@ import com.example.se415017.maynoothskyradar.objects.Aircraft;
 import com.example.se415017.maynoothskyradar.services.SocketService;
 import com.google.android.gms.maps.model.LatLng;
 
+import org.w3c.dom.Text;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -61,7 +65,7 @@ import butterknife.ButterKnife;
 public class MainActivity extends AppCompatActivity implements
         MainMapFragment.OnFragmentInteractionListener,
         AircraftListFragment.OnListFragmentInteractionListener {
-    //TODO: (almost done) move all of the UI stuff out of the Activity and into Fragments
+    //DONE: move all of the UI stuff out of the Activity and into Fragments
     //DONE: instead of using hard-coded values for the server's URL, make the user enter it
     String strUrl = ""; //Used to be "sbsrv1.cs.nuim.ie"; moved away from using hard-coded values
     int serverPort = 30003; //redundant
@@ -73,11 +77,15 @@ public class MainActivity extends AppCompatActivity implements
 
     public SBSDecoder sbsDecoder;
     public DistanceCalculator distCalc;
-    public TextFileReaderService textFileReaderService;
+    Messenger sockMessenger = new Messenger(new IncomingHandler());
+    Messenger tfrsMessenger = new Messenger(new IncomingHandler());
 
+    public TextFileReaderService textFileReaderService;
     public SocketService socketService;
+
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
     boolean socketServiceBound = false;
+    boolean tfrServiceBound = false;
     final String TAG = "MainActivity";
     public ArrayList<Aircraft> aircraftArrayList;
 
@@ -90,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements
 
     //DONE: Test if I can actually use ButterKnife's @Bind annotations on toolbars - I can!
     //Redundant as of 15 March
-    //TODO: Try to show the SlidingTabPagerStrip under the Toolbar
+    //DONE: Try to show the SlidingTabPagerStrip under the Toolbar
 //    @Bind(R.id.activity_main_toolbar)
 //    Toolbar activityToolbar;
 //
@@ -103,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements
     boolean netStatus = false;
     boolean serverStatus = false;
 
-    //TODO: Research WifiLocks and determine if I need them in my app (I probably don't)
+    //DONT: Research WifiLocks and determine if I need them in my app (I don't)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -121,9 +129,9 @@ public class MainActivity extends AppCompatActivity implements
         if(distCalc == null){
             distCalc = new DistanceCalculator();
         }
-        if(textFileReaderService == null){
-            textFileReaderService = new TextFileReaderService();
-        }
+//        if(textFileReaderService == null){
+//            textFileReaderService = new TextFileReaderService();
+//        }
         if(aircraftArrayList == null) {
             aircraftArrayList = new ArrayList<Aircraft>();
         }
@@ -156,16 +164,21 @@ public class MainActivity extends AppCompatActivity implements
                         Log.e(TAG, e.toString());
                         showMalformedURLDialog(MainActivity.this);
                     }
-                    Intent sockIntent = new Intent(this, SocketService.class);
+                    //Intent sockIntent = new Intent(this, SocketService.class);
                     Log.d(TAG, "Intent created");
 
-                    sockIntent.putExtra("serverAddr", url.toString());
+                    //sockIntent.putExtra("serverAddr", url.toString());
                     //TODO: Reactivate after I've done testing with the example log
                     //startService(sockIntent);
                     /**
                      * bindService kills the service upon unbinding
                      */
                     //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
+                    //Check if the TextFileReaderService is running, if not, it will start it
+                    //startService() was stopping isTFRServiceRunning from being reached
+                    startService(new Intent(this, TextFileReaderService.class));
+                    Log.d(TAG, "Service started");
+                    isTFRServiceRunning();
                 } else {
                     Log.d(TAG, "Existing SocketService found");
                 }
@@ -223,6 +236,20 @@ public class MainActivity extends AppCompatActivity implements
     public void onDestroy(){
         Log.d(TAG, "Killing MainActivity");
         super.onDestroy();
+        if(socketServiceBound) {
+            try {
+                unbindFromSocketService();
+            } catch (Throwable t) {
+                Log.e(TAG, "Failed to unbind from SocketService");
+            }
+        }
+        if(tfrServiceBound) {
+            try {
+                unbindFromTFRService();
+            } catch (Throwable t) {
+                Log.e(TAG, "Failed to unbind from TextFileReaderService");
+            }
+        }
     }
 
     @Override
@@ -252,21 +279,48 @@ public class MainActivity extends AppCompatActivity implements
         super.onSaveInstanceState(outState);
     }
 
-    // Necessary callbacks for service binding
-    private ServiceConnection mConnection = new ServiceConnection() {
+    //The two ServiceConnections below are necessary callbacks for service binding
+    private ServiceConnection sockConnection = new ServiceConnection() {
         @Override
-        public void onServiceConnected(ComponentName className,
-                                       IBinder service){
-            SocketService.SimpleLocalBinder binder =
-                    (SocketService.SimpleLocalBinder) service;
-            socketService = binder.getService();
+        public void onServiceConnected(ComponentName className, IBinder service){
+            Log.d(TAG, "onServiceConnected to " + service.toString());
+            sockMessenger = new Messenger(service);
+            try {
+                Message msg = Message.obtain(null, SocketService.MSG_REG_CLIENT);
+                msg.replyTo = sockMessenger;
+                sockMessenger.send(msg);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString());
+            }
             socketServiceBound = true;
             Log.d(TAG, "Socket service bound");
         }
-
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             socketServiceBound = false;
+            sockMessenger = null;
+        }
+    };
+
+    private ServiceConnection tfrsConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected to " + service.toString());
+            tfrsMessenger = new Messenger(service);
+            try {
+                Message msg = Message.obtain(null, TextFileReaderService.MSG_REG_CLIENT);
+                msg.replyTo = tfrsMessenger;
+                Log.d(TAG, "Replying to: " + msg.replyTo.toString());
+                tfrsMessenger.send(msg);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString());
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            tfrServiceBound = false;
+            tfrsMessenger = null;
         }
     };
 
@@ -299,6 +353,69 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
         return false;
+    }
+
+    private void isSocketServiceRunning(){
+        Log.d(TAG, "Checking if SocketService is running");
+        if(SocketService.isRunning()){
+            bindToSocketService();
+        } else {
+            startService(new Intent(this, SocketService.class));
+            bindToSocketService();
+        }
+    }
+    private void isTFRServiceRunning(){
+        Log.d(TAG, "Checking if TextFileReaderService is running");
+        if(TextFileReaderService.isRunning()){
+            bindToTFRService();
+        } else {
+            startService(new Intent(this, SocketService.class));
+            bindToTFRService();
+        }
+    }
+
+    //These next 2 methods bind to SocketService and TextFileReaderService
+    void bindToSocketService(){
+        Log.d(TAG, "Binding to SocketService");
+        bindService(new Intent(this, SocketService.class), sockConnection, Context.BIND_AUTO_CREATE);
+        socketServiceBound = true;
+    }
+    void bindToTFRService(){
+        Log.d(TAG, "Binding to TextFileReaderService");
+        bindService(new Intent(this, TextFileReaderService.class), tfrsConnection, Context.BIND_AUTO_CREATE);
+        tfrServiceBound = true;
+    }
+
+    //These next 2 methods unbind from SocketService and TextFileReaderService
+    void unbindFromSocketService(){
+        if(socketServiceBound) {
+            if(sockMessenger != null) {
+                try {
+                    Message msg = Message.obtain(null, SocketService.MSG_UNREG_CLIENT);
+                    msg.replyTo = sockMessenger;
+                    sockMessenger.send(msg);
+                } catch (RemoteException e) {
+                    Log.e(TAG, e.toString());
+                }
+            }
+            unbindService(sockConnection);
+            socketServiceBound = false;
+        }
+    }
+    void unbindFromTFRService(){
+        if(tfrServiceBound) {
+            if(tfrsMessenger != null) {
+                try {
+                    Message msg = Message.obtain(null, TextFileReaderService.MSG_UNREG_CLIENT);
+                    msg.replyTo = tfrsMessenger;
+                    tfrsMessenger.send(msg);
+                } catch (RemoteException e) {
+                    Log.e(TAG, e.toString());
+                }
+            }
+            unbindService(tfrsConnection);
+            tfrServiceBound = false;
+        }
     }
     /**
      * Shows the alert dialog which notifies the user that they've entered a malformed URL.
@@ -461,11 +578,41 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    /**
+     * Sends a message to a service to get it to send messages to this activity.
+     * @param msgCode
+     */
+    private void sendMessageToService(int msgCode) {
+        if(socketServiceBound) {
+            if(sockMessenger != null){
+                try {
+                    Message msg = Message.obtain(null, SocketService.MESSAGE, msgCode);
+                    msg.replyTo = sockMessenger;
+                    sockMessenger.send(msg);
+                } catch (RemoteException e) {
+                    Log.e(TAG, e.toString());
+                }
+            }
+        }
+        if(tfrServiceBound) {
+            if(tfrsMessenger != null){
+                try {
+                    Message msg = Message.obtain(null, TextFileReaderService.MESSAGE, msgCode);
+                    msg.replyTo = tfrsMessenger;
+                    tfrsMessenger.send(msg);
+                } catch (RemoteException e) {
+                    Log.e(TAG, e.toString());
+                }
+            }
+        }
+    }
     class IncomingHandler extends android.os.Handler {
         @Override
         public void handleMessage(Message msg){
             if(msg.what == SocketService.MESSAGE){
                 Log.d(TAG, "Message from SocketService = " + msg.getData().getString("sbsMessage"));
+            } else if (msg.what == TextFileReaderService.MESSAGE) {
+                Log.d(TAG, "Message from TextFileReaderService = " + msg.getData().getString("sbsSampleLog"));
             } else {
                 Log.d(TAG, "Invalid message from SocketService");
             }
@@ -509,253 +656,5 @@ public class MainActivity extends AppCompatActivity implements
             }
             return null;
         }
-
     }
-/**
- * The below code has all been copied into SBSDecoder for easier re-usability
- */
-
-//    public void parseSBSMessage(String[] sbsMessageArray){
-//        Aircraft aircraftToAddOrModify = new Aircraft();
-//        Log.d(TAG, "Number of aircraft detected: " + Integer.toString(aircraftArrayList.size()));
-//        //By checking for 22 fields, we don't get thrown off by transmission messages without that amount of fields
-//        //if(sbsMessageArray.length == 22) {
-//        //The above is redundant thanks to the array length checking done in readFromTextFile()
-//        //sbsMessageArray[1] is the type of transmission message
-//        aircraftToAddOrModify.icaoHexAddr = sbsMessageArray[4];
-//        switch (sbsMessageArray[0]) {
-//            case "MSG":
-//                switch (Integer.parseInt(sbsMessageArray[1])) {
-//                    case 1:
-//                        Log.d(TAG, "Callsign = " + sbsMessageArray[10]);
-//                        aircraftToAddOrModify.callsign = sbsMessageArray[10];
-//                        break;
-//                    case 2:
-//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-//                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-//                        Log.d(TAG, "Track = " + sbsMessageArray + "\u00b0");
-//                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-//                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-//                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-//                        aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-//                        aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
-//                        aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
-//                        aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
-//                        break;
-//                    case 3:
-//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-//                        Log.d(TAG, "Latitude = " + sbsMessageArray[14]);
-//                        Log.d(TAG, "Longitude = " + sbsMessageArray[15]);
-//                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-//                        aircraftToAddOrModify.latitude = Double.parseDouble(sbsMessageArray[14]);
-//                        aircraftToAddOrModify.longitude = Double.parseDouble(sbsMessageArray[15]);
-//                        break;
-//                    case 4:
-//                        Log.d(TAG, "Ground speed = " + sbsMessageArray[12] + "kts");
-//                        Log.d(TAG, "Track = " + sbsMessageArray[13] + "\u00b0");
-//                        Log.d(TAG, "Climbing at " + sbsMessageArray[16] + "ft/min");
-//                        aircraftToAddOrModify.gSpeed = Integer.parseInt(sbsMessageArray[12]);
-//                        aircraftToAddOrModify.track = Integer.parseInt(sbsMessageArray[13]);
-//                        break;
-//                    //"OR" operators in switch statements was a bad idea
-//                    case 5:
-//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-//                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-//                        break;
-//                    case 6:
-//                        Log.d(TAG, "Squawk = " + sbsMessageArray[17]);
-//                        break;
-//                    case 7:
-//                        Log.d(TAG, "Altitude = " + sbsMessageArray[11] + "ft");
-//                        aircraftToAddOrModify.altitude = Integer.parseInt(sbsMessageArray[11]);
-//                        break;
-//                    case 8:
-//                        //Log.d(TAG, "Is " + sbsMessageArray[4] + " on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
-//                        break;
-//                }
-//                break;
-//            default:
-//                break;
-//        }
-//        Log.d(TAG, "Aircraft status = "+ sbsMessageArray[1] + ", " + aircraftToAddOrModify.toString());
-//        searchThroughAircraftArrayList(aircraftToAddOrModify, Integer.parseInt(sbsMessageArray[1]));
-//    }
-//
-//    /**
-//     *
-//     * @param aircraftToSearchFor The Aircraft object that we're searching through the ArrayList for
-//     * @param transMessageType The type of transmission message received from an aircraft
-//     */
-//    public void searchThroughAircraftArrayList(Aircraft aircraftToSearchFor, int transMessageType) {
-//        //Checks if an aircraft with a given ICAO hex code is found in the list
-//        boolean hexIdentFound = false;
-//
-//        //There's no point iterating through an empty list.
-//        if (aircraftArrayList.size() > 0) {
-//            //foreach loops were causing ConcurrentModificationExceptions
-//            for (int i = 0; i < aircraftArrayList.size(); i++) {
-//                //This Aircraft object is just something to compare newly-discovered ones against
-//                Aircraft aircraftToCompare = aircraftArrayList.get(i);
-//                hexIdentFound = aircraftToCompare.icaoHexAddr.equals(aircraftToSearchFor.icaoHexAddr);
-//                if (hexIdentFound) {
-//                    Log.d(TAG, "Updating " + aircraftToSearchFor.icaoHexAddr + ", current status: "
-//                            + aircraftToCompare.toString());
-//                    /**
-//                     * Some fields aren't included in different transmission message types. So,
-//                     * if we receive subsequent messages from an aircraft, we fill in missing
-//                     * fields in messages using its last known values for each field.
-//                     *
-//                     * For example, MSG,1 just has the callsign of an aircraft. We get its
-//                     * altitude, ground speed, track, latitude & longitude from the
-//                     * corresponding Aircraft object.
-//                     */
-//                    switch (transMessageType){
-//                        case 1:
-//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 1");
-//                            aircraftToSearchFor.altitude = aircraftToCompare.altitude;
-//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
-//                            aircraftToSearchFor.track = aircraftToCompare.track;
-//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
-//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
-//                            break;
-//                        case 2:
-//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 2");
-//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
-//                            aircraftToSearchFor.track = aircraftToCompare.track;
-//                            break;
-//                        case 3:
-//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 3");
-//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
-//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
-//                            aircraftToSearchFor.track = aircraftToCompare.track;
-//                            break;
-//                        case 4:
-//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 4");
-//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
-//                            aircraftToSearchFor.altitude = aircraftToCompare.altitude;
-//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
-//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
-//                            break;
-//                        case 5:
-//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 5");
-//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
-//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
-//                            aircraftToSearchFor.track = aircraftToCompare.track;
-//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
-//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
-//                            break;
-//                        case 6:
-//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 6");
-//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
-//                            aircraftToSearchFor.altitude = aircraftToCompare.altitude;
-//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
-//                            aircraftToSearchFor.track = aircraftToCompare.track;
-//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
-//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
-//                            break;
-//                        case 7:
-//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 7");
-//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
-//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
-//                            aircraftToSearchFor.track = aircraftToCompare.track;
-//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
-//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
-//                            break;
-//                        case 8:
-//                            Log.d(TAG, aircraftToSearchFor.icaoHexAddr + " Modified Aircraft, case 8");
-//                            aircraftToSearchFor.callsign = aircraftToCompare.callsign;
-//                            aircraftToSearchFor.altitude = aircraftToCompare.altitude;
-//                            aircraftToSearchFor.gSpeed = aircraftToCompare.gSpeed;
-//                            aircraftToSearchFor.track = aircraftToCompare.track;
-//                            aircraftToSearchFor.latitude = aircraftToCompare.latitude;
-//                            aircraftToSearchFor.longitude = aircraftToCompare.longitude;
-//                            break;
-//                    }
-//                    Log.d(TAG, "Modified aircraft status: " + aircraftToSearchFor.toString());
-//                    aircraftArrayList.set(i, aircraftToSearchFor); //Add the modified Aircraft object to the ArrayList
-//                    break; //No need to keep checking the list
-//                }
-//            }
-//            //We've iterated through the entire Aircraft list and haven't found aircraftToSearchFor,
-//            //so we'll add it to the list.
-//            if (!hexIdentFound) {
-//                Log.d(TAG, "Adding new aircraft to list: " + aircraftToSearchFor.toString());
-//                aircraftArrayList.add(aircraftToSearchFor);
-//            }
-//        } else {
-//            //No aircraft in aircraftArrayList, now adding the first one to be discovered
-//            Log.d(TAG, "No aircraft found in list, now adding a new aircraft.");
-//            aircraftArrayList.add(aircraftToSearchFor);
-//        }
-//    }
-
-    /**
-     * This method parses lines of NMEA data to check if they contain latitude
-     * and longitude data.
-     * param sentence - a line of NMEA data
-     *
-     * 2 March 2016 - Now redundant.
-     */
-//    public void decodeNMEA(String sentence) {
-//        String tag = "Decoding NMEA";
-//        if (sentence.startsWith("$GPRMC")) {
-//            String[] rmcValues = sentence.split(",");
-//            double nmeaLatitude = Double.parseDouble(rmcValues[3]);
-//            double nmeaLatMin = nmeaLatitude % 100; //get minutes from latitude value
-//            nmeaLatitude /= 100;
-//            if (rmcValues[4].charAt(0) == 'S') {
-//                nmeaLatitude = -nmeaLatitude;
-//            }
-//            double nmeaLongitude = Double.parseDouble(rmcValues[5]);
-//            double nmeaLonMin = nmeaLongitude % 100; //get minutes from longitude value
-//            nmeaLongitude /= 100;
-//            if (rmcValues[6].charAt(0) == 'W') {
-//                nmeaLongitude = -nmeaLongitude;
-//            }
-//
-//            Log.d(tag + ": lat", Double.toString(nmeaLatitude));
-//            GpsLat.setText("Latitude: " + Double.toString(nmeaLatitude));
-//            Log.d(tag + ": lon", Double.toString(nmeaLongitude));
-//            GpsLon.setText("Longitude: " + Double.toString(nmeaLongitude));
-//        }
-//    }
-    // using the data supplied in Joe's email from 10 November
-//    String[] dummyData = {
-//            "$GPGGA,103102.557,5323.0900,N,00636.1283,W,1,08,1.0,49.1,M,56.5,M,,0000*7E",
-//            "$GPGSA,A,3,01,11,08,19,28,32,03,18,,,,,1.7,1.0,1.3*37",
-//            "$GPGSV,3,1,10,08,70,154,34,11,61,270,26,01,47,260,48,22,40,062,*7E",
-//            "$GPGSV,3,2,10,19,40,297,46,32,39,184,32,28,28,314,43,03,11,205,41*7C",
-//            "$GPGSV,3,3,10,18,07,044,35,30,03,276,42*75",
-//            "$GPRMC,103102.557,A,5323.0900,N,00636.1283,W,000.0,308.8,101115,,,A*79",
-//            "$GPVTG,308.8,T,,M,000.0,N,000.0,K,A*0E"
-//    };
-    //Redundant
-    //@Bind(R.id.button_gps_activation)
-//    Button GpsActivationButton;
-//    @Bind(R.id.read_sample_log_button)
-//    Button ReadSampleLogButton;
-//
-//    //These are the GPS coordinates of the server
-//    @Bind(R.id.gps_latitude)
-//    TextView GpsLat;
-//    @Bind(R.id.gps_longitude)
-//    TextView GpsLon;
-//
-//    @Bind(R.id.server_status)
-//    TextView ServerStat;
-
-//    @OnClick(R.id.button_gps_activation)
-//    public void activateGPS(View view){
-//        Log.d(TAG, "activateGPS button pressed");
-//        SharedPreferences sharedPref = getSharedPreferences(PREFS, MODE_PRIVATE);
-//        String latStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LAT_PREF, 0)));
-//        GpsLat.setText("Latitude: " + latStringFromPref);
-//        String lonStringFromPref = Double.toString(Double.longBitsToDouble(sharedPref.getLong(LON_PREF, 0)));
-//        GpsLon.setText("Longitude: " + lonStringFromPref);
-//    }
-
-//    @OnClick(R.id.read_sample_log_button)
-//    public void readSampleLog(View view) {
-//        Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
-//    }
 }
