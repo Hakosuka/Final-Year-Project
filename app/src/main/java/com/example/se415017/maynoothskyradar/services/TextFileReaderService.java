@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.example.se415017.maynoothskyradar.R;
@@ -51,8 +52,8 @@ public class TextFileReaderService extends Service {
     //Allows for communication with MainActivity
     IBinder myBinder = new TextFileBinder();
     final Messenger messenger = new Messenger(new IncomingHandler());
-    Messenger replyMessenger;
     ArrayList<Messenger> messageClientList = new ArrayList<>();
+    Handler delaySimulator = new Handler();
 
     //Basic constructor class
     public TextFileReaderService(){
@@ -101,21 +102,19 @@ public class TextFileReaderService extends Service {
                 count++;
                 lastSentenceRead = count;
                 String word = s.next(); //.trim(); //remove whitespaces from the line being read
-                if(lastSentenceReadBeforeUnbinding <= count)
-                    sendMessageToClients(word);
                 String[] splitLine = word.split(","); //split the line from the log using the comma
                 //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
                 Log.d(TAG, "Line #" + count + " from sample log = " + word +
                         ", has " + splitLine.length + " elements.");
                 //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
                 if(splitLine.length == 22) {
+                    if(lastSentenceReadBeforeUnbinding <= count)
+                        sendMessageToClients(word);
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
-                    if(newAircraft.latitude != null && newAircraft.longitude != null){
+                    if(newAircraft.latitude != null && newAircraft.longitude != null)
                         newAircraft.path.add(newAircraft.getPosition());
-                    }
-                    if(splitLine[7].length() > 6){
+                    if(splitLine[7].length() > 6)
                         delay = Double.parseDouble(splitLine[7].substring(6)) - delay;
-                    }
                     Log.d(TAG, "Aircraft status = " + newAircraft.toString());
                     sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
                 } else {
@@ -197,9 +196,17 @@ public class TextFileReaderService extends Service {
             switch (msg.what) {
                 case MSG_START_READING:
                     Log.d(TAG, "Message = " + msg.arg1);
+                    long readingStart = SystemClock.currentThreadTimeMillis();
                     if(!finishedReading) {
+                        //delaySimulator.postDelayed(new Runnable() {
+                            //@Override
+                            //public void run() {
                         readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
+                            //}
+                        //}, 150); //Wait 150ms to send TODO: not send the whole text file at once
                     }
+                    long readingFinish = SystemClock.currentThreadTimeMillis() - readingStart;
+                    Log.d(TAG, "Process took " + readingFinish + "ms");
                     finishedReading = true;
                     break;
                 case MSG_REG_CLIENT:

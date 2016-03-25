@@ -14,6 +14,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
@@ -74,6 +75,8 @@ public class MainActivity extends AppCompatActivity implements
     public static final String SERVER_PREF = "serverAddress";
     public static final String LAT_PREF = "latitude";
     public static final String LON_PREF = "longitude";
+    public static final String SBS_MSG = "sbsMessage";
+    public static final String TFRS_MSG = "sbsSampleLog";
     URL url;
 
     public SBSDecoder sbsDecoder;
@@ -87,6 +90,8 @@ public class MainActivity extends AppCompatActivity implements
 
     public TextFileReaderService textFileReaderService;
     public SocketService socketService;
+
+    Handler delaySimulator = new Handler();
 
     static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
     boolean socketServiceBound = false;
@@ -630,11 +635,25 @@ public class MainActivity extends AppCompatActivity implements
     @SuppressLint("HandlerLeak")
     class IncomingHandler extends android.os.Handler {
         @Override
-        public void handleMessage(Message msg){
+        public void handleMessage(final Message msg){
             if(msg.what == SocketService.MESSAGE){
-                Log.d(TAG, "Message from SocketService = " + msg.getData().getString("sbsMessage"));
+                String sockResponse = msg.getData().getString(SBS_MSG);
+                Log.d(TAG, "Message from SocketService = " + sockResponse);
+                if(sockResponse != null) {
+                    String[] splitMessage = sockResponse.split(",");
+                    Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitMessage);
+                    aircraftArrayList = sbsDecoder.searchThroughAircraftList(aircraftArrayList,
+                            newAircraft, Integer.parseInt(splitMessage[1]));
+                }
             } else if (msg.what == TextFileReaderService.MSG_START_READING) {
-                Log.d(TAG, "Message from TextFileReaderService = " + msg.getData().getString("sbsSampleLog"));
+                String tfrsResponse = msg.getData().getString("sbsSampleLog");
+                Log.d(TAG, "Message from TextFileReaderService = " + tfrsResponse);
+                if(tfrsResponse != null) {
+                    String[] splitMessage = tfrsResponse.split(",");
+                    Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitMessage);
+                    aircraftArrayList = sbsDecoder.searchThroughAircraftList(aircraftArrayList,
+                            newAircraft, Integer.parseInt(splitMessage[1]));
+                }
             } else {
                 Log.d(TAG, "Invalid message from SocketService");
             }

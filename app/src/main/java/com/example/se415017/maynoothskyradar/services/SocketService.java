@@ -244,6 +244,7 @@ public class SocketService extends Service {
      * @param message The SBS-1 message picked up by the server.
      */
     private void sendMessageToClients(String message){
+        Log.d(TAG, "Message to send = " + message);
         for(Messenger messenger : messengerClientList){
             try {
                 Bundle bundle = new Bundle();
