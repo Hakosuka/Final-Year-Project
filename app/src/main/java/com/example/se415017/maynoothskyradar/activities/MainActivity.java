@@ -23,6 +23,7 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
@@ -31,6 +32,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -47,6 +49,7 @@ import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
 import com.example.se415017.maynoothskyradar.services.TextFileReaderService;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 import com.example.se415017.maynoothskyradar.services.SocketService;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.w3c.dom.Text;
@@ -100,6 +103,10 @@ public class MainActivity extends AppCompatActivity implements
     public ArrayList<Aircraft> aircraftArrayList;
 
     public static FragmentManager fragManager;
+    private Fragment currentFrag;
+    private MainMapFragment mainMapFrag;
+    private AircraftListFragment aircraftListFrag;
+    private MainTabPagerAdapter adapter;
 
     @Bind(R.id.activity_main_tabs)
     PagerSlidingTabStrip mainTabs;
@@ -146,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements
             aircraftArrayList = new ArrayList<Aircraft>();
         }
         final NetHelper netHelper = new NetHelper(getApplicationContext());
-        Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
+        //Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
         if(netHelper.isConnected()) {
             if(strUrl.equalsIgnoreCase("")) {
                 //TODO: Take the user to the setup activity
@@ -205,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements
             showNoInternetDialog(MainActivity.this);
         }
         fragManager = getSupportFragmentManager();
-        MainTabPagerAdapter adapter = new MainTabPagerAdapter(fragManager, aircraftArrayList);
+        adapter = new MainTabPagerAdapter(fragManager, aircraftArrayList);
         mainPager.setAdapter(adapter);
         mainTabs.setViewPager(mainPager);
     }
@@ -222,6 +229,9 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "TextFileReaderService found? " + Boolean.toString(doesThisServiceExist(TextFileReaderService.class)));
         if(doesThisServiceExist(TextFileReaderService.class))
             bindToTFRService();
+        if(currentFrag instanceof MainMapFragment) {
+            ((MainMapFragment) currentFrag).updateAircrafts(aircraftArrayList);
+        }
         super.onResume();
     }
 
@@ -538,6 +548,16 @@ public class MainActivity extends AppCompatActivity implements
                 .show();
     }
 
+    /**
+     * Returns the tag of a Fragment so that I can find it.
+     * @param viewPagerId The ID of the ViewPager
+     * @param position The position in the ViewPager of the Fragment we want to find
+     * @return
+     */
+    private String getFragmentTag(int viewPagerId, int position) {
+        return "android:switcher" + viewPagerId + ":" + position;
+    }
+
     //TODO: Get TextFileReaderService working so that this stuff becomes irrelevant
     public String readFromTextFile(Context context) {
         int count = 0;
@@ -596,11 +616,12 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onFragmentInteraction(Uri uri){
         //Leaving this method empty is OK
+        Log.d(TAG, "Interacted with Fragment:" + uri.toString());
     }
 
     @Override
     public void onListFragmentInteraction(Aircraft dummyItem){
-
+        Log.d(TAG, "Interacted with ListFragment");
     }
 
     /**
@@ -644,6 +665,10 @@ public class MainActivity extends AppCompatActivity implements
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitMessage);
                     aircraftArrayList = sbsDecoder.searchThroughAircraftList(aircraftArrayList,
                             newAircraft, Integer.parseInt(splitMessage[1]));
+                    //The data has changed, the below method updates the adapter's associated views
+                    if(mainMapFrag != null){
+                        mainMapFrag.updateAircrafts(aircraftArrayList);
+                    }
                 }
             } else if (msg.what == TextFileReaderService.MSG_START_READING) {
                 String tfrsResponse = msg.getData().getString("sbsSampleLog");
@@ -651,8 +676,10 @@ public class MainActivity extends AppCompatActivity implements
                 if(tfrsResponse != null) {
                     String[] splitMessage = tfrsResponse.split(",");
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitMessage);
+                    Log.d(TAG, "New aircraft = " + newAircraft.toString());
                     aircraftArrayList = sbsDecoder.searchThroughAircraftList(aircraftArrayList,
                             newAircraft, Integer.parseInt(splitMessage[1]));
+                    adapter.updateAircraftArrayList(aircraftArrayList);
                 }
             } else {
                 Log.d(TAG, "Invalid message from SocketService");
@@ -663,8 +690,16 @@ public class MainActivity extends AppCompatActivity implements
     /**
      * 11 March 2016 - moved MainTabPagerAdapter inside MainActivity because, well, it's my app's
      * main activity.
+     * 27 March 2016 - tested out changing MainTabPagerAdapter from a FragmentStatePagerAdapter to a
+     * FragmentPagerAdapter, as the former only keeps a reference to ONE Fragment at a time, but the
+     * latter can keep a reference to as many Fragments as it can handle. This helps with smoother
+     * animation when switching fragments.
+     * As my app only has two Fragments, there's not much to lose from switching to a
+     * FragmentPagerAdapter.
+     *               - I've misunderstood getItem() in PagerAdapters, they keep a reference to the
+     *               current Fragment and the ones next to it in the PagerAdapter.
      */
-    private class MainTabPagerAdapter extends FragmentStatePagerAdapter {
+    private class MainTabPagerAdapter extends FragmentPagerAdapter {
         final String[] TAB_TITLES = {"Map", "List of planes"};
         final String AIR_KEY = "aircraftKey";
         FragmentManager fragMgr;
@@ -677,25 +712,64 @@ public class MainActivity extends AppCompatActivity implements
             this.aircraftArrayList = aircraftArrayList;
         }
 
+        public void updateAircraftArrayList(ArrayList<Aircraft> aircraftArrayList) {
+            Log.d(TAG, "Updating aircraft ArrayList");
+            this.aircraftArrayList = aircraftArrayList;
+            notifyDataSetChanged();
+            if (mainMapFrag != null) {
+                mainMapFrag.updateAircrafts(aircraftArrayList);
+            } else {
+                Log.d(TAG, "No MainMapFragment found");
+            }
+        }
+
         @Override
         public CharSequence getPageTitle(int position){
             return TAB_TITLES[position];
         }
 
         @Override
-        public int getCount() {
-            return TAB_TITLES.length;
-        }
+        public int getCount() { return TAB_TITLES.length; }
 
+        /**
+         * getItem() is really quite a misnomer, it isn't called whenever the user swipes to a new
+         * page, but instead when the new Fragments are being instantiated. DON'T save references
+         * to Fragments here.
+         * @param position
+         * @return Fragment
+         */
         @Override
         public Fragment getItem(int position){
             switch(position){
                 case 0:
+                    Log.d(TAG, "Switched to MainMapFragment");
                     return MainMapFragment.newInstance(aircraftArrayList);
                 case 1:
+                    Log.d(TAG, "Switched to AircraftListFragment");
                     return AircraftListFragment.newInstance(1, aircraftArrayList);
             }
             return null;
+        }
+
+        /**
+         * This is where the Fragments are actually instantiated, thus it's safe to save
+         * references to Fragments here.
+         * @param container
+         * @param position
+         * @return createdFragment - the newly-created Fragment
+         */
+        @Override
+        public Object instantiateItem(ViewGroup container, int position) {
+            Fragment createdFragment = (Fragment)super.instantiateItem(container, position);
+            switch(position) {
+                case 0:
+                    mainMapFrag = (MainMapFragment) createdFragment;
+                    break;
+                case 1:
+                    aircraftListFrag = (AircraftListFragment) createdFragment;
+                    break;
+            }
+            return createdFragment;
         }
     }
 }

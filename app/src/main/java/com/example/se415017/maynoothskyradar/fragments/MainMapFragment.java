@@ -226,14 +226,22 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             markersAdded = true;
         }
     }
+
+
     /**
      * TODO:
      * Adds a new Aircraft marker when a new aircraft has been discovered.
      * @param newAircraft The newly discovered aircraft to be added to the map.
      */
-    protected void onNewAircraftDiscovered(Aircraft newAircraft){
-        aircrafts.add(newAircraft);
+    public void newAircraftDiscovered(Aircraft newAircraft){
         if(googleMap != null) {
+            for(int i = 0; i < aircrafts.size(); i++) {
+                if(aircrafts.get(i).icaoHexAddr.equalsIgnoreCase(newAircraft.icaoHexAddr)) {
+                    aircrafts.set(i, newAircraft);
+                } else {
+                    aircrafts.add(newAircraft);
+                }
+            }
             if(newAircraft.latitude != null && newAircraft.longitude != null) {
                 Marker m = googleMap.addMarker(new MarkerOptions().position(newAircraft.getPosition())
                         .title("Mode-S: " + newAircraft.icaoHexAddr)
@@ -249,8 +257,20 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                         .addAll(newAircraft.path));
                 markersAndAircraft.put(m.getId(), newAircraft);
             }
-
+            //Update the markers
+            addMarkers();
         }
+    }
+
+    /**
+     * Updates the ArrayList of Aircraft objects held by the Fragment
+     * @param aircrafts - the updated ArrayList of Aircraft objects
+     */
+    public void updateAircrafts(ArrayList<Aircraft> aircrafts) {
+        Log.d(TAG, "Updating AircraftMarkers, " + aircrafts.size() +  " to update.");
+        this.aircrafts = aircrafts;
+        if(googleMap != null)
+            addMarkers();
     }
 
     //This is what's calling setUpMap
@@ -274,18 +294,26 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             //Check if the Aircraft object has latitude and longitude values yet
             //If not, don't add them to the map, there'd be no point adding them in
             if(a.latitude != null && a.longitude != null) {
-                Marker m = googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
-                        .snippet("Coordinates: " + a.getPosString())
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
-                        .flat(true)
-                        .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
-                googleMap.addPolyline(new PolylineOptions()
-                        .width(5.0f)
-                        .color(Color.rgb(253, 95, 0)) //"Neon orange" colour - stands out easily on the map
-                        .geodesic(true) //Draws lines on the map assuming it's a globe, not a flat map
-                        .addAll(a.path));
-                markersAndAircraft.put(m.getId(), a);
-                Log.d(TAG, "Marker ID for " + a.icaoHexAddr + " = " + m.getId());
+                //New Aircraft found
+                if (!markersAndAircraft.containsValue(a)) {
+                    Marker m = googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
+                            .snippet("Coordinates: " + a.getPosString())
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
+                            .flat(true)
+                            .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
+                    googleMap.addPolyline(new PolylineOptions()
+                            .width(5.0f)
+                            .color(Color.rgb(253, 95, 0)) //"Neon orange" colour - stands out easily on the map
+                            .geodesic(true) //Draws lines on the map assuming it's a globe, not a flat map
+                            .addAll(a.path));
+                    markersAndAircraft.put(m.getId(), a);
+                    Log.d(TAG, "Marker ID for " + a.icaoHexAddr + " = " + m.getId());
+                } else {
+                    //TODO: Update from existing Aircraft
+                    String marker = markersAndAircraft.toString();
+                    Log.d(TAG, "Marker to update: " + marker);
+
+                }
             }
         }
         googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {

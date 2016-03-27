@@ -91,6 +91,12 @@ public class TextFileReaderService extends Service {
         return true;
     }
 
+    @Override
+    public void onRebind(Intent rebindIntent) {
+        super.onRebind(rebindIntent);
+        Log.d(TAG, "Rebinding to " + rebindIntent.toString());
+    }
+
 
     //TODO: Add a Thread to use to read the text file, and then simulate the gaps between each
     //message being received by the server by making that Thread sleep for that time.
