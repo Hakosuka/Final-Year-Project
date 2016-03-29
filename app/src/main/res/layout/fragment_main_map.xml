@@ -1,7 +1,8 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="com.example.se415017.maynoothskyradar.fragments.MainMapFragment">
 
     <fragment
@@ -13,4 +14,134 @@
             <!--android:id="@+id/main_mapview"-->
             <!--android:layout_width="fill_parent"-->
             <!--android:layout_height="fill_parent"/>-->
-</RelativeLayout>
+    <FrameLayout
+        android:id="@+id/map_bSheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:behavior_hideable="true"
+        app:layout_behavior="android.support.design.widget.BottomSheetBehavior"
+        android:visibility="invisible">
+        <RelativeLayout
+            android:id="@+id/map_bSheet_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="24dp">
+            <TextView
+                android:id="@+id/bSheet_hex_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mode-S hex code"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+            <TextView
+                android:id="@+id/bSheet_hex_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:paddingLeft="@dimen/content_margin"
+                android:layout_alignBottom="@id/hex_title"
+                android:layout_toRightOf="@id/hex_title"
+                android:layout_toEndOf="@id/hex_title"
+                android:textColor="#000000"/>
+            <TextView
+                android:id="@+id/bSheet_callsign_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:paddingLeft="@dimen/inside_margin"
+                android:layout_alignBottom="@id/bSheet_hex_title"
+                android:layout_toRightOf="@id/bSheet_hex_content"
+                android:layout_toEndOf="@id/bSheet_hex_content"/>
+
+            <TextView
+                android:id="@+id/bSheet_altitude_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Altitude:"
+                android:textStyle="bold"
+                android:layout_below="@id/bSheet_hex_title"
+                android:layout_alignRight="@id/bSheet_hex_title"
+                android:layout_alignEnd="@id/bSheet_hex_title" />
+            <TextView
+                android:id="@+id/bSheet_altitude_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="@dimen/content_margin"
+                android:layout_alignBottom="@id/bSheet_altitude_title"
+                android:layout_toRightOf="@id/bSheet_altitude_title"
+                android:layout_toEndOf="@id/bSheet_altitude_title"/>
+
+            <TextView
+                android:id="@+id/bSheet_latitude_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Latitude:"
+                android:textStyle="bold"
+                android:layout_below="@+id/bSheet_altitude_title"
+                android:layout_alignRight="@+id/bSheet_altitude_title"
+                android:layout_alignEnd="@+id/bSheet_altitude_title" />
+            <TextView
+                android:id="@+id/bSheet_latitude_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="@dimen/content_margin"
+                android:layout_alignBottom="@id/bSheet_latitude_title"
+                android:layout_toRightOf="@id/bSheet_latitude_title"
+                android:layout_toEndOf="@id/bSheet_latitude_title"/>
+
+            <TextView
+                android:id="@+id/bSheet_longitude_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Longitude:"
+                android:textStyle="bold"
+                android:layout_below="@+id/bSheet_latitude_title"
+                android:layout_alignRight="@+id/bSheet_latitude_title"
+                android:layout_alignEnd="@+id/bSheet_latitude_title" />
+            <TextView
+                android:id="@+id/bSheet_longitude_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="@dimen/content_margin"
+                android:layout_alignBottom="@id/bSheet_longitude_title"
+                android:layout_toRightOf="@id/bSheet_longitude_title"
+                android:layout_toEndOf="@id/bSheet_longitude_title"/>
+
+            <TextView
+                android:id="@+id/bSheet_gs_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ground speed:"
+                android:textStyle="bold"
+                android:layout_below="@+id/bSheet_longitude_title"
+                android:layout_alignRight="@+id/bSheet_longitude_title"
+                android:layout_alignEnd="@+id/bSheet_longitude_title"/>
+            <TextView
+                android:id="@+id/bSheet_gs_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="@dimen/content_margin"
+                android:layout_alignBottom="@id/bSheet_gs_title"
+                android:layout_toRightOf="@id/bSheet_gs_title"
+                android:layout_toEndOf="@id/bSheet_gs_title"/>
+
+            <TextView
+                android:id="@+id/bSheet_track_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Track:"
+                android:textStyle="bold"
+                android:layout_below="@+id/bSheet_gs_title"
+                android:layout_alignRight="@+id/bSheet_gs_title"
+                android:layout_alignEnd="@+id/bSheet_gs_title"/>
+            <TextView
+                android:id="@+id/bSheet_track_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="@dimen/content_margin"
+                android:layout_alignBottom="@id/bSheet_track_title"
+                android:layout_toRightOf="@id/bSheet_track_title"
+                android:layout_toEndOf="@id/bSheet_track_title"/>
+        </RelativeLayout>
+    </FrameLayout>
+</android.support.design.widget.CoordinatorLayout>

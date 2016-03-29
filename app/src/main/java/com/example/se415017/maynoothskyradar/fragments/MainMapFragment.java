@@ -10,18 +10,25 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
+import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.os.AsyncTaskCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.se415017.maynoothskyradar.R;
@@ -45,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.WeakHashMap;
 
+import butterknife.Bind;
 import butterknife.ButterKnife;
 
 /**
@@ -78,6 +86,21 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
 //    @Bind(R.id.main_mapview)
 //    MapView mapView;
 
+    @Bind(R.id.map_bSheet) FrameLayout bottomSheet;
+    @Bind(R.id.map_bSheet_content) ViewGroup bottomSheetContent;
+    @Bind(R.id.bSheet_hex_title) TextView sheetHexTitle;
+    @Bind(R.id.bSheet_hex_content) TextView sheetHexContent;
+    @Bind(R.id.bSheet_altitude_title) TextView sheetAltTitle;
+    @Bind(R.id.bSheet_altitude_content) TextView sheetAltContent;
+    @Bind(R.id.bSheet_callsign_content) TextView sheetCallsign;
+    @Bind(R.id.bSheet_latitude_title) TextView sheetLatTitle;
+    @Bind(R.id.bSheet_latitude_content) TextView sheetLatContent;
+    @Bind(R.id.bSheet_longitude_title) TextView sheetLonTitle;
+    @Bind(R.id.bSheet_longitude_content) TextView sheetLonContent;
+    @Bind(R.id.bSheet_gs_title) TextView sheetGSpeedTitle;
+    @Bind(R.id.bSheet_gs_content) TextView sheetGSpeedContent;
+    @Bind(R.id.bSheet_track_title) TextView sheetTrackTitle;
+    @Bind(R.id.bSheet_track_content) TextView sheetTrackContent;
     //DONE: Test if ButterKnife can work on MapFragments - IT CAN'T, @Bind fields must extend from View or be an interface
     SupportMapFragment mainMapFrag;
 
@@ -171,7 +194,19 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             return null;
         view = inflater.inflate(R.layout.fragment_main_map, container, false);
         ButterKnife.bind(this, view);
+        final BottomSheetBehavior behavior = BottomSheetBehavior.from(bottomSheet);
+        behavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                Log.d(TAG, "Bottom sheet state changed");
+            }
 
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                Log.d(TAG, "Bottom sheet is sliding");
+            }
+        });
+        behavior.setPeekHeight(24);
         mainMapFrag = (SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.main_map);
         mainMapFrag.getMapAsync(this);
 
@@ -346,6 +381,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                         break;
                     }
                 }
+                final Aircraft aircraftToBeShown = selected;
                 //Sometimes some Markers weren't mapped to an Aircraft object, causing a
                 //NullPointerException - such as the Marker for the server's location.
                 if(selected != null) {
@@ -357,6 +393,15 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                                     public void onClick(View v) {
                                         //TODO: Take the user to the AircraftDetailFragment
                                         Log.d(TAG, "Snackbar button clicked.");
+                                        sheetHexContent.setText(aircraftToBeShown.icaoHexAddr);
+                                        sheetCallsign.setText(aircraftToBeShown.callsign);
+                                        sheetAltContent.setText(aircraftToBeShown.altitude);
+                                        sheetLatContent.setText(aircraftToBeShown.latitude);
+                                        sheetLonContent.setText(aircraftToBeShown.longitude);
+                                        sheetGSpeedContent.setText(aircraftToBeShown.gSpeed);
+                                        //Add degree symbol
+                                        sheetTrackContent.setText(aircraftToBeShown.track + "\u00B0");
+                                        bottomSheet.setVisibility(View.VISIBLE);
                                     }
                                 })
                             .show();
@@ -398,6 +443,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                                 public void onClick(View v) {
                                     //TODO: Take the user to the AircraftDetailFragment
                                     Log.d(TAG, "Snackbar button clicked.");
+                                    bottomSheet.setVisibility(View.VISIBLE);
                                 }
                             })
                             .show();
@@ -465,11 +511,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-//        if (googleMap != null) { TODO: CANNOT PERFORM THIS ACTION AFTER ONSAVEINSTANCESTATE
-//            MainActivity.fragManager.beginTransaction()
-//                    .remove(MainActivity.fragManager.findFragmentById(R.id.main_map)).commit();
-//            googleMap = null;
-//        }
     }
 
     @Override
@@ -494,4 +535,11 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         public void onFragmentInteraction(Uri uri);
         //public void onFragmentSetAircraft(ArrayList<Aircraft> aircraftArrayList);
     }
+
+//    public class UpdateMarkerTask extends AsyncTask<Void, Void, Aircraft> {
+//        @Override
+//        protected Location doInBackground(Void...arg0){
+//            return (Location) aircraft.getPosition();
+//        }
+//    }
 }

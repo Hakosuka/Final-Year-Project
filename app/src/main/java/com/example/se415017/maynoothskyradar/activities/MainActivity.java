@@ -152,6 +152,18 @@ public class MainActivity extends AppCompatActivity implements
         if(aircraftArrayList == null) {
             aircraftArrayList = new ArrayList<Aircraft>();
         }
+        if(savedInstanceState.getSerializable("aircraftArrayList") instanceof ArrayList<?>) {
+            ArrayList<?> unknownTypeList = (ArrayList<?>) savedInstanceState
+                    .getSerializable("aircraftArrayList");
+            if(unknownTypeList != null && unknownTypeList.size() > 0) {
+                for (int i = 0; i < unknownTypeList.size(); i++) {
+                    Object unknownTypeObject = unknownTypeList.get(i);
+                    if(unknownTypeObject instanceof Aircraft){
+                        aircraftArrayList.add((Aircraft) unknownTypeObject);
+                    }
+                }
+            }
+        }
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         //Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
         if(netHelper.isConnected()) {
@@ -301,6 +313,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onSaveInstanceState(Bundle outState){
+        outState.putSerializable("aircraftArrayList", aircraftArrayList);
         super.onSaveInstanceState(outState);
     }
 
