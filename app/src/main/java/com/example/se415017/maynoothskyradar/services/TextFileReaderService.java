@@ -53,6 +53,7 @@ public class TextFileReaderService extends Service {
     IBinder myBinder = new TextFileBinder();
     final Messenger messenger = new Messenger(new IncomingHandler());
     ArrayList<Messenger> messageClientList = new ArrayList<>();
+    static ArrayList<Aircraft> aircraftArrayList = new ArrayList<>();
     Handler delaySimulator = new Handler();
 
     //Basic constructor class
@@ -100,7 +101,7 @@ public class TextFileReaderService extends Service {
 
     //TODO: Add a Thread to use to read the text file, and then simulate the gaps between each
     //message being received by the server by making that Thread sleep for that time.
-    public void readFromTextFile(Context context, ArrayList<Aircraft> aircraftArrayList) {
+    public ArrayList<Aircraft> readFromTextFile(Context context, ArrayList<Aircraft> aircraftArrayList) {
         int count = 0;
         Scanner s = new Scanner(context.getResources().openRawResource(R.raw.samplelog));
         try {
@@ -159,7 +160,7 @@ public class TextFileReaderService extends Service {
                 Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
             }
         }
-        //return s.toString();
+        return aircraftArrayList;
     }
 
     public static boolean isRunning() {
@@ -187,6 +188,10 @@ public class TextFileReaderService extends Service {
         }
     }
 
+    public static ArrayList<Aircraft> getAircraftArrayList(){
+        return aircraftArrayList;
+    }
+
     public class TextFileBinder extends Binder {
         public TextFileReaderService getService(){
             return TextFileReaderService.this;
@@ -204,10 +209,7 @@ public class TextFileReaderService extends Service {
                     Log.d(TAG, "Message = " + msg.arg1);
                     long readingStart = SystemClock.currentThreadTimeMillis();
                     if(!finishedReading) {
-                        //delaySimulator.postDelayed(new Runnable() {
-                            //@Override
-                            //public void run() {
-                        readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
+                        aircraftArrayList = readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
                             //}
                         //}, 150); //Wait 150ms to send TODO: not send the whole text file at once
                     }

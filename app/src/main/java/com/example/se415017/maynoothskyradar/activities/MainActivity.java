@@ -55,6 +55,7 @@ import com.google.android.gms.maps.model.LatLng;
 import org.w3c.dom.Text;
 
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -127,10 +128,11 @@ public class MainActivity extends AppCompatActivity implements
 
     boolean netStatus = false;
     boolean serverStatus = false;
+    boolean resuming = false;
 
-    //TODO: Research WifiLocks and determine if I need them in my app (I probably don't)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "Creating MainActivity");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 //        setSupportActionBar(activityToolbar);
@@ -152,17 +154,22 @@ public class MainActivity extends AppCompatActivity implements
         if(aircraftArrayList == null) {
             aircraftArrayList = new ArrayList<Aircraft>();
         }
-        if(savedInstanceState.getSerializable("aircraftArrayList") instanceof ArrayList<?>) {
-            ArrayList<?> unknownTypeList = (ArrayList<?>) savedInstanceState
-                    .getSerializable("aircraftArrayList");
-            if(unknownTypeList != null && unknownTypeList.size() > 0) {
-                for (int i = 0; i < unknownTypeList.size(); i++) {
-                    Object unknownTypeObject = unknownTypeList.get(i);
-                    if(unknownTypeObject instanceof Aircraft){
-                        aircraftArrayList.add((Aircraft) unknownTypeObject);
+        if(savedInstanceState != null) {
+            if (savedInstanceState.getSerializable("aircraftArrayList") instanceof ArrayList<?>) {
+                ArrayList<?> unknownTypeList = (ArrayList<?>) savedInstanceState
+                        .getSerializable("aircraftArrayList");
+                if (unknownTypeList != null && unknownTypeList.size() > 0) {
+                    for (int i = 0; i < unknownTypeList.size(); i++) {
+                        Object unknownTypeObject = unknownTypeList.get(i);
+                        if (unknownTypeObject instanceof Aircraft) {
+                            aircraftArrayList.add((Aircraft) unknownTypeObject);
+                        }
                     }
                 }
             }
+            resuming = savedInstanceState.getBoolean("resuming", false);
+        } else {
+            Log.d(TAG, "savedInstanceState was null");
         }
         final NetHelper netHelper = new NetHelper(getApplicationContext());
         //Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
@@ -182,49 +189,35 @@ public class MainActivity extends AppCompatActivity implements
                 Log.d(TAG, "User-saved URL detected");
                 //If all else fails, use sbsrv1.cs.nuim.ie as the default string
                 strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie");
-
+                try {
+                    url = new URL("https", strUrl, 30003, "");
+                    Log.d(TAG, "URL created: " + url.toString());
+                } catch (MalformedURLException e) {
+                    Log.e(TAG, e.toString());
+                    showMalformedURLDialog(MainActivity.this);
+                }
                 if(!doesThisServiceExist(SocketService.class)) {
                     Log.d(TAG, "No existing SocketService found");
-                    try {
-                        //Now is not the time to add the port, that comes later
-                        url = new URL("http", strUrl, "");
-                        Log.d(TAG, "URL created: " + url.toString());
-                    } catch (MalformedURLException e) {
-                        Log.e(TAG, e.toString());
-                        showMalformedURLDialog(MainActivity.this);
-                    }
-                    //Intent sockIntent = new Intent(this, SocketService.class);
                     Log.d(TAG, "Intent created");
-
-                    //sockIntent.putExtra("serverAddr", url.toString());
-                    //TODO: Reactivate after I've done testing with the example log
-                    //startService(sockIntent);
-                    /**
-                     * bindService kills the service upon unbinding
-                     */
-                    //bindService(sockIntent, mConnection, Context.BIND_AUTO_CREATE);
-                    //Check if the TextFileReaderService is running, if not, it will start it
-                    //startService() was stopping isTFRServiceRunning from being reached
-                    //startService(new Intent(this, TextFileReaderService.class));
-                    //Log.d(TAG, "Service started");
-                    //isSocketServiceRunning();
-                    Log.d(TAG, "Here's where I'd run isSocketServiceRunning()...if the server was working");
+                    //DONE: Reactivate after I've done testing with the example log
+                    isSocketServiceRunning(url.toString());
                 } else {
                     Log.d(TAG, "Existing SocketService found");
-                    bindToSocketService();
+                    bindToSocketService(url.toString());
                 } if (!doesThisServiceExist(TextFileReaderService.class)) {
                     Log.d(TAG, "No existing TextFileReaderService found");
                     isTFRServiceRunning();
                 } else {
                     Log.d(TAG, "Existing TextFileReaderService found");
-                    bindToTFRService();
+                    //When this wasn't set to true, when this Activity was being re-created
+                    bindToTFRService(true);
                 }
             }
         } else {
             showNoInternetDialog(MainActivity.this);
         }
         fragManager = getSupportFragmentManager();
-        adapter = new MainTabPagerAdapter(fragManager, aircraftArrayList);
+        adapter = new MainTabPagerAdapter(fragManager, aircraftArrayList, false);
         mainPager.setAdapter(adapter);
         mainTabs.setViewPager(mainPager);
     }
@@ -239,10 +232,11 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "MainActivity resuming");
         Log.d(TAG, "SocketService found? " + Boolean.toString(doesThisServiceExist(SocketService.class)));
         Log.d(TAG, "TextFileReaderService found? " + Boolean.toString(doesThisServiceExist(TextFileReaderService.class)));
-        if(doesThisServiceExist(TextFileReaderService.class))
-            bindToTFRService();
-        if(currentFrag instanceof MainMapFragment) {
-            ((MainMapFragment) currentFrag).updateAircrafts(aircraftArrayList);
+        isTFRServiceRunning();
+        isSocketServiceRunning(url.toString());
+        if(adapter != null) {
+            adapter.activityResuming = true;
+            adapter.updateAircraftArrayList(aircraftArrayList);
         }
         super.onResume();
     }
@@ -255,7 +249,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        bindToTFRService();
+        bindToTFRService(false);
     }
 
     @Override
@@ -313,7 +307,9 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onSaveInstanceState(Bundle outState){
+        Log.d(TAG, "Saving instance state");
         outState.putSerializable("aircraftArrayList", aircraftArrayList);
+        outState.putBoolean("resuming", true);
         super.onSaveInstanceState(outState);
     }
 
@@ -399,37 +395,43 @@ public class MainActivity extends AppCompatActivity implements
         return false;
     }
 
-    private void isSocketServiceRunning(){
+    private void isSocketServiceRunning(String urlToConnectTo){
         Log.d(TAG, "Checking if SocketService is running");
         if(SocketService.isRunning()){
-            bindToSocketService();
+            bindToSocketService(urlToConnectTo);
         } else {
-            startService(new Intent(this, SocketService.class));
-            bindToSocketService();
+            Intent sockIntent = new Intent(this, SocketService.class);
+            sockIntent.putExtra("serverAddr", urlToConnectTo);
+            startService(sockIntent);
+            bindToSocketService(urlToConnectTo);
         }
     }
     private void isTFRServiceRunning(){
         Log.d(TAG, "Checking if TextFileReaderService is running");
         if(TextFileReaderService.isRunning()){
-            bindToTFRService();
+            bindToTFRService(true);
+            aircraftArrayList = TextFileReaderService.getAircraftArrayList();
         } else {
             //Intent tfrsIntent = new Intent(this, TextFileReaderService.class);
             //tfrsIntent.putExtra("MESSENGER", new Messenger(tfrsMessenger, new TextFileReaderService.TextFileBinder()));
             startService(new Intent(this, TextFileReaderService.class));
-            bindToTFRService();
+            bindToTFRService(false);
         }
     }
 
     //These next 2 methods bind to SocketService and TextFileReaderService
-    void bindToSocketService(){
+    void bindToSocketService(String urlToConnectTo){
         Log.d(TAG, "Binding to SocketService");
-        bindService(new Intent(this, SocketService.class), sockConnection, Context.BIND_AUTO_CREATE);
+        Intent sockBindingIntent = new Intent(this, SocketService.class);
+        sockBindingIntent.putExtra("serverAddr", urlToConnectTo);
+        bindService(sockBindingIntent, sockConnection, Context.BIND_AUTO_CREATE);
         socketServiceBound = true;
     }
-    void bindToTFRService(){
+    void bindToTFRService(boolean restartRead){
         Log.d(TAG, "Binding to TextFileReaderService");
         Intent tfrsIntent = new Intent(this, TextFileReaderService.class);
         tfrsIntent.putExtra("origin", "MainActivity");
+        tfrsIntent.putExtra("doIRestart", restartRead);
         bindService(new Intent(this, TextFileReaderService.class), tfrsConnection, Context.BIND_AUTO_CREATE);
         tfrServiceBound = true;
     }
@@ -571,61 +573,6 @@ public class MainActivity extends AppCompatActivity implements
         return "android:switcher" + viewPagerId + ":" + position;
     }
 
-    //TODO: Get TextFileReaderService working so that this stuff becomes irrelevant
-    public String readFromTextFile(Context context) {
-        int count = 0;
-        Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));
-        try {
-            while (s.hasNext()) {
-                count++;
-                String word = s.next(); //.trim(); //remove whitespaces from the line being read
-                String[] splitLine = word.split(","); //split the line from the log using the comma
-                Log.d(TAG, "Line #" + Integer.toString(count) + " from sample log = " + word +
-                        ", has " + Integer.toString(splitLine.length) + " elements.");
-                //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
-                if(splitLine.length == 22) {
-                    Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
-                    Log.d(TAG, "Aircraft status = " + newAircraft.toString());
-                    sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
-                } else {
-                    Log.d(TAG, "Insufficient amount of fields in message from " + splitLine[4]);
-                }
-            }
-        } finally {
-            Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
-                    " aircraft detected.");
-            s.close();
-            ArrayList<Aircraft> aircraftListToCompare = new ArrayList<Aircraft>();
-            for(Aircraft a : aircraftArrayList){
-                Log.d(TAG, "Detected: " + a.toString());
-                if(a.altitude != null && a.longitude != null && a.latitude != null){
-                    Log.d(TAG, "Adding aircraft " + a.icaoHexAddr);
-                    aircraftListToCompare.add(a);
-                }
-            }
-            for(Aircraft a : aircraftListToCompare){
-                Log.d(TAG, "Valid aircraft detected: " + a.toString());
-                Aircraft nearestAircraft = new Aircraft();
-                double lowest2DDist = 99999.9;
-                double lowest3DDist = 99999.9;
-                for(Aircraft b : aircraftListToCompare){
-                    Log.d(TAG, "Comparing against aircraft: " + b.toString());
-                    //Stops us from comparing the same Aircraft against itself
-                    if(!a.equals(b)){
-                        double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
-                        double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
-                        Log.d(TAG, "2D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(twoDDist) + "km");
-                        Log.d(TAG, "3D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(threeDDist) + "km");
-                        if(twoDDist < lowest2DDist && threeDDist < lowest3DDist)
-                            nearestAircraft = b;
-                    }
-                }
-                Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
-            }
-        }
-        return s.toString();
-    }
-
     @Override
     public void onFragmentInteraction(Uri uri){
         //Leaving this method empty is OK
@@ -643,25 +590,21 @@ public class MainActivity extends AppCompatActivity implements
      */
     private void sendMessageToService(int msgCode) {
         if(socketServiceBound) {
-            if(sockMessenger != null){
-                try {
-                    Message msg = Message.obtain(null, SocketService.MESSAGE, msgCode);
-                    msg.replyTo = sockMessenger;
-                    sockMessenger.send(msg);
-                } catch (RemoteException e) {
-                    Log.e(TAG, e.toString());
-                }
+            try {
+                Message msg = Message.obtain(null, SocketService.MESSAGE, msgCode);
+                msg.replyTo = sockMessenger;
+                sockMessenger.send(msg);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString());
             }
         }
         if(tfrServiceBound) {
-            if(tfrsMessenger != null){
-                try {
-                    Message msg = Message.obtain(null, TextFileReaderService.MSG_START_READING, msgCode);
-                    msg.replyTo = tfrsMessenger;
-                    tfrsMessenger.send(msg);
-                } catch (RemoteException e) {
-                    Log.e(TAG, e.toString());
-                }
+            try {
+                Message msg = Message.obtain(null, TextFileReaderService.MSG_START_READING, msgCode);
+                msg.replyTo = tfrsMessenger;
+                tfrsMessenger.send(msg);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString());
             }
         }
     }
@@ -679,9 +622,7 @@ public class MainActivity extends AppCompatActivity implements
                     aircraftArrayList = sbsDecoder.searchThroughAircraftList(aircraftArrayList,
                             newAircraft, Integer.parseInt(splitMessage[1]));
                     //The data has changed, the below method updates the adapter's associated views
-                    if(mainMapFrag != null){
-                        mainMapFrag.updateAircrafts(aircraftArrayList);
-                    }
+                    adapter.updateAircraftArrayList(aircraftArrayList);
                 }
             } else if (msg.what == TextFileReaderService.MSG_START_READING) {
                 String tfrsResponse = msg.getData().getString("sbsSampleLog");
@@ -718,21 +659,32 @@ public class MainActivity extends AppCompatActivity implements
         FragmentManager fragMgr;
         public Bundle bundle;
         ArrayList<Aircraft> aircraftArrayList;
+        boolean activityResuming = false;
 
-        public MainTabPagerAdapter(FragmentManager fm, ArrayList<Aircraft> aircraftArrayList) {
+        public MainTabPagerAdapter(FragmentManager fm, ArrayList<Aircraft> aircraftArrayList, boolean activityResuming) {
             super(fm);
             fragMgr = fm;
             this.aircraftArrayList = aircraftArrayList;
+            this.activityResuming = activityResuming;
         }
 
+        /**
+         * Updates the AircraftArrayList held in both of these Fragments.
+         * @param aircraftArrayList
+         */
         public void updateAircraftArrayList(ArrayList<Aircraft> aircraftArrayList) {
             Log.d(TAG, "Updating aircraft ArrayList");
+            Log.d(TAG, "Is activity resuming? " + Boolean.toString(activityResuming));
             this.aircraftArrayList = aircraftArrayList;
             notifyDataSetChanged();
             if (mainMapFrag != null) {
-                mainMapFrag.updateAircrafts(aircraftArrayList);
+                mainMapFrag.updateAircrafts(aircraftArrayList, activityResuming);
             } else {
                 Log.d(TAG, "No MainMapFragment found");
+            } if (aircraftListFrag != null) {
+                aircraftListFrag.updateDataset(aircraftArrayList);
+            } else {
+                Log.d(TAG, "No AircraftListFragment found");
             }
         }
 
@@ -755,10 +707,10 @@ public class MainActivity extends AppCompatActivity implements
         public Fragment getItem(int position){
             switch(position){
                 case 0:
-                    Log.d(TAG, "Switched to MainMapFragment");
+                    Log.d(TAG, "Initialised MainMapFragment");
                     return MainMapFragment.newInstance(aircraftArrayList);
                 case 1:
-                    Log.d(TAG, "Switched to AircraftListFragment");
+                    Log.d(TAG, "Initialised AircraftListFragment");
                     return AircraftListFragment.newInstance(1, aircraftArrayList);
             }
             return null;
@@ -785,4 +737,58 @@ public class MainActivity extends AppCompatActivity implements
             return createdFragment;
         }
     }
+    //DONE: Get TextFileReaderService working so that this stuff becomes irrelevant
+//    public String readFromTextFile(Context context) {
+//        int count = 0;
+//        Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));
+//        try {
+//            while (s.hasNext()) {
+//                count++;
+//                String word = s.next(); //.trim(); //remove whitespaces from the line being read
+//                String[] splitLine = word.split(","); //split the line from the log using the comma
+//                Log.d(TAG, "Line #" + Integer.toString(count) + " from sample log = " + word +
+//                        ", has " + Integer.toString(splitLine.length) + " elements.");
+//                //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
+//                if(splitLine.length == 22) {
+//                    Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
+//                    Log.d(TAG, "Aircraft status = " + newAircraft.toString());
+//                    sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
+//                } else {
+//                    Log.d(TAG, "Insufficient amount of fields in message from " + splitLine[4]);
+//                }
+//            }
+//        } finally {
+//            Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
+//                    " aircraft detected.");
+//            s.close();
+//            ArrayList<Aircraft> aircraftListToCompare = new ArrayList<Aircraft>();
+//            for(Aircraft a : aircraftArrayList){
+//                Log.d(TAG, "Detected: " + a.toString());
+//                if(a.altitude != null && a.longitude != null && a.latitude != null){
+//                    Log.d(TAG, "Adding aircraft " + a.icaoHexAddr);
+//                    aircraftListToCompare.add(a);
+//                }
+//            }
+//            for(Aircraft a : aircraftListToCompare){
+//                Log.d(TAG, "Valid aircraft detected: " + a.toString());
+//                Aircraft nearestAircraft = new Aircraft();
+//                double lowest2DDist = 99999.9;
+//                double lowest3DDist = 99999.9;
+//                for(Aircraft b : aircraftListToCompare){
+//                    Log.d(TAG, "Comparing against aircraft: " + b.toString());
+//                    //Stops us from comparing the same Aircraft against itself
+//                    if(!a.equals(b)){
+//                        double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
+//                        double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
+//                        Log.d(TAG, "2D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(twoDDist) + "km");
+//                        Log.d(TAG, "3D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(threeDDist) + "km");
+//                        if(twoDDist < lowest2DDist && threeDDist < lowest3DDist)
+//                            nearestAircraft = b;
+//                    }
+//                }
+//                Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
+//            }
+//        }
+//        return s.toString();
+//    }
 }

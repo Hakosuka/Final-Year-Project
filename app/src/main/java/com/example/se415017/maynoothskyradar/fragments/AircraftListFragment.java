@@ -6,6 +6,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,11 +37,13 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     // TODO: Customize parameter argument names
     private static final String ARG_COLUMN_COUNT = "column-count";
     private static final String AIR_KEY = "aircraftKey";
+    private static final String TAG = "AircraftListFragment";
     // TODO: Customize parameters
     private int mColumnCount = 1;
     private OnListFragmentInteractionListener mListener;
     private ArrayList<Aircraft> aircraftArrayList;
     List<AircraftListItem> aircraftListItems;
+    private AircraftRecyclerViewAdapter mAdapter;
     @Bind(android.R.id.list)
     RecyclerView aircraftListView;
 
@@ -100,11 +103,16 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
             } else {
                 recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
             }
-            recyclerView.setAdapter(new AircraftRecyclerViewAdapter(context, aircraftArrayList, mListener)); //, mListener));
+            mAdapter = new AircraftRecyclerViewAdapter(context, aircraftArrayList, mListener); //, mListener));
+            recyclerView.setAdapter(mAdapter);
         }
         return view;
     }
 
+    public void updateDataset(ArrayList<Aircraft> aircraftArrayList) {
+        this.aircraftArrayList = aircraftArrayList;
+        mAdapter.notifyDataSetChanged();
+    }
 
     @Override
     public void onAttach(Context context) {
@@ -147,6 +155,6 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
-
+        Log.d(TAG, "Item #" + position + " clicked");
     }
 }

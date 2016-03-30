@@ -197,8 +197,28 @@ public class SocketService extends Service {
     public void onRebind(Intent rebindIntent){
         Log.d(TAG, "Socket service rebound");
         super.onRebind(rebindIntent);
+        Bundle extras = rebindIntent.getExtras();
+        serverAddr = extras.getString("serverAddr");
         if(socket!=null){
-                reconnectSocket(socket);
+            reconnectSocket(socket);
+        } else {
+            Log.d(TAG, "Socket was null");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "Network thread running");
+                    initialiseSocket();
+                    if(initialisationSuccess) { // && urlReachable) {
+                        try {
+                            InputStream inputStream = socket.getInputStream();
+                            socketConnected = true;
+                            readFromInputStream(inputStream);
+                        } catch (IOException e) {
+                            Log.e(TAG, e.toString());
+                        }
+                    }
+                }
+            }).start();
         }
     }
     /**
@@ -217,14 +237,6 @@ public class SocketService extends Service {
                 builder.append(line);
                 Log.d(TAG, "String from BufferedReader = " + line);
                 sendMessageToClients(line);
-//                if(replyMessenger != null){
-//                    try {
-//                        message.obj = line;
-//                        replyMessenger.send(message);
-//                    } catch (RemoteException e) {
-//                        Log.e(TAG, e.toString());
-//                    }
-//                }
             }
         } catch (IOException e) {
             Log.e(TAG, "readFromInputStream error: " + e.toString());
