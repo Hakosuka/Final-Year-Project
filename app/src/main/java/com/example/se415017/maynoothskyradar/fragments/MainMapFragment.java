@@ -340,7 +340,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                     //be added to the map as a new marker.
                     //Also, "markersAddedAfterResume" is here so that the Markers get added again after
                     //a configuration change.
-                    if (!aircraftAndMarkers.containsKey(a.icaoHexAddr) || !markersAdded) { //AfterResume) {
+                    if (!aircraftAndMarkers.containsKey(a.icaoHexAddr)) { //AfterResume) {
                         Marker m = googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
                                 .snippet("Coordinates: " + a.getPosString())
                                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
