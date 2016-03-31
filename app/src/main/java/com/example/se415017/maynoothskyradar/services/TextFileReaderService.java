@@ -153,8 +153,15 @@ public class TextFileReaderService extends Service {
                         double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
                         Log.d(TAG, "2D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(twoDDist) + "km");
                         Log.d(TAG, "3D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(threeDDist) + "km");
-                        if(twoDDist < lowest2DDist && threeDDist < lowest3DDist)
+                        if(twoDDist < lowest2DDist && threeDDist < lowest3DDist) {
                             nearestAircraft = b;
+                            a.nearestNeighbour = b;
+                            b.nearestNeighbour = a;
+                            a.twoDDistToNN = twoDDist;
+                            b.twoDDistToNN = twoDDist;
+                            a.threeDDistToNN = threeDDist;
+                            b.threeDDistToNN = threeDDist;
+                        }
                     }
                 }
                 Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());

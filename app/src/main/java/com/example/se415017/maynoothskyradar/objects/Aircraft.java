@@ -27,6 +27,9 @@ public class Aircraft implements Parcelable {
     public String latitude, longitude;
     public int climbRate = 0; //The rate of change in the Aircraft's altitude per minute
     public ArrayList<LatLng> path; //The path that the Aircraft has followed
+    public Aircraft nearestNeighbour; //Nearest Aircraft to it
+    public double twoDDistToNN; //2D distance to the Aircraft nearest to it
+    public double threeDDistToNN; //3D distance to the Aircraft nearest to it
 
     //Default public constructor with no argument
     public Aircraft(){

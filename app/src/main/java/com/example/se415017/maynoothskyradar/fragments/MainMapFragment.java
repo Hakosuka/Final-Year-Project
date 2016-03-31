@@ -360,7 +360,11 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                         Log.d(TAG, "Marker to update: " + marker);
                         marker.setPosition(a.getPosition());
                         marker.setTitle("Mode-S: " + a.icaoHexAddr);
-                        marker.setSnippet("Coordinates: " + a.getPosString());
+                        if(a.nearestNeighbour != null){
+                            marker.setSnippet("Coordinates: " + a.getPosString() + "\nNearest aircraft: " + a.nearestNeighbour.icaoHexAddr);
+                        } else {
+                            marker.setSnippet("Coordinates: " + a.getPosString());
+                        }
                         marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north));
                         marker.setFlat(true);
                         marker.setRotation(Float.parseFloat(a.track)); //rotate the marker by the track of the aircraft;
