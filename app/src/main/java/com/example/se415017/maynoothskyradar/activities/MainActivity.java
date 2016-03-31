@@ -92,12 +92,7 @@ public class MainActivity extends AppCompatActivity implements
     final Messenger sockMessenger = new Messenger(new IncomingHandler());
     final Messenger tfrsMessenger = new Messenger(new IncomingHandler());
 
-    public TextFileReaderService textFileReaderService;
-    public SocketService socketService;
-
-    Handler delaySimulator = new Handler();
-
-    static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
+    //static final LatLng MAYNOOTH = new LatLng(53.23, -6.36);
     boolean socketServiceBound = false;
     boolean tfrServiceBound = false;
     final String TAG = "MainActivity";
@@ -609,6 +604,30 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    private ArrayList<Aircraft> findNearestAircraft(ArrayList<Aircraft> aircraftListToCompare) {
+        for(Aircraft a : aircraftArrayList) {
+            double lowest2DDist = 99999.0;
+            double lowest3DDist = 99999.0;
+            for(Aircraft b : aircraftArrayList) {
+                if(!a.equals(b) && b.latitude != null && b.longitude != null) {
+                    double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
+                    double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
+                    if (twoDDist < lowest2DDist && threeDDist < lowest3DDist) {
+                        lowest2DDist = twoDDist;
+                        lowest3DDist = threeDDist;
+                        a.nearestNeighbour = b;
+                        b.nearestNeighbour = a;
+                        a.twoDDistToNN = twoDDist;
+                        b.twoDDistToNN = twoDDist;
+                        a.threeDDistToNN = threeDDist;
+                        b.threeDDistToNN = threeDDist;
+                    }
+                }
+            }
+        }
+        return aircraftArrayList;
+    }
+
     @SuppressLint("HandlerLeak")
     class IncomingHandler extends android.os.Handler {
         @Override
@@ -621,6 +640,7 @@ public class MainActivity extends AppCompatActivity implements
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitMessage);
                     aircraftArrayList = sbsDecoder.searchThroughAircraftList(aircraftArrayList,
                             newAircraft, Integer.parseInt(splitMessage[1]));
+                    aircraftArrayList = findNearestAircraft(aircraftArrayList);
                     //The data has changed, the below method updates the adapter's associated views
                     adapter.updateAircraftArrayList(aircraftArrayList);
                 }
@@ -633,6 +653,7 @@ public class MainActivity extends AppCompatActivity implements
                     Log.d(TAG, "New aircraft = " + newAircraft.toString());
                     aircraftArrayList = sbsDecoder.searchThroughAircraftList(aircraftArrayList,
                             newAircraft, Integer.parseInt(splitMessage[1]));
+                    aircraftArrayList = findNearestAircraft(aircraftArrayList);
                     adapter.updateAircraftArrayList(aircraftArrayList);
                 }
             } else {

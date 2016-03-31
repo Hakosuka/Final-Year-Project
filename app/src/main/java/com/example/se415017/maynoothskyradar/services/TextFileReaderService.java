@@ -134,19 +134,16 @@ public class TextFileReaderService extends Service {
             s.close();
             ArrayList<Aircraft> aircraftListToCompare = new ArrayList<>();
             for(Aircraft a : aircraftArrayList){
-                Log.d(TAG, "Detected: " + a.toString());
                 if(a.altitude != null && a.longitude != null && a.latitude != null){
                     Log.d(TAG, "Adding aircraft " + a.icaoHexAddr);
                     aircraftListToCompare.add(a);
                 }
             }
             for(Aircraft a : aircraftListToCompare){
-                Log.d(TAG, "Valid aircraft detected: " + a.toString());
                 Aircraft nearestAircraft = new Aircraft();
                 double lowest2DDist = 99999.9;
                 double lowest3DDist = 99999.9;
                 for(Aircraft b : aircraftListToCompare){
-                    Log.d(TAG, "Comparing against aircraft: " + b.toString());
                     //Stops us from comparing the same Aircraft against itself
                     if(!a.equals(b)){
                         double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
@@ -154,6 +151,8 @@ public class TextFileReaderService extends Service {
                         Log.d(TAG, "2D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(twoDDist) + "km");
                         Log.d(TAG, "3D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(threeDDist) + "km");
                         if(twoDDist < lowest2DDist && threeDDist < lowest3DDist) {
+                            lowest2DDist = twoDDist;
+                            lowest3DDist = threeDDist;
                             nearestAircraft = b;
                             a.nearestNeighbour = b;
                             b.nearestNeighbour = a;
