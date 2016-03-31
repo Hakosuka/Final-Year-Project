@@ -33,7 +33,7 @@ public class NetHelper {
         netInfo = connMgr.getActiveNetworkInfo();
 
         if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-            Log.d(TAG, netInfo.toString()); //TODO: Test if this creates a NullPointerException
+            Log.d(TAG, netInfo.toString());
             return true;
         }
         else {

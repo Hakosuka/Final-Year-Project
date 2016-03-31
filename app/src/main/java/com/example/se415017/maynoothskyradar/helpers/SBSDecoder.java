@@ -108,14 +108,12 @@ public class SBSDecoder {
                         aircraftToAddOrModify.altitude = sbsMessageArray[11];
                         break;
                     case 8:
-                        //Log.d(TAG, "Is " + sbsMessageArray[4] + " on the ground? " + Boolean.toString(sbsMessageArray[21].equals("1")));
                         break;
                 }
                 break;
             default:
                 break;
         }
-        //Log.d(TAG, "Aircraft status = " + sbsMessageArray[1] + ", " + aircraftToAddOrModify.toString() + " ******");
         return aircraftToAddOrModify;
     }
 

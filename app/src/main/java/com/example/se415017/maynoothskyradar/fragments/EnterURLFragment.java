@@ -43,10 +43,6 @@ import butterknife.OnTextChanged;
  * changes, and that would suck.
  */
 public class EnterURLFragment extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-
-    // TODO: Rename and change types of parameters
     final String PREFS = "UserPreferences";
     final String SERVER_PREF = "serverAddress";
     final String LAT_PREF = "latitude";
@@ -126,7 +122,6 @@ public class EnterURLFragment extends Fragment {
      * this fragment using the provided parameters.
      * @return A new instance of fragment EnterURLFragment.
      */
-    // TODO: Rename and change types and number of parameters
     public static EnterURLFragment newInstance() {
         return new EnterURLFragment();
     }
@@ -151,7 +146,7 @@ public class EnterURLFragment extends Fragment {
         // If the user has changed their device's orientation, load their inputs from before they did that
         if(savedInstanceState != null){
             Log.d(TAG, "Entering saved user inputs into EditText fields");
-            serverAddressEditor.setText(savedInstanceState.getString(SERVER_PREF, "")); //TODO: NullPointerException!
+            serverAddressEditor.setText(savedInstanceState.getString(SERVER_PREF, ""));
             latitudeEditor.setText(savedInstanceState.getString(LAT_PREF, ""));
             longitudeEditor.setText(savedInstanceState.getString(LON_PREF, ""));
         } else {
@@ -180,10 +175,6 @@ public class EnterURLFragment extends Fragment {
         long lonFromEditor = Double.doubleToRawLongBits(
                 Double.parseDouble(longitudeEditor.getText().toString()));
         editor.putString(SERVER_PREF, editorText);
-        //TODO: Refactor this so that LAT_PREF and LON_PREF are stored as Strings, to cut down on
-        //variable type conversion from String -> Double -> Long -> Double.
-        //editor.putString(LAT_PREF, latitudeEditor.getText().toString()));
-        //editor.putString(LON_PREF, longitudeEditor.getText().toString()));
         editor.putLong(LAT_PREF, latFromEditor);
         editor.putLong(LON_PREF, lonFromEditor);
         editor.apply();
@@ -233,7 +224,7 @@ public class EnterURLFragment extends Fragment {
         if (context instanceof OnFragmentInteractionListener) {
             mListener = (OnFragmentInteractionListener) context;
         } else {
-            throw new RuntimeException(context.toString() //TODO: implement OnFragmentInteractionListner
+            throw new RuntimeException(context.toString()
                     + " must implement OnFragmentInteractionListener");
         }
     }
@@ -255,7 +246,6 @@ public class EnterURLFragment extends Fragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
     }
 

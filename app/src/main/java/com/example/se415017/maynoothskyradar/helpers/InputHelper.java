@@ -14,7 +14,6 @@ public class InputHelper {
 
     //Constructor of the InputHelper class
     public InputHelper() {
-        //TODO: Read tutorials on helper classes
         Log.d(getClass().getSimpleName(), "InputHelper created");
     }
 

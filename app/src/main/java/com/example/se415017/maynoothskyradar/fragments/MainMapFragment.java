@@ -264,7 +264,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
      */
     private void setUpMap(GoogleMap googleMap, boolean activityResumed) {
         googleMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
-        //googleMap.setMyLocationEnabled(true); TODO: Maybe wait until I have the pointing function worked out
         googleMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)))
                 .setTitle("My server is here");
         //DONE: Add custom markers for the planes - see onCreateView()
@@ -297,7 +296,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(final GoogleMap gMap) {
         if(!mapSetUp){
             googleMap = gMap;
-            Log.d(TAG, "setUpMap - onMapReady");
             setUpMap(googleMap, activityResuming);
             mapSetUp = true;
         }
@@ -310,7 +308,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     /**
-     * TODO:
      * Adds markers and polylines to the map for each Aircraft.
      * @param activityResumed - when returning the app, but the app hasn't killed the MainActivity,
      *                        additional unnecessary markers were laid on top of the existing map
@@ -319,9 +316,8 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     public void addMarkers(boolean activityResumed){
         if(!activityResumed) {
             for (Aircraft a : aircrafts) {
-                Log.d(TAG, "Checking Aircraft for position");
                 //Check if the Aircraft object has latitude and longitude values yet
-                //If not, don't add them to the map, there'd be no point adding them in
+                //If not, don't add them to the map, there'd be no point adding a Marker for them
                 if (a.latitude != null && a.longitude != null) {
                     //New Aircraft found
                     //29 Mar - I'll have to use a different data type for the HashMap entries' values
@@ -344,7 +340,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                         aircraftAndPaths.put(a.icaoHexAddr, p);
                         Log.d(TAG, "Marker ID for " + a.icaoHexAddr + " = " + m.getId());
                     } else {
-                        //TODO: Update from existing Aircraft
                         Marker marker = aircraftAndMarkers.get(a.icaoHexAddr);
                         Log.d(TAG, "Marker to update: " + marker);
                         marker.setPosition(a.getPosition());
@@ -398,7 +393,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                             .setAction("OK", new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    //TODO: Take the user to the AircraftDetailFragment
+                                    //TODO: Show a BottomSheet
                                     Log.d(TAG, "Snackbar button clicked.");
                                     sheetHexContent.setText(aircraftToBeShown.icaoHexAddr);
                                     sheetCallsign.setText(aircraftToBeShown.callsign);
@@ -450,7 +445,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                         .setAction("OK", new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                //TODO: Take the user to the AircraftDetailFragment
+                                //TODO: Show the BottomSheet
                                 Log.d(TAG, "Snackbar button clicked.");
                                 sheetHexContent.setText(aircraftToBeShown.icaoHexAddr);
                                 sheetCallsign.setText(aircraftToBeShown.callsign);
@@ -471,37 +466,6 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         Log.d(TAG, "Finished adding markers");
     }
 
-    public void animateMarker(final Marker marker, final LatLng toPosition, final boolean hideMarker){
-        final Handler handler = new Handler();
-        final long start = SystemClock.uptimeMillis();
-        Projection proj = googleMap.getProjection();
-        Point startPt = proj.toScreenLocation(marker.getPosition());
-        final LatLng startLatLng = proj.fromScreenLocation(startPt);
-        final long duration = 500;
-        final Interpolator interpolator = new LinearInterpolator();
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                long elapsed = SystemClock.uptimeMillis() - start;
-                float t = interpolator.getInterpolation((float) elapsed/duration);
-                double lng = t*toPosition.longitude + (1 - t) * startLatLng.longitude;
-                double lat = t*toPosition.latitude + (1 - t) * startLatLng.latitude;
-                marker.setPosition(new LatLng(lat, lng));
-                if(t < 1.0) {
-                    //Post again 16ms later
-                    handler.postDelayed(this, 16);
-                } else {
-                    if(hideMarker) {
-                        marker.setVisible(false);
-                    } else {
-                        marker.setVisible(true);
-                    }
-                }
-            }
-        });
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
@@ -551,13 +515,5 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         public void onFragmentInteraction(Uri uri);
-        //public void onFragmentSetAircraft(ArrayList<Aircraft> aircraftArrayList);
     }
-
-//    public class UpdateMarkerTask extends AsyncTask<Void, Void, Aircraft> {
-//        @Override
-//        protected Location doInBackground(Void...arg0){
-//            return (Location) aircraft.getPosition();
-//        }
-//    }
 }
