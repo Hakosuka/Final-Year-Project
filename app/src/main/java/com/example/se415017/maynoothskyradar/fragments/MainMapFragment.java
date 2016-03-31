@@ -165,18 +165,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                         }
                     }
                 }
-//            } else if (getArguments().getSerializable(MARKER_KEY) instanceof ArrayList<?>) {
-//                ArrayList<?> unknownTypeList = (ArrayList<?>) getArguments().getSerializable(MARKER_KEY);
-//                if(unknownTypeList != null && unknownTypeList.size() > 0) {
-//                    for (int i = 0; i < unknownTypeList.size(); i++) {
-//                        Object unknownTypeObject = unknownTypeList.get(i);
-//                        if(unknownTypeObject instanceof Marker){
-//                            aircraftMarkers.add((Marker) unknownTypeObject);
-//                        }
-//                    }
-//                }
             }
-            //aircraftAndMarkers = (HashMap<String, Marker>) savedInstanceState.getSerializable(HASHMAP_KEY);
         }
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         latitude = Double.longBitsToDouble(sharedPreferences.getLong(LAT_PREF, 0));

@@ -529,16 +529,6 @@ public class MainActivity extends AppCompatActivity implements
                 .show();
     }
 
-    /**
-     * Returns the tag of a Fragment so that I can find it.
-     * @param viewPagerId The ID of the ViewPager
-     * @param position The position in the ViewPager of the Fragment we want to find
-     * @return
-     */
-    private String getFragmentTag(int viewPagerId, int position) {
-        return "android:switcher" + viewPagerId + ":" + position;
-    }
-
     @Override
     public void onFragmentInteraction(Uri uri){
         //Leaving this method empty is OK
@@ -576,10 +566,10 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private ArrayList<Aircraft> findNearestAircraft(ArrayList<Aircraft> aircraftListToCompare) {
-        for(Aircraft a : aircraftArrayList) {
+        for(Aircraft a : aircraftListToCompare) {
             double lowest2DDist = 99999.0;
             double lowest3DDist = 99999.0;
-            for(Aircraft b : aircraftArrayList) {
+            for(Aircraft b : aircraftListToCompare) {
                 if(!a.equals(b) && b.latitude != null && b.longitude != null) {
                     double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
                     double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
@@ -596,7 +586,7 @@ public class MainActivity extends AppCompatActivity implements
                 }
             }
         }
-        return aircraftArrayList;
+        return aircraftListToCompare;
     }
 
     @SuppressLint("HandlerLeak")
