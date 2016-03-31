@@ -514,35 +514,6 @@ public class MainActivity extends AppCompatActivity implements
                 })
                 .show();
     }
-    /**
-     * Shows the alert dialog which notifies the user that they haven't saved the address of their server.
-     * Now redundant thanks to EnterURLFragment.
-     * @param activity
-     * @return MaterialDialog
-     */
-    public MaterialDialog showNoServerAddressDialog(final Activity activity){
-        Log.d(TAG, "SocketService found? " + Boolean.toString(doesThisServiceExist(SocketService.class)));
-        return new MaterialDialog.Builder(this)
-                .title(R.string.server_not_added)
-                .content(R.string.enter_address)
-                .inputRange(8, 255, Color.RED)
-                .positiveText("Enter")
-                .input("Server address", "", false, new MaterialDialog.InputCallback() {
-                    //The "false" above doesn't allow user input when the EditText field is empty
-                    @Override
-                    public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
-                        Log.d(TAG, "User input = " + input.toString());
-                        strUrl = input.toString();
-                        SharedPreferences sharedPref = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = sharedPref.edit();
-                        Log.d(TAG, "onInput() Address to be saved = " + strUrl);
-                        editor.putString(SERVER_PREF, strUrl);
-                        //apply() works faster than apply() but apply() works immediately
-                        editor.apply();
-                    }
-                })
-                .show();
-    }
 
     /**
      * Just a dialog that gives some basic details about the app.
