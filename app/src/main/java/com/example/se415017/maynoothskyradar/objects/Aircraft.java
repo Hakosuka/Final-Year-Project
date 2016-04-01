@@ -65,7 +65,6 @@ public class Aircraft implements Parcelable {
         this.longitude = longitude;
     }
 
-    //TODO: Implement OnItemClickListener
     //This code below is to allow for the use of Parcelables, which are at least 10x quicker than Serializables
     //Values are read in the same order they were written to the Parcelable.
     public Aircraft(Parcel in){

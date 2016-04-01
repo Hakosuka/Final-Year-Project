@@ -24,7 +24,6 @@ import org.w3c.dom.Text;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-//TODO: Convert this to a Service, just like SocketService
 /**
  * Created by se415017 on 03/03/2016.
  *
@@ -219,7 +218,7 @@ public class TextFileReaderService extends Service {
                     if(!finishedReading) {
                         aircraftArrayList = readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
                             //}
-                        //}, 150); //Wait 150ms to send TODO: not send the whole text file at once
+                        //}, 150); //Wait 150ms to send
                     }
                     long readingFinish = SystemClock.currentThreadTimeMillis() - readingStart;
                     Log.d(TAG, "Process took " + readingFinish + "ms");

@@ -19,7 +19,6 @@
     <string name="etarr">ETA:</string>
     <string name="title_activity_base">BaseActivity</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <string name="enter_address">Please enter the web address (no port number needed) of your server below.</string>

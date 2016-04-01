@@ -15,8 +15,6 @@ import android.widget.ListView;
 
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.activities.MainActivity;
-import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent;
-import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent.DummyItem;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
 import java.lang.reflect.Array;
@@ -34,11 +32,9 @@ import butterknife.ButterKnife;
  */
 public class AircraftListFragment extends Fragment implements AdapterView.OnItemClickListener {
 
-    // TODO: Customize parameter argument names
     private static final String ARG_COLUMN_COUNT = "column-count";
     private static final String AIR_KEY = "aircraftKey";
     private static final String TAG = "AircraftListFragment";
-    // TODO: Customize parameters
     private int mColumnCount = 1;
     private OnListFragmentInteractionListener mListener;
     private ArrayList<Aircraft> aircraftArrayList;
@@ -54,7 +50,6 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     public AircraftListFragment() {
     }
 
-    // TODO: Customize parameter initialization
     @SuppressWarnings("unused")
     public static AircraftListFragment newInstance(int columnCount, ArrayList<Aircraft> aircraftArrayList) {
         AircraftListFragment fragment = new AircraftListFragment();
@@ -149,7 +144,6 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     public interface OnListFragmentInteractionListener {
         // TODO: Update argument type and name
         void onListFragmentInteraction(Aircraft item);
-        //TODO: Implement this in MainActivity to show more detail on the Aircraft
         //public void onListItemSelection(int position);
     }
 

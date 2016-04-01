@@ -16,7 +16,7 @@
         android:fragment="com.example.se415017.maynoothskyradar.activities.SettingsActivity$DataSyncPreferenceFragment"
         android:icon="@drawable/ic_sync_black_24dp"
         android:title="@string/pref_header_data_sync" />
-    <!-- TODO: Add headers that are relevant to my settings Activity -->
+
     <header
         android:fragment="com.example.se415017.maynoothskyradar.activities.SettingsActivity$ServerAddressPreferenceFragment"
         android:title="Server's web address" />
