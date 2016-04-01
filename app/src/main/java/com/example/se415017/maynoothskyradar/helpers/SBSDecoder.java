@@ -133,11 +133,6 @@ public class SBSDecoder {
                                                          int transMessageType){
         //Checks if an aircraft with a given ICAO hex code is found in the list
         boolean hexIdentFound = false;
-        Log.d(TAG, "Path length = " + aircraftToSearchFor.path.size());
-        if(aircraftToSearchFor.path.size() > 0){
-            Log.d(TAG, "Path = " + aircraftToSearchFor.getPosition());
-            Log.d(TAG, "Path = " + aircraftToSearchFor.icaoHexAddr + aircraftToSearchFor.path);
-        }
         //There's no point iterating through an empty list.
         if (aircraftArrayList.size() > 0) {
             //foreach loops were causing ConcurrentModificationExceptions

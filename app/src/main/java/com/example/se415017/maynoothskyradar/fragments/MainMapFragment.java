@@ -314,138 +314,85 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
      *                        Markers.
      */
     public void addMarkers(boolean activityResumed){
-        if(!activityResumed) {
-            for (Aircraft a : aircrafts) {
-                //Check if the Aircraft object has latitude and longitude values yet
-                //If not, don't add them to the map, there'd be no point adding a Marker for them
-                if (a.latitude != null && a.longitude != null) {
-                    //New Aircraft found
-                    //29 Mar - I'll have to use a different data type for the HashMap entries' values
-                    //as if I were to use an Aircraft object as the value, the new Aircraft would
-                    //be added to the map as a new marker.
-                    //Also, "markersAddedAfterResume" is here so that the Markers get added again after
-                    //a configuration change.
-                    if (!aircraftAndMarkers.containsKey(a.icaoHexAddr)) { //AfterResume) {
-                        Marker m = googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
-                                .snippet("Coordinates: " + a.getPosString())
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
-                                .flat(true)
-                                .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
-                        Polyline p = googleMap.addPolyline(new PolylineOptions()
-                                .width(5.0f)
-                                .color(Color.rgb(253, 95, 0)) //"Neon orange" colour - stands out easily on the map
-                                .geodesic(true) //Draws lines on the map assuming it's a globe, not a flat map
-                                .addAll(a.path));
-                        aircraftAndMarkers.put(a.icaoHexAddr, m);
-                        aircraftAndPaths.put(a.icaoHexAddr, p);
-                        Log.d(TAG, "Marker ID for " + a.icaoHexAddr + " = " + m.getId());
-                    } else {
-                        Marker marker = aircraftAndMarkers.get(a.icaoHexAddr);
-                        Log.d(TAG, "Marker to update: " + marker);
-                        marker.setPosition(a.getPosition());
-                        marker.setTitle("Mode-S: " + a.icaoHexAddr);
-                        if(a.nearestNeighbour != null){
-                            marker.setSnippet("Coordinates: " + a.getPosString() + "\nNearest aircraft: " + a.nearestNeighbour.icaoHexAddr);
-                        } else {
-                            marker.setSnippet("Coordinates: " + a.getPosString());
-                        }
-                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north));
-                        marker.setFlat(true);
-                        marker.setRotation(Float.parseFloat(a.track)); //rotate the marker by the track of the aircraft;
-                        //Update the entry in aircraftAndMarkers for the updated Aircraft
-                        aircraftAndMarkers.put(a.icaoHexAddr, marker);
-                        Polyline path = aircraftAndPaths.get(a.icaoHexAddr);
-                        path.setPoints(a.path);
-                        path.setWidth(5.0f);
-                        path.setColor(Color.rgb(253, 95, 0));
-                        path.setGeodesic(true);
-                        //Update the entry in aircraftAndPaths for the updated Aircraft
-                        aircraftAndPaths.put(a.icaoHexAddr, path);
-                    }
+        for (Aircraft a : aircrafts) {
+            //Check if the Aircraft object has latitude and longitude values yet
+            //If not, don't add them to the map, there'd be no point adding a Marker for them
+            if (a.latitude != null && a.longitude != null) {
+                //New Aircraft found
+                //29 Mar - I'll have to use a different data type for the HashMap entries' values
+                //as if I were to use an Aircraft object as the value, the new Aircraft would
+                //be added to the map as a new marker.
+                //Also, "markersAddedAfterResume" is here so that the Markers get added again after
+                //a configuration change.
+                if (!aircraftAndMarkers.containsKey(a.icaoHexAddr) || !markersAdded) { //AfterResume) {
+                    Marker m = googleMap.addMarker(new MarkerOptions().position(a.getPosition()).title("Mode-S: " + a.icaoHexAddr)
+                            .snippet("Coordinates: " + a.getPosString())
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north))
+                            .flat(true)
+                            .rotation(Float.parseFloat(a.track))); //rotate the marker by the track of the aircraft
+                    Polyline p = googleMap.addPolyline(new PolylineOptions()
+                            .width(5.0f)
+                            .color(Color.rgb(253, 95, 0)) //"Neon orange" colour - stands out easily on the map
+                            .geodesic(true) //Draws lines on the map assuming it's a globe, not a flat map
+                            .addAll(a.path));
+                    aircraftAndMarkers.put(a.icaoHexAddr, m);
+                    aircraftAndPaths.put(a.icaoHexAddr, p);
+                    Log.d(TAG, "Marker ID for " + a.icaoHexAddr + " = " + m.getId());
                 } else {
-                    Log.d(TAG, "No position found for " + a.icaoHexAddr);
+                    Marker marker = aircraftAndMarkers.get(a.icaoHexAddr);
+                    Log.d(TAG, "Marker to update: " + marker.getId());
+                    marker.setPosition(a.getPosition());
+                    marker.setTitle("Mode-S: " + a.icaoHexAddr);
+                    if(a.nearestNeighbour != null){
+                        marker.setSnippet("Coordinates: " + a.getPosString() + "\nNearest aircraft: " + a.nearestNeighbour.icaoHexAddr);
+                    } else {
+                        marker.setSnippet("Coordinates: " + a.getPosString());
+                    }
+                    marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.airplane_north));
+                    marker.setFlat(true);
+                    marker.setRotation(Float.parseFloat(a.track)); //rotate the marker by the track of the aircraft;
+                    //Update the entry in aircraftAndMarkers for the updated Aircraft
+                    aircraftAndMarkers.put(a.icaoHexAddr, marker);
+                    Polyline path = aircraftAndPaths.get(a.icaoHexAddr);
+                    path.setPoints(a.path);
+                    path.setWidth(5.0f);
+                    path.setColor(Color.rgb(253, 95, 0));
+                    path.setGeodesic(true);
+                    //Update the entry in aircraftAndPaths for the updated Aircraft
+                    aircraftAndPaths.put(a.icaoHexAddr, path);
+                }
+            } else {
+                Log.d(TAG, "No position found for " + a.icaoHexAddr);
+            }
+        }
+        googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+            Aircraft selected = null;
+            //Search the HashMap for the Aircraft which corresponds to the clicked Marker
+            for (String aHexCode : aircraftAndMarkers.keySet()) {
+                if (aircraftAndMarkers.get(aHexCode).equals(marker)) {
+                    for (Aircraft a : aircrafts) {
+                        if (a.icaoHexAddr.equalsIgnoreCase(aHexCode)) {
+                            selected = a;
+                            //We've found the right Aircraft, now break out of the loop
+                            break;
+                        }
+                    }
+                    break;
                 }
             }
-            googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                @Override
-                public boolean onMarkerClick(Marker marker) {
-                Aircraft selected = null;
-                //Search the HashMap for the Aircraft which corresponds to the clicked Marker
-                for (String aHexCode : aircraftAndMarkers.keySet()) {
-                    if (aircraftAndMarkers.get(aHexCode).equals(marker)) {
-                        for (Aircraft a : aircrafts) {
-                            if (a.icaoHexAddr.equalsIgnoreCase(aHexCode)) {
-                                selected = a;
-                                //We've found the right Aircraft, now break out of the loop
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-                final Aircraft aircraftToBeShown = selected;
-                //Sometimes some Markers weren't mapped to an Aircraft object, causing a
-                //NullPointerException - such as the Marker for the server's location.
-                if (selected != null) {
-                    Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
-                    //Show the Aircraft's location if its Marker is clicked
-                    Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
-                            .setAction("OK", new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    //TODO: Show a BottomSheet
-                                    Log.d(TAG, "Snackbar button clicked.");
-                                    sheetHexContent.setText(aircraftToBeShown.icaoHexAddr);
-                                    sheetCallsign.setText(aircraftToBeShown.callsign);
-                                    sheetAltContent.setText(aircraftToBeShown.altitude);
-                                    sheetLatContent.setText(aircraftToBeShown.latitude);
-                                    sheetLonContent.setText(aircraftToBeShown.longitude);
-                                    sheetGSpeedContent.setText(aircraftToBeShown.gSpeed);
-                                    //Add degree symbol
-                                    sheetTrackContent.setText(aircraftToBeShown.track + "\u00B0");
-                                    bottomSheet.setVisibility(View.VISIBLE);
-                                }
-                            })
-                            .show();
-                    //I need to add this too, otherwise the map won't centre on the Marker's location
-                    googleMap.animateCamera(CameraUpdateFactory
-                            .newLatLngZoom(selected.getPosition(), 8.0f));
-                } else {
-                    Log.d(TAG, "Marker doesn't correspond to any plane");
-                }
-                //I need to add this, otherwise the InfoWindow won't show
-                marker.showInfoWindow();
-
-                return true;
-                }
-            });
-            googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-                @Override
-                public void onInfoWindowClick(Marker marker) {
-                Aircraft selected = null;
-                for (String aHexCode : aircraftAndMarkers.keySet()) {
-                    if (aircraftAndMarkers.get(aHexCode).equals(marker)) {
-                        for (Aircraft a : aircrafts) {
-                            if (a.icaoHexAddr.equalsIgnoreCase(aHexCode)) {
-                                selected = a;
-                                //We've found the right Aircraft, now break out of the loop
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-                //Necessary for the SnackBar code below
-                final Aircraft aircraftToBeShown = selected;
-                //Just in case it's the server's Marker
-                if (selected != null) {
-                    Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
-                    //Show the Aircraft's location if its Marker is clicked
-                    Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
+            final Aircraft aircraftToBeShown = selected;
+            //Sometimes some Markers weren't mapped to an Aircraft object, causing a
+            //NullPointerException - such as the Marker for the server's location.
+            if (selected != null) {
+                Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
+                //Show the Aircraft's location if its Marker is clicked
+                Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
                         .setAction("OK", new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                //TODO: Show the BottomSheet
+                                //TODO: Show a BottomSheet
                                 Log.d(TAG, "Snackbar button clicked.");
                                 sheetHexContent.setText(aircraftToBeShown.icaoHexAddr);
                                 sheetCallsign.setText(aircraftToBeShown.callsign);
@@ -459,10 +406,62 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                             }
                         })
                         .show();
+                //I need to add this too, otherwise the map won't centre on the Marker's location
+                googleMap.animateCamera(CameraUpdateFactory
+                        .newLatLngZoom(selected.getPosition(), 8.0f));
+            } else {
+                Log.d(TAG, "Marker doesn't correspond to any plane");
+            }
+            //I need to add this, otherwise the InfoWindow won't show
+            marker.showInfoWindow();
+
+            return true;
+            }
+        });
+        googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+            Aircraft selected = null;
+            for (String aHexCode : aircraftAndMarkers.keySet()) {
+                if (aircraftAndMarkers.get(aHexCode).equals(marker)) {
+                    for (Aircraft a : aircrafts) {
+                        if (a.icaoHexAddr.equalsIgnoreCase(aHexCode)) {
+                            selected = a;
+                            //We've found the right Aircraft, now break out of the loop
+                            break;
+                        }
+                    }
+                    break;
                 }
-                }
-            });
-        }
+            }
+            //Necessary for the SnackBar code below
+            final Aircraft aircraftToBeShown = selected;
+            //Just in case it's the server's Marker
+            if (selected != null) {
+                Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
+                //Show the Aircraft's location if its Marker is clicked
+                Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
+                    .setAction("OK", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            //TODO: Show the BottomSheet
+                            Log.d(TAG, "Snackbar button clicked.");
+                            sheetHexContent.setText(aircraftToBeShown.icaoHexAddr);
+                            sheetCallsign.setText(aircraftToBeShown.callsign);
+                            sheetAltContent.setText(aircraftToBeShown.altitude);
+                            sheetLatContent.setText(aircraftToBeShown.latitude);
+                            sheetLonContent.setText(aircraftToBeShown.longitude);
+                            sheetGSpeedContent.setText(aircraftToBeShown.gSpeed);
+                            //Add degree symbol
+                            sheetTrackContent.setText(aircraftToBeShown.track + "\u00B0");
+                            bottomSheet.setVisibility(View.VISIBLE);
+                        }
+                    })
+                    .show();
+            }
+            }
+        });
+
         Log.d(TAG, "Finished adding markers");
     }
 

@@ -134,7 +134,9 @@ public class TextFileReaderService extends Service {
             s.close();
             ArrayList<Aircraft> aircraftListToCompare = new ArrayList<>();
             for(Aircraft a : aircraftArrayList){
-                if(a.altitude != null && a.longitude != null && a.latitude != null){
+                //Latitude and longitude are defined at the same time, this is cutting down on
+                //redundant checks
+                if(a.altitude != null && a.latitude != null){
                     Log.d(TAG, "Adding aircraft " + a.icaoHexAddr);
                     aircraftListToCompare.add(a);
                 }

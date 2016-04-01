@@ -170,7 +170,6 @@ public class MainActivity extends AppCompatActivity implements
         //Log.d(TAG, "String from example log = " + readFromTextFile(getApplicationContext()));
         if(netHelper.isConnected()) {
             if(strUrl.equalsIgnoreCase("")) {
-                //TODO: Take the user to the setup activity
                 Log.d(TAG, "No user-saved URL detected");
                 //showNoServerAddressDialog(MainActivity.this);
                 Toast.makeText(MainActivity.this, "Server address not found", Toast.LENGTH_LONG)
@@ -243,8 +242,12 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
+        Log.d(TAG, "Configuration changed");
         super.onConfigurationChanged(newConfig);
         bindToTFRService(false);
+        if(adapter != null){
+            adapter.updateAircraftArrayList(aircraftArrayList);
+        }
     }
 
     @Override
@@ -570,7 +573,9 @@ public class MainActivity extends AppCompatActivity implements
             double lowest2DDist = 99999.0;
             double lowest3DDist = 99999.0;
             for(Aircraft b : aircraftListToCompare) {
-                if(!a.equals(b) && b.latitude != null && b.longitude != null) {
+                //Latitude and longitude are defined at the same time, so this is just cutting down
+                //on redundant checks
+                if(!a.equals(b) && a.latitude != null && b.latitude != null) {
                     double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
                     double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
                     if (twoDDist < lowest2DDist && threeDDist < lowest3DDist) {
@@ -648,6 +653,7 @@ public class MainActivity extends AppCompatActivity implements
             fragMgr = fm;
             this.aircraftArrayList = aircraftArrayList;
             this.activityResuming = activityResuming;
+            updateAircraftArrayList(aircraftArrayList);
         }
 
         /**
