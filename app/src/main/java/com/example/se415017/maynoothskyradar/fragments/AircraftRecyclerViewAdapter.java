@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 import com.example.se415017.maynoothskyradar.R;
 import com.example.se415017.maynoothskyradar.fragments.AircraftListFragment.OnListFragmentInteractionListener;
-import com.example.se415017.maynoothskyradar.fragments.dummy.DummyContent.DummyItem;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
 import java.util.ArrayList;

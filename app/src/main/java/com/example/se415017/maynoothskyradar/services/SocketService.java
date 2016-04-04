@@ -19,6 +19,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.se415017.maynoothskyradar.activities.MainActivity;
+import com.google.android.gms.wallet.firstparty.InitializeBuyFlowRequest;
 
 import org.apache.http.params.HttpParams;
 
@@ -54,12 +55,14 @@ public class SocketService extends Service {
     public static final int MESSAGE = 1;
     public static final int MSG_REG_CLIENT = 3;
     public static final int MSG_UNREG_CLIENT = 5;
+    public static final int MSG_SOCK_INIT_FAIL = 7;
 
     private static boolean isRunning = false;
 
     static final String SERVER = "sbsrv1.cs.nuim.ie"; //redundant
     static final String TAG = "SocketService";
     static final String PREFS = "UserPreferences";
+    static final String SOCK_INIT_FAIL = "Initialisation failed";
     String serverAddr = ""; // should replace SERVER, is defined by the intent passed by MainActivity
 
     Intent bindingIntent;
@@ -96,6 +99,7 @@ public class SocketService extends Service {
             Log.d(TAG, "Initialisation successful");
         } catch (IOException e) {
             Log.e(TAG, e.toString());
+            sendMessageToClients(SOCK_INIT_FAIL);
         }
     }
     public void reconnectSocket(Socket socket) {
@@ -137,7 +141,7 @@ public class SocketService extends Service {
             public void run() {
                 Log.d(TAG, "Network thread running");
                 initialiseSocket();
-                if(initialisationSuccess) { // && urlReachable) {
+                if(initialisationSuccess) {
                     try {
                         InputStream inputStream = socket.getInputStream();
                         socketConnected = true;
@@ -261,7 +265,12 @@ public class SocketService extends Service {
             try {
                 Bundle bundle = new Bundle();
                 bundle.putString("sbsMessage", message);
-                Message msg = Message.obtain(null, MESSAGE);
+                Message msg = new Message();
+                if(message.equals(SOCK_INIT_FAIL)){
+                    msg = Message.obtain(null, MSG_SOCK_INIT_FAIL);
+                } else {
+                    msg = Message.obtain(null, MESSAGE);
+                }
                 msg.setData(bundle);
                 messenger.send(msg);
             } catch (RemoteException e) {

@@ -21,6 +21,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -120,9 +121,6 @@ public class MainActivity extends AppCompatActivity implements
 //        Log.d(TAG, "Toolbar clicked");
 //    }
 
-
-    boolean netStatus = false;
-    boolean serverStatus = false;
     boolean resuming = false;
 
     @Override
@@ -130,7 +128,6 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "Creating MainActivity");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        setSupportActionBar(activityToolbar);
         cleanUpActionBar();
         ButterKnife.bind(this); //DONE: Unable to bind views - I'd forgot to comment-out the Buttons and TextViews.
 
@@ -228,10 +225,10 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "TextFileReaderService found? " + Boolean.toString(doesThisServiceExist(TextFileReaderService.class)));
         isTFRServiceRunning();
         isSocketServiceRunning(url.toString());
-        if(adapter != null) {
-            adapter.activityResuming = true;
-            adapter.updateAircraftArrayList(aircraftArrayList);
-        }
+//        if(adapter != null) {
+//            adapter.activityResuming = true;
+//            adapter.updateAircraftArrayList(aircraftArrayList);
+//        }
         super.onResume();
     }
 
@@ -246,7 +243,7 @@ public class MainActivity extends AppCompatActivity implements
         super.onConfigurationChanged(newConfig);
         bindToTFRService(false);
         if(adapter != null){
-            adapter.updateAircraftArrayList(aircraftArrayList);
+            //adapter.updateAircraftArrayList(aircraftArrayList);
         }
     }
 
@@ -408,11 +405,16 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "Checking if TextFileReaderService is running");
         if(TextFileReaderService.isRunning()){
             bindToTFRService(true);
-            aircraftArrayList = TextFileReaderService.getAircraftArrayList();
+            //aircraftArrayList = TextFileReaderService.getAircraftArrayList();
         } else {
             //Intent tfrsIntent = new Intent(this, TextFileReaderService.class);
             //tfrsIntent.putExtra("MESSENGER", new Messenger(tfrsMessenger, new TextFileReaderService.TextFileBinder()));
-            startService(new Intent(this, TextFileReaderService.class));
+            Thread startServiceThread = new Thread(){
+                public void run(){
+                    startService(new Intent(getApplicationContext(), TextFileReaderService.class));
+                }
+            };
+            startServiceThread.run();
             bindToTFRService(false);
         }
     }
@@ -613,7 +615,7 @@ public class MainActivity extends AppCompatActivity implements
             } else if (msg.what == TextFileReaderService.MSG_START_READING) {
                 String tfrsResponse = msg.getData().getString("sbsSampleLog");
                 Log.d(TAG, "Message from TextFileReaderService = " + tfrsResponse);
-                if(tfrsResponse != null) {
+                if (tfrsResponse != null) {
                     String[] splitMessage = tfrsResponse.split(",");
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitMessage);
                     Log.d(TAG, "New aircraft = " + newAircraft.toString());
@@ -622,6 +624,8 @@ public class MainActivity extends AppCompatActivity implements
                     aircraftArrayList = findNearestAircraft(aircraftArrayList);
                     adapter.updateAircraftArrayList(aircraftArrayList);
                 }
+            } else if (msg.what == SocketService.MSG_SOCK_INIT_FAIL) {
+                Snackbar.make(mainPager, "Socket initialisation failed", Snackbar.LENGTH_INDEFINITE);
             } else {
                 Log.d(TAG, "Invalid message from SocketService");
             }
