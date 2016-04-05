@@ -21,6 +21,7 @@ import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
 import org.w3c.dom.Text;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -75,6 +76,7 @@ public class TextFileReaderService extends Service {
         Bundle extras = bindingIntent.getExtras();
         if(extras != null)
             Log.d(TAG, "Binding to " + extras.getString("origin"));
+        Log.d(TAG, "Returning binder");
         return messenger.getBinder();
     }
 
@@ -107,15 +109,22 @@ public class TextFileReaderService extends Service {
             while (s.hasNext()) {
                 count++;
                 lastSentenceRead = count;
-                String word = s.next(); //.trim(); //remove whitespaces from the line being read
+                final String word = s.next(); //.trim(); //remove whitespaces from the line being read
                 String[] splitLine = word.split(","); //split the line from the log using the comma
                 //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
                 Log.d(TAG, "Line #" + count + " from sample log = " + word +
                         ", has " + splitLine.length + " elements.");
                 //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
-                if(splitLine.length == 22) {
-                    if(lastSentenceReadBeforeUnbinding <= count)
-                        sendMessageToClients(word);
+                if (splitLine.length == 22) {
+                    if (lastSentenceReadBeforeUnbinding <= count) {
+                        Runnable msgTask = new Runnable() {
+                            @Override
+                            public void run() {
+                                sendMessageToClients(word);
+                            }
+                        };
+                        delaySimulator.postDelayed(msgTask, 150);
+                    }
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
                     if(newAircraft.latitude != null && newAircraft.longitude != null)
                         newAircraft.path.add(newAircraft.getPosition());
@@ -210,18 +219,14 @@ public class TextFileReaderService extends Service {
         @Override
         public void handleMessage(Message msg){
             Log.d(TAG, "Message = " + msg);
-            Log.d(TAG, "Message origin = " + msg.replyTo);
             switch (msg.what) {
                 case MSG_START_READING:
                     Log.d(TAG, "Message = " + msg.arg1);
                     long readingStart = SystemClock.currentThreadTimeMillis();
                     if(!finishedReading) {
                         aircraftArrayList = readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
-                            //}
-                        //}, 150); //Wait 150ms to send
                     }
-                    long readingFinish = SystemClock.currentThreadTimeMillis() - readingStart;
-                    Log.d(TAG, "Process took " + readingFinish + "ms");
+                    Log.d(TAG, "Finished reading");
                     finishedReading = true;
                     break;
                 case MSG_REG_CLIENT:

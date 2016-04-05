@@ -203,7 +203,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             Log.d(TAG, "Loading from bundle " + a.toString());
         }
 
-        setUpMapIfNeeded(activityResuming);
+        setUpMapIfNeeded();
 
         Log.d(TAG, "Lat & Lon: " + Double.toString(latitude) + ", " + Double.toString(longitude));
         return view;
@@ -212,12 +212,12 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState){
         if(googleMap != null) {
-            setUpMap(googleMap, activityResuming);
+            setUpMap(googleMap);
         } else { //It's null anyway
             ((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.main_map)).getMapAsync(this);
             mainMapFrag.getMapAsync(this);
             if (googleMap != null) {
-                setUpMap(googleMap, activityResuming);
+                setUpMap(googleMap);
             }
         }
     }
@@ -238,7 +238,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     public void onResume() {
         Log.d(TAG, "Resuming");
         super.onResume();
-        setUpMapIfNeeded(activityResuming);
+        setUpMapIfNeeded();
         //Wait until googleMap is re-initialised
         if(cameraPosition != null & googleMap != null) {
             googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
@@ -247,14 +247,14 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     //Sets up the map if it hasn't been set up already
-    protected void setUpMapIfNeeded(boolean activityResumed) {
+    protected void setUpMapIfNeeded() {
         if (googleMap == null){
             Log.d(TAG, "Map was null");
             ((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.main_map))
                     .getMapAsync(this);
             //Check if the map was obtained successfully
             if (googleMap != null) {
-                setUpMap(googleMap, activityResumed);
+                setUpMap(googleMap);
             }
         }
     }
@@ -262,7 +262,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     /** This is where markers, lines and listeners are added, and where the camera is moved.
      *  @param googleMap The GoogleMap object to be set up.
      */
-    private void setUpMap(GoogleMap googleMap, boolean activityResumed) {
+    private void setUpMap(GoogleMap googleMap) {
         googleMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         googleMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)))
                 .setTitle("My server is here");
@@ -272,7 +272,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         Log.d(TAG, "Number of planes to set up: " + aircrafts.size());
         Log.d(TAG, "Have the markers been added? " + Boolean.toString(markersAdded));
         if(!markersAdded) {
-            addMarkers(activityResumed);
+            addMarkers();
             markersAdded = true;
         }
     }
@@ -280,15 +280,12 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     /**
      * Updates the ArrayList of Aircraft objects held by the Fragment
      * @param aircrafts - the updated ArrayList of Aircraft objects
-     * @param activityResumed - if the MainActivity is resuming rather than being created again,
-     *                        this will be true to stop Markers being added again.
      */
-    public void updateAircrafts(ArrayList<Aircraft> aircrafts, boolean activityResumed) {
+    public void updateAircrafts(ArrayList<Aircraft> aircrafts) {
         Log.d(TAG, "Updating AircraftMarkers, " + aircrafts.size() +  " to update.");
         this.aircrafts = aircrafts;
-        this.activityResuming = activityResumed;
         if(googleMap != null)
-            addMarkers(activityResumed);
+            addMarkers();
     }
 
     //This is what's calling setUpMap
@@ -296,7 +293,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(final GoogleMap gMap) {
         if(!mapSetUp){
             googleMap = gMap;
-            setUpMap(googleMap, activityResuming);
+            setUpMap(googleMap);
             mapSetUp = true;
         }
     }
@@ -309,11 +306,8 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
 
     /**
      * Adds markers and polylines to the map for each Aircraft.
-     * @param activityResumed - when returning the app, but the app hasn't killed the MainActivity,
-     *                        additional unnecessary markers were laid on top of the existing map
-     *                        Markers.
      */
-    public void addMarkers(boolean activityResumed){
+    public void addMarkers(){
         for (Aircraft a : aircrafts) {
             //Check if the Aircraft object has latitude and longitude values yet
             //If not, don't add them to the map, there'd be no point adding a Marker for them
@@ -490,6 +484,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onDestroyView() {
+        Log.d(TAG, "View destroyed");
         super.onDestroyView();
     }
 

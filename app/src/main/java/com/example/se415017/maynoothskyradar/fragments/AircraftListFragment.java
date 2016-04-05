@@ -105,6 +105,7 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     }
 
     public void updateDataset(ArrayList<Aircraft> aircraftArrayList) {
+        Log.d(TAG, "Updating dataset");
         this.aircraftArrayList = aircraftArrayList;
         mAdapter.notifyDataSetChanged();
     }

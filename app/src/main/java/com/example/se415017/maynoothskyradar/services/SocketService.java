@@ -1,5 +1,6 @@
 package com.example.se415017.maynoothskyradar.services;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
@@ -98,7 +99,7 @@ public class SocketService extends Service {
             initialisationSuccess = !socket.isClosed();
             Log.d(TAG, "Initialisation successful");
         } catch (IOException e) {
-            Log.e(TAG, e.toString());
+            Log.e(TAG, "initialiseSocket() - " + e.toString());
             sendMessageToClients(SOCK_INIT_FAIL);
         }
     }
@@ -107,7 +108,7 @@ public class SocketService extends Service {
             try {
                 socket.connect(new InetSocketAddress(serverAddr, 30003), 10000);
             } catch (IOException e) {
-                Log.e(TAG, e.toString());
+                Log.e(TAG, "reconnectSocket() - " + e.toString());
             }
         }
     }
@@ -218,7 +219,7 @@ public class SocketService extends Service {
                             socketConnected = true;
                             readFromInputStream(inputStream);
                         } catch (IOException e) {
-                            Log.e(TAG, e.toString());
+                            Log.e(TAG, "onRebind() - " + e.toString());
                         }
                     }
                 }
@@ -260,13 +261,13 @@ public class SocketService extends Service {
      * @param message The SBS-1 message picked up by the server.
      */
     private void sendMessageToClients(String message){
-        Log.d(TAG, "Message to send = " + message);
+        Log.d(TAG, "Message to send = " + message + " to " + messengerClientList.size() + " clients.");
         for(Messenger messenger : messengerClientList){
             try {
                 Bundle bundle = new Bundle();
                 bundle.putString("sbsMessage", message);
                 Message msg = new Message();
-                if(message.equals(SOCK_INIT_FAIL)){
+                if(message.equalsIgnoreCase(SOCK_INIT_FAIL)){
                     msg = Message.obtain(null, MSG_SOCK_INIT_FAIL);
                 } else {
                     msg = Message.obtain(null, MESSAGE);
@@ -280,9 +281,11 @@ public class SocketService extends Service {
         }
     }
 
-    class IncomingHandler extends Handler {
+    @SuppressLint("HandlerLeak")
+    public class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg){
+            Log.d(TAG, "Message from " + msg.replyTo);
             switch (msg.what) {
                 case MESSAGE:
                     Log.d(TAG, msg.toString());
@@ -292,6 +295,10 @@ public class SocketService extends Service {
                     break;
                 case MSG_UNREG_CLIENT:
                     messengerClientList.remove(msg.replyTo);
+                    break;
+                default:
+                    super.handleMessage(msg);
+                    break;
             }
         }
     }
