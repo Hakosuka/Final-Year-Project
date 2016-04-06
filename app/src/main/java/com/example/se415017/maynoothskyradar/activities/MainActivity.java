@@ -34,6 +34,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
@@ -562,6 +563,11 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onListFragmentInteraction(Aircraft dummyItem){
         Log.d(TAG, "Interacted with ListFragment");
+    }
+
+    @Override
+    public void onListItemSelection(View v, int position){
+        Log.d(TAG, "Interacted with " + v + " @position " + position);
     }
 
     /**

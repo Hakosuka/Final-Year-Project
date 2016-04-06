@@ -108,6 +108,7 @@ public class AircraftRecyclerViewAdapter extends
         @Override
         public void onClick(View view){
             Log.d("AircraftRecycler", view.toString());
+            mListener.onListItemSelection(view, getLayoutPosition());
         }
     }
 }

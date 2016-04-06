@@ -150,12 +150,17 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
      */
     public interface OnListFragmentInteractionListener {
         // TODO: Update argument type and name
+        //"public" modifiers are redundant for interface methods
         void onListFragmentInteraction(Aircraft item);
-        //public void onListItemSelection(int position);
+        void onListItemSelection(View v, int position);
     }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Log.d(TAG, "Item #" + position + " clicked");
+    }
+
+    public void onListItemSelection(View v, int position) {
+        Log.d(TAG, "View " + v + " clicked @position " + position);
     }
 }
