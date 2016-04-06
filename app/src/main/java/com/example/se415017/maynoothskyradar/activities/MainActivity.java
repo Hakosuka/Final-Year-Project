@@ -719,10 +719,8 @@ public class MainActivity extends AppCompatActivity implements
         public Fragment getItem(int position){
             switch(position){
                 case 0:
-                    Log.d(TAG, "Initialised MainMapFragment");
                     return MainMapFragment.newInstance(aircraftArrayList);
                 case 1:
-                    Log.d(TAG, "Initialised AircraftListFragment");
                     return AircraftListFragment.newInstance(1, aircraftArrayList);
             }
             return null;
@@ -740,67 +738,15 @@ public class MainActivity extends AppCompatActivity implements
             Fragment createdFragment = (Fragment)super.instantiateItem(container, position);
             switch(position) {
                 case 0:
+                    Log.d(TAG, "Initialised MainMapFragment");
                     mainMapFrag = (MainMapFragment) createdFragment;
                     break;
                 case 1:
+                    Log.d(TAG, "Initialised AircraftListFragment");
                     aircraftListFrag = (AircraftListFragment) createdFragment;
                     break;
             }
             return createdFragment;
         }
     }
-    //DONE: Get TextFileReaderService working so that this stuff becomes irrelevant
-//    public String readFromTextFile(Context context) {
-//        int count = 0;
-//        Scanner s = new Scanner(getResources().openRawResource(R.raw.samplelog));
-//        try {
-//            while (s.hasNext()) {
-//                count++;
-//                String word = s.next(); //.trim(); //remove whitespaces from the line being read
-//                String[] splitLine = word.split(","); //split the line from the log using the comma
-//                Log.d(TAG, "Line #" + Integer.toString(count) + " from sample log = " + word +
-//                        ", has " + Integer.toString(splitLine.length) + " elements.");
-//                //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
-//                if(splitLine.length == 22) {
-//                    Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
-//                    Log.d(TAG, "Aircraft status = " + newAircraft.toString());
-//                    sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
-//                } else {
-//                    Log.d(TAG, "Insufficient amount of fields in message from " + splitLine[4]);
-//                }
-//            }
-//        } finally {
-//            Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
-//                    " aircraft detected.");
-//            s.close();
-//            ArrayList<Aircraft> aircraftListToCompare = new ArrayList<Aircraft>();
-//            for(Aircraft a : aircraftArrayList){
-//                Log.d(TAG, "Detected: " + a.toString());
-//                if(a.altitude != null && a.longitude != null && a.latitude != null){
-//                    Log.d(TAG, "Adding aircraft " + a.icaoHexAddr);
-//                    aircraftListToCompare.add(a);
-//                }
-//            }
-//            for(Aircraft a : aircraftListToCompare){
-//                Log.d(TAG, "Valid aircraft detected: " + a.toString());
-//                Aircraft nearestAircraft = new Aircraft();
-//                double lowest2DDist = 99999.9;
-//                double lowest3DDist = 99999.9;
-//                for(Aircraft b : aircraftListToCompare){
-//                    Log.d(TAG, "Comparing against aircraft: " + b.toString());
-//                    //Stops us from comparing the same Aircraft against itself
-//                    if(!a.equals(b)){
-//                        double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
-//                        double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
-//                        Log.d(TAG, "2D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(twoDDist) + "km");
-//                        Log.d(TAG, "3D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(threeDDist) + "km");
-//                        if(twoDDist < lowest2DDist && threeDDist < lowest3DDist)
-//                            nearestAircraft = b;
-//                    }
-//                }
-//                Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
-//            }
-//        }
-//        return s.toString();
-//    }
 }

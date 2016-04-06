@@ -44,7 +44,7 @@ public class TextFileReaderService extends Service {
     public static final String AIR_KEY = "aircraftKey";
 
     public static boolean isRunning = false;
-    boolean finishedReading = false; //This stops the text file from being read again upon the Activity re-binding to this Service
+    public static boolean finishedReading = false; //This stops the text file from being read again upon the Activity re-binding to this Service
     int lastSentenceRead = 0; //The last line of the text file which has been read
     int lastSentenceReadBeforeUnbinding = 0;
 

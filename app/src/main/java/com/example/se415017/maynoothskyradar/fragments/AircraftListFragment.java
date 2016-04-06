@@ -2,6 +2,7 @@ package com.example.se415017.maynoothskyradar.fragments;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.UiThread;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -80,6 +81,8 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
                         }
                     }
                 }
+            } else {
+                Log.d(TAG, "No aircraft found");
             }
         }
     }
@@ -100,13 +103,16 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
             }
             mAdapter = new AircraftRecyclerViewAdapter(context, aircraftArrayList, mListener); //, mListener));
             recyclerView.setAdapter(mAdapter);
+            return recyclerView;
         }
         return view;
     }
 
+    @UiThread
     public void updateDataset(ArrayList<Aircraft> aircraftArrayList) {
-        Log.d(TAG, "Updating dataset");
+        Log.d(TAG, "Updating dataset with " + aircraftArrayList.size() + " aircraft.");
         this.aircraftArrayList = aircraftArrayList;
+        mAdapter.aircraftList = aircraftArrayList;
         mAdapter.notifyDataSetChanged();
     }
 

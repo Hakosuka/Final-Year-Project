@@ -21,14 +21,13 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 
 /**
- * {@link RecyclerView.Adapter} that can display a {@link DummyItem} and makes a call to the
+ * {@link RecyclerView.Adapter} that can display a {@link AircraftListItem} and makes a call to the
  * specified {@link OnListFragmentInteractionListener}.
- * TODO: Replace the implementation with code for your data type.
  */
 public class AircraftRecyclerViewAdapter extends
         RecyclerView.Adapter<AircraftRecyclerViewAdapter.ViewHolder> {
 
-    private ArrayList<Aircraft> aircraftList;
+    public ArrayList<Aircraft> aircraftList;
     private List<AircraftListItem> aircraftListItems;
     private final AircraftListFragment.OnListFragmentInteractionListener mListener;
 
