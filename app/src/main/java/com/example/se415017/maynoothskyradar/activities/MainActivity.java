@@ -567,7 +567,13 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onListItemSelection(View v, int position){
-        Log.d(TAG, "Interacted with " + v + " @position " + position);
+        Aircraft selected = aircraftArrayList.get(position);
+        Log.d(TAG, "Interacted with view @position " + position
+                + ", corresponds to " + selected.icaoHexAddr);
+        if(selected.latitude != null) {
+            Snackbar.make(mainPager, "Do you want to see more details on "
+                    + selected.icaoHexAddr + "?", Snackbar.LENGTH_INDEFINITE).show();
+        }
     }
 
     /**
@@ -651,7 +657,7 @@ public class MainActivity extends AppCompatActivity implements
                     adapter.updateAircraftArrayList(aircraftArrayList);
                 }
             } else if (msg.what == SocketService.MSG_SOCK_INIT_FAIL) {
-                Snackbar.make(mainPager, "Socket initialisation failed", Snackbar.LENGTH_INDEFINITE);
+                Snackbar.make(mainPager, "Socket initialisation failed", Snackbar.LENGTH_INDEFINITE).show();
             } else {
                 Log.d(TAG, "Invalid message from SocketService");
             }

@@ -133,11 +133,6 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
         mListener = null;
     }
 
-//    @Override
-//    public void onListItemClick(ListView listView, View v, int position, long id){
-//        super.onListItemClick(listView, v, position, id);
-//    }
-
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -158,9 +153,5 @@ public class AircraftListFragment extends Fragment implements AdapterView.OnItem
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id){
         Log.d(TAG, "Item #" + position + " clicked");
-    }
-
-    public void onListItemSelection(View v, int position) {
-        Log.d(TAG, "View " + v + " clicked @position " + position);
     }
 }

@@ -107,7 +107,7 @@ public class AircraftRecyclerViewAdapter extends
         //TODO: Take the user to the AircraftDetailFragment
         @Override
         public void onClick(View view){
-            Log.d("AircraftRecycler", view.toString());
+            Log.d("AircraftRecycler", "Corresponds to " + mItem.icaoHexAddr);
             mListener.onListItemSelection(view, getLayoutPosition());
         }
     }
