@@ -107,6 +107,9 @@ public class MainActivity extends AppCompatActivity implements
     private AircraftListFragment aircraftListFrag;
     private MainTabPagerAdapter adapter;
 
+    private Snackbar aircraftSelectedSnackbar;
+    private Snackbar connectionFailedSnackbar;
+
     @Bind(R.id.activity_main_tabs)
     PagerSlidingTabStrip mainTabs;
     @Bind(R.id.activity_main_pager)
@@ -128,6 +131,11 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "Creating MainActivity");
+        Log.d(TAG, "onCreate() - SocketService found? "
+                + Boolean.toString(doesThisServiceExist(SocketService.class)));
+        Log.d(TAG, "onCreate() - TextFileReaderService found? "
+                + Boolean.toString(doesThisServiceExist(TextFileReaderService.class)));
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         cleanUpActionBar();
@@ -142,9 +150,6 @@ public class MainActivity extends AppCompatActivity implements
         if(distCalc == null){
             distCalc = new DistanceCalculator();
         }
-//        if(textFileReaderService == null){
-//            textFileReaderService = new TextFileReaderService();
-//        }
         if(aircraftArrayList == null) {
             aircraftArrayList = new ArrayList<Aircraft>();
         }
@@ -211,9 +216,23 @@ public class MainActivity extends AppCompatActivity implements
             showNoInternetDialog(MainActivity.this);
         }
         fragManager = getSupportFragmentManager();
-        adapter = new MainTabPagerAdapter(fragManager, aircraftArrayList, resuming);
+        adapter = new MainTabPagerAdapter(fragManager, aircraftArrayList);
         mainPager.setAdapter(adapter);
         mainTabs.setViewPager(mainPager);
+        if(aircraftSelectedSnackbar == null) {
+            //Text isn't set yet, that comes later when clicking list elements in AircraftListFragment
+            aircraftSelectedSnackbar = Snackbar.make(mainPager, "", Snackbar.LENGTH_INDEFINITE);
+        }
+        if(connectionFailedSnackbar == null) {
+            connectionFailedSnackbar = Snackbar.make(mainPager, "Connection failed. Do you want to " +
+                    "try reading from the sample log instead?", Snackbar.LENGTH_INDEFINITE);
+            connectionFailedSnackbar.setAction("OK", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d(TAG, "ConnectionFailedSnackbar button clicked");
+                }
+            });
+        }
     }
 
     @Override
@@ -571,8 +590,24 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "Interacted with view @position " + position
                 + ", corresponds to " + selected.icaoHexAddr);
         if(selected.latitude != null) {
-            Snackbar.make(mainPager, "Do you want to see more details on "
-                    + selected.icaoHexAddr + "?", Snackbar.LENGTH_INDEFINITE).show();
+            aircraftSelectedSnackbar = Snackbar.make(mainPager, "Do you want to see more details on "
+                    + selected.icaoHexAddr + "?", Snackbar.LENGTH_INDEFINITE);
+            if(connectionFailedSnackbar.isShown()) {
+                //Google's Material Design specs recommend no more than one Snackbar on screen at a time
+                connectionFailedSnackbar.dismiss();
+            }
+            aircraftSelectedSnackbar.setAction("OK", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d(TAG, "AircraftSelectedSnackbar button clicked");
+                }
+            });
+            aircraftSelectedSnackbar.show();
+        } else {
+            Log.d(TAG, "Interacted with view @position " + position + ", corresponds to "
+                    + selected.icaoHexAddr + " , which has no defined location");
+            if(aircraftSelectedSnackbar.isShown())
+                aircraftSelectedSnackbar.dismiss();
         }
     }
 
@@ -657,7 +692,9 @@ public class MainActivity extends AppCompatActivity implements
                     adapter.updateAircraftArrayList(aircraftArrayList);
                 }
             } else if (msg.what == SocketService.MSG_SOCK_INIT_FAIL) {
-                Snackbar.make(mainPager, "Socket initialisation failed", Snackbar.LENGTH_INDEFINITE).show();
+                if(aircraftSelectedSnackbar.isShown())
+                    aircraftSelectedSnackbar.dismiss();
+                connectionFailedSnackbar.show();
             } else {
                 Log.d(TAG, "Invalid message from SocketService");
             }
@@ -682,13 +719,11 @@ public class MainActivity extends AppCompatActivity implements
         FragmentManager fragMgr;
         public Bundle bundle;
         ArrayList<Aircraft> aircraftArrayList;
-        boolean activityResuming = false;
 
-        public MainTabPagerAdapter(FragmentManager fm, ArrayList<Aircraft> aircraftArrayList, boolean activityResuming) {
+        public MainTabPagerAdapter(FragmentManager fm, ArrayList<Aircraft> aircraftArrayList) {
             super(fm);
             fragMgr = fm;
             this.aircraftArrayList = aircraftArrayList;
-            this.activityResuming = activityResuming;
             updateAircraftArrayList(aircraftArrayList);
         }
 
@@ -698,7 +733,6 @@ public class MainActivity extends AppCompatActivity implements
          */
         public void updateAircraftArrayList(ArrayList<Aircraft> aircraftArrayList) {
             Log.d(TAG, "Updating aircraft ArrayList");
-            Log.d(TAG, "Is activity resuming? " + Boolean.toString(activityResuming));
             this.aircraftArrayList = aircraftArrayList;
             notifyDataSetChanged();
             if (mainMapFrag != null) {
