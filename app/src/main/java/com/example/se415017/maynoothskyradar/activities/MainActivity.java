@@ -195,22 +195,23 @@ public class MainActivity extends AppCompatActivity implements
                     Log.e(TAG, e.toString());
                     showMalformedURLDialog(MainActivity.this);
                 }
-                if(!doesThisServiceExist(SocketService.class)) {
-                    Log.d(TAG, "No existing SocketService found");
-                    Log.d(TAG, "Intent created");
-                    //DONE: Reactivate after I've done testing with the example log
-                    isSocketServiceRunning(url.toString());
-                } else {
-                    Log.d(TAG, "Existing SocketService found");
-                    bindToSocketService(url.toString());
-                } if (!doesThisServiceExist(TextFileReaderService.class)) {
-                    Log.d(TAG, "No existing TextFileReaderService found");
-                    isTFRServiceRunning();
-                } else {
-                    Log.d(TAG, "Existing TextFileReaderService found");
-                    //When this wasn't set to true, when this Activity was being re-created
-                    bindToTFRService(true);
-                }
+                isSocketServiceRunning(url.toString());
+//                if(!doesThisServiceExist(SocketService.class)) {
+//                    Log.d(TAG, "No existing SocketService found");
+//                    Log.d(TAG, "Intent created");
+//                    //DONE: Reactivate after I've done testing with the example log
+//                    isSocketServiceRunning(url.toString());
+//                } else {
+//                    Log.d(TAG, "Existing SocketService found");
+//                    bindToSocketService(url.toString());
+//                } if (!doesThisServiceExist(TextFileReaderService.class)) {
+//                    Log.d(TAG, "No existing TextFileReaderService found");
+//                    isTFRServiceRunning();
+//                } else {
+//                    Log.d(TAG, "Existing TextFileReaderService found");
+//                    //When this wasn't set to true, when this Activity was being re-created
+//                    bindToTFRService(true);
+//                }
             }
         } else {
             showNoInternetDialog(MainActivity.this);
@@ -225,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements
         }
         if(connectionFailedSnackbar == null) {
             connectionFailedSnackbar = Snackbar.make(mainPager, "Connection failed. Do you want to " +
-                    "try reading from the sample log instead?", Snackbar.LENGTH_INDEFINITE);
+                    "read from the sample log instead?", Snackbar.LENGTH_INDEFINITE);
             connectionFailedSnackbar.setAction("OK", new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -252,6 +253,8 @@ public class MainActivity extends AppCompatActivity implements
         }
         else {
             if(doesThisServiceExist(TextFileReaderService.class)){
+                Log.d(TAG, "Stopping service");
+                Intent stopTFRSIntent = new Intent(this, TextFileReaderService.class);
                 stopService(new Intent(this, TextFileReaderService.class));
             }
             Intent setUpIntent = new Intent(this, SetUpActivity.class);
@@ -430,6 +433,7 @@ public class MainActivity extends AppCompatActivity implements
         } else {
             final Intent sockIntent = new Intent(this, SocketService.class);
             sockIntent.putExtra("serverAddr", urlToConnectTo);
+            sockIntent.putExtra("MESSENGER", sockMessenger);
             Thread startServiceThread = new Thread(){
                 public void run(){
                     startService(sockIntent);
@@ -587,9 +591,10 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onListItemSelection(View v, int position){
         Aircraft selected = aircraftArrayList.get(position);
-        Log.d(TAG, "Interacted with view @position " + position
-                + ", corresponds to " + selected.icaoHexAddr);
+
         if(selected.latitude != null) {
+            Log.d(TAG, "Interacted with view @position " + position
+                    + ", corresponds to " + selected.icaoHexAddr);
             aircraftSelectedSnackbar = Snackbar.make(mainPager, "Do you want to see more details on "
                     + selected.icaoHexAddr + "?", Snackbar.LENGTH_INDEFINITE);
             if(connectionFailedSnackbar.isShown()) {
@@ -669,7 +674,7 @@ public class MainActivity extends AppCompatActivity implements
             Log.d(TAG, "Message = " + msg);
             if(msg.what == SocketService.MESSAGE){
                 String sockResponse = msg.getData().getString(SBS_MSG);
-                Log.d(TAG, "Message from SocketService = " + sockResponse);
+                //Log.d(TAG, "Message from SocketService = " + sockResponse);
                 if(sockResponse != null) {
                     String[] splitMessage = sockResponse.split(",");
                     Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitMessage);

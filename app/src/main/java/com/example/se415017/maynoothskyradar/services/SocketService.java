@@ -137,22 +137,7 @@ public class SocketService extends Service {
         serverAddr = intent.getStringExtra("serverAddr");
         Log.d(TAG, "Address obtained = " + serverAddr);
         Log.d(TAG, "Service started");
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "Network thread running");
-                initialiseSocket();
-                if(initialisationSuccess) {
-                    try {
-                        InputStream inputStream = socket.getInputStream();
-                        socketConnected = true;
-                        readFromInputStream(inputStream);
-                    } catch (IOException e) {
-                        Log.e(TAG, e.toString());
-                    }
-                }
-            }
-        }).start();
+
         Log.d(TAG, "Returning service");
         return START_NOT_STICKY; // Don't bother restarting the Service if the device has ran out of memory
     }
@@ -285,13 +270,30 @@ public class SocketService extends Service {
     public class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg){
-            Log.d(TAG, "Message from " + msg.replyTo);
+            Log.d(TAG, "Message from " + msg.replyTo + "= " + msg);
             switch (msg.what) {
                 case MESSAGE:
                     Log.d(TAG, msg.toString());
                     break;
                 case MSG_REG_CLIENT:
+                    Log.d(TAG, "Adding client");
                     messengerClientList.add(msg.replyTo);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(TAG, "Network thread running");
+                            initialiseSocket();
+                            if(initialisationSuccess) {
+                                try {
+                                    InputStream inputStream = socket.getInputStream();
+                                    socketConnected = true;
+                                    readFromInputStream(inputStream);
+                                } catch (IOException e) {
+                                    Log.e(TAG, e.toString());
+                                }
+                            }
+                        }
+                    }).start();
                     break;
                 case MSG_UNREG_CLIENT:
                     messengerClientList.remove(msg.replyTo);
