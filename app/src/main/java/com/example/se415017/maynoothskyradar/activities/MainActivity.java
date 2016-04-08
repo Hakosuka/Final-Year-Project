@@ -196,22 +196,6 @@ public class MainActivity extends AppCompatActivity implements
                     showMalformedURLDialog(MainActivity.this);
                 }
                 isSocketServiceRunning(url.toString());
-//                if(!doesThisServiceExist(SocketService.class)) {
-//                    Log.d(TAG, "No existing SocketService found");
-//                    Log.d(TAG, "Intent created");
-//                    //DONE: Reactivate after I've done testing with the example log
-//                    isSocketServiceRunning(url.toString());
-//                } else {
-//                    Log.d(TAG, "Existing SocketService found");
-//                    bindToSocketService(url.toString());
-//                } if (!doesThisServiceExist(TextFileReaderService.class)) {
-//                    Log.d(TAG, "No existing TextFileReaderService found");
-//                    isTFRServiceRunning();
-//                } else {
-//                    Log.d(TAG, "Existing TextFileReaderService found");
-//                    //When this wasn't set to true, when this Activity was being re-created
-//                    bindToTFRService(true);
-//                }
             }
         } else {
             showNoInternetDialog(MainActivity.this);
@@ -247,7 +231,6 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "SocketService found? " + Boolean.toString(doesThisServiceExist(SocketService.class)));
         Log.d(TAG, "TextFileReaderService found? " + Boolean.toString(doesThisServiceExist(TextFileReaderService.class)));
         if(url != null) {
-            //isTFRServiceRunning();
             isSocketServiceRunning(url.toString());
         }
         else {

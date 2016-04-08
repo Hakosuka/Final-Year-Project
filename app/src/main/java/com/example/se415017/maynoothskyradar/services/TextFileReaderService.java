@@ -21,7 +21,10 @@ import com.example.se415017.maynoothskyradar.objects.Aircraft;
 
 import org.w3c.dom.Text;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -55,6 +58,11 @@ public class TextFileReaderService extends Service {
     ArrayList<Messenger> messageClientList = new ArrayList<>();
     static ArrayList<Aircraft> aircraftArrayList = new ArrayList<>();
     Handler delaySimulator = new Handler();
+
+    //8 April - InputStream and BufferedReader are a faster way of reading a text file than Scanner
+    InputStream textFileInputStream;
+    BufferedReader textFileReader;
+    String textFileLine;
 
     //Basic constructor class
     public TextFileReaderService(){
@@ -104,78 +112,85 @@ public class TextFileReaderService extends Service {
     //message being received by the server by making that Thread sleep for that time.
     public ArrayList<Aircraft> readFromTextFile(Context context, ArrayList<Aircraft> aircraftArrayList) {
         int count = 0;
-        Scanner s = new Scanner(context.getResources().openRawResource(R.raw.samplelog));
+        textFileInputStream = context.getResources().openRawResource(R.raw.samplelog);
+        textFileReader = new BufferedReader(new InputStreamReader(textFileInputStream));
         try {
-            while (s.hasNext()) {
-                count++;
-                lastSentenceRead = count;
-                final String word = s.next(); //.trim(); //remove whitespaces from the line being read
-                String[] splitLine = word.split(","); //split the line from the log using the comma
-                //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
-                Log.d(TAG, "Line #" + count + " from sample log = " + word +
-                        ", has " + splitLine.length + " elements.");
-                //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
-                if (splitLine.length == 22) {
-                    if (lastSentenceReadBeforeUnbinding <= count) {
-                        Runnable msgTask = new Runnable() {
-                            @Override
-                            public void run() {
-                                sendMessageToClients(word);
-                            }
-                        };
-                        delaySimulator.postDelayed(msgTask, 150);
-                    }
-                    Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
-                    if(newAircraft.latitude != null && newAircraft.longitude != null)
-                        newAircraft.path.add(newAircraft.getPosition());
-                    if(splitLine[7].length() > 6)
-                        delay = Double.parseDouble(splitLine[7].substring(6)) - delay;
-                    Log.d(TAG, "Aircraft status = " + newAircraft.toString());
-                    sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
-                } else {
-                    Log.d(TAG, "Insufficient amount of fields in message from " + splitLine[4]);
-                }
-            }
-        } finally {
-            Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
-                    " aircraft detected.");
-            s.close();
-            ArrayList<Aircraft> aircraftListToCompare = new ArrayList<>();
-            for(Aircraft a : aircraftArrayList){
-                //Latitude and longitude are defined at the same time, this is cutting down on
-                //redundant checks
-                if(a.altitude != null && a.latitude != null){
-                    Log.d(TAG, "Adding aircraft " + a.icaoHexAddr);
-                    aircraftListToCompare.add(a);
-                }
-            }
-            for(Aircraft a : aircraftListToCompare){
-                Aircraft nearestAircraft = new Aircraft();
-                double lowest2DDist = 99999.9;
-                double lowest3DDist = 99999.9;
-                for(Aircraft b : aircraftListToCompare){
-                    //Stops us from comparing the same Aircraft against itself
-                    if(!a.equals(b)){
-                        double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
-                        double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
-                        Log.d(TAG, "2D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(twoDDist) + "km");
-                        Log.d(TAG, "3D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(threeDDist) + "km");
-                        if(twoDDist < lowest2DDist && threeDDist < lowest3DDist) {
-                            lowest2DDist = twoDDist;
-                            lowest3DDist = threeDDist;
-                            nearestAircraft = b;
-                            a.nearestNeighbour = b;
-                            b.nearestNeighbour = a;
-                            a.twoDDistToNN = twoDDist;
-                            b.twoDDistToNN = twoDDist;
-                            a.threeDDistToNN = threeDDist;
-                            b.threeDDistToNN = threeDDist;
+            do {
+                textFileLine = textFileReader.readLine();
+                if(textFileLine != null) {
+                    count++;
+                    lastSentenceRead = count;
+                    final String word = textFileLine; //.trim(); //remove whitespaces from the line being read
+                    String[] splitLine = word.split(","); //split the line from the log using the comma
+                    //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
+                    Log.d(TAG, "Line #" + count + " from sample log = " + word +
+                            ", has " + splitLine.length + " elements.");
+                    //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
+                    if (splitLine.length == 22) {
+                        if (lastSentenceReadBeforeUnbinding <= count) {
+                            sendMessageToClients(word);
+
                         }
+                        Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
+                        if (newAircraft.latitude != null && newAircraft.longitude != null)
+                            newAircraft.path.add(newAircraft.getPosition());
+                        if (splitLine[7].length() > 6)
+                            delay = Double.parseDouble(splitLine[7].substring(6)) - delay;
+                        Log.d(TAG, "Aircraft status = " + newAircraft.toString());
+                        sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
+                    } else {
+                        Log.d(TAG, "Insufficient amount of fields in message from line #" + count);
                     }
                 }
-                Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
+            } while (textFileLine != null);
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
+        } finally {
+            try {
+                textFileInputStream.close();
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
             }
         }
+
+        Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
+                " aircraft detected.");
+        ArrayList<Aircraft> aircraftListToCompare = new ArrayList<>();
+        for(Aircraft a : aircraftArrayList){
+            //Latitude and longitude are defined at the same time, this is cutting down on
+            //redundant checks
+            if(a.altitude != null && a.latitude != null){
+                Log.d(TAG, "Adding aircraft " + a.icaoHexAddr);
+                aircraftListToCompare.add(a);
+            }
+        }
+        for(Aircraft a : aircraftListToCompare){
+            Aircraft nearestAircraft = new Aircraft();
+            double lowest2DDist = 99999.9;
+            double lowest3DDist = 99999.9;
+            for(Aircraft b : aircraftListToCompare){
+                //Stops us from comparing the same Aircraft against itself
+                if(!a.equals(b)){
+                    double twoDDist = distCalc.twoDDistanceBetweenAircraft(a, b);
+                    double threeDDist = distCalc.threeDDistanceBetweenAircraft(a, b);
+                    Log.d(TAG, "2D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(twoDDist) + "km");
+                    Log.d(TAG, "3D distance between " + a.icaoHexAddr + " and " + b.icaoHexAddr + "= " + Double.toString(threeDDist) + "km");
+                    if(twoDDist < lowest2DDist && threeDDist < lowest3DDist) {
+                        lowest2DDist = twoDDist;
+                        lowest3DDist = threeDDist;
+                        nearestAircraft = b;
+                        a.nearestNeighbour = b;
+                        b.nearestNeighbour = a;
+                        a.twoDDistToNN = twoDDist;
+                        b.twoDDistToNN = twoDDist;
+                        a.threeDDistToNN = threeDDist;
+                        b.threeDDistToNN = threeDDist;
+                    }
+                }
+            }
+            Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
+        }
+
         return aircraftArrayList;
     }
 

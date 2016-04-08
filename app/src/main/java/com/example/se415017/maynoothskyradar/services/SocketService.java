@@ -99,7 +99,7 @@ public class SocketService extends Service {
             initialisationSuccess = !socket.isClosed();
             Log.d(TAG, "Initialisation successful");
         } catch (IOException e) {
-            Log.e(TAG, "initialiseSocket() - " + e.toString());
+            Log.e(TAG, "initialiseSocket() - " + e.toString()); //TODO: UnknownHostException
             sendMessageToClients(SOCK_INIT_FAIL);
         }
     }
