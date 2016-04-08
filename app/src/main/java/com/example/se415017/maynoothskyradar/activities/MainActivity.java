@@ -230,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements
             connectionFailedSnackbar.setAction("OK", new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Log.d(TAG, "ConnectionFailedSnackbar button clicked");
+                    isTFRServiceRunning();
                 }
             });
         }
@@ -247,15 +247,14 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "SocketService found? " + Boolean.toString(doesThisServiceExist(SocketService.class)));
         Log.d(TAG, "TextFileReaderService found? " + Boolean.toString(doesThisServiceExist(TextFileReaderService.class)));
         if(url != null) {
-            //Stops the TextFileReaderService from running in the background
-            isTFRServiceRunning();
+            //isTFRServiceRunning();
             isSocketServiceRunning(url.toString());
         }
         else {
             if(doesThisServiceExist(TextFileReaderService.class)){
-                Log.d(TAG, "Stopping service");
+                //Stops the TextFileReaderService from running in the background
                 Intent stopTFRSIntent = new Intent(this, TextFileReaderService.class);
-                stopService(new Intent(this, TextFileReaderService.class));
+                stopService(stopTFRSIntent);
             }
             Intent setUpIntent = new Intent(this, SetUpActivity.class);
             setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
