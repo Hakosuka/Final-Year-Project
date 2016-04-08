@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -111,52 +112,59 @@ public class TextFileReaderService extends Service {
     //TODO: Add a Thread to use to read the text file, and then simulate the gaps between each
     //message being received by the server by making that Thread sleep for that time.
     public ArrayList<Aircraft> readFromTextFile(Context context, ArrayList<Aircraft> aircraftArrayList) {
-        int count = 0;
         textFileInputStream = context.getResources().openRawResource(R.raw.samplelog);
         textFileReader = new BufferedReader(new InputStreamReader(textFileInputStream));
-        try {
-            do {
-                textFileLine = textFileReader.readLine();
-                if(textFileLine != null) {
-                    count++;
-                    lastSentenceRead = count;
-                    final String word = textFileLine; //.trim(); //remove whitespaces from the line being read
-                    String[] splitLine = word.split(","); //split the line from the log using the comma
-                    //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
-                    Log.d(TAG, "Line #" + count + " from sample log = " + word +
-                            ", has " + splitLine.length + " elements.");
-                    //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
-                    if (splitLine.length == 22) {
-                        if (lastSentenceReadBeforeUnbinding <= count) {
-                            sendMessageToClients(word);
-
-                        }
-                        Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
-                        if (newAircraft.latitude != null && newAircraft.longitude != null)
-                            newAircraft.path.add(newAircraft.getPosition());
-                        if (splitLine[7].length() > 6)
-                            delay = Double.parseDouble(splitLine[7].substring(6)) - delay;
-                        Log.d(TAG, "Aircraft status = " + newAircraft.toString());
-                        sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
-                    } else {
-                        Log.d(TAG, "Insufficient amount of fields in message from line #" + count);
-                    }
-                }
-            } while (textFileLine != null);
-        } catch (IOException e) {
-            Log.e(TAG, e.toString());
-        } finally {
+        do {
+            int count = 0;
             try {
-                textFileInputStream.close();
+                textFileLine = textFileReader.readLine();
             } catch (IOException e) {
                 Log.e(TAG, e.toString());
+            } if(textFileLine != null) {
+                count++;
+                lastSentenceRead = count;
+                final String word = textFileLine; //.trim(); //remove whitespaces from the line being read
+                String[] splitLine = word.split(","); //split the line from the log using the comma
+                //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
+                Log.d(TAG, "Line #" + count + " from sample log = " + word +
+                        ", has " + splitLine.length + " elements.");
+                //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
+                if (splitLine.length == 22) {
+                    if (lastSentenceReadBeforeUnbinding <= count) {
+                        sendMessageToClients(word);
+                    }
+                    Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
+                    if (newAircraft.latitude != null && newAircraft.longitude != null)
+                        newAircraft.path.add(newAircraft.getPosition());
+                    if (splitLine[7].length() > 6)
+                        delay = Double.parseDouble(splitLine[7].substring(6)) - delay;
+                    Log.d(TAG, "Aircraft status = " + newAircraft.toString());
+                    sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
+                } else {
+                    Log.d(TAG, "Insufficient amount of fields in message from line #" + count);
+                }
             }
+        } while (textFileLine != null);
+        try {
+            textFileInputStream.close();
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
         }
-
         Log.d(TAG, "Finished reading file, " + Integer.toString(aircraftArrayList.size()) +
                 " aircraft detected.");
+        aircraftArrayList = findNearestAircraft(aircraftArrayList);
+        return aircraftArrayList;
+    }
+
+    /**
+     * Calculates the nearest other aircraft to each Aircraft with a defined location.
+     * 8 April: I moved this out of readFromTextFile() so that the code is more modular.
+     * @param aircrafts The ArrayList of Aircraft objects to search through
+     * @return aircraftListToCompare The ArrayList of Aircraft with each one's "nearestNeighbour" defined
+     */
+    public ArrayList<Aircraft> findNearestAircraft(ArrayList<Aircraft> aircrafts) {
         ArrayList<Aircraft> aircraftListToCompare = new ArrayList<>();
-        for(Aircraft a : aircraftArrayList){
+        for(Aircraft a : aircrafts){
             //Latitude and longitude are defined at the same time, this is cutting down on
             //redundant checks
             if(a.altitude != null && a.latitude != null){
@@ -190,10 +198,8 @@ public class TextFileReaderService extends Service {
             }
             Log.d(TAG, "The closest aircraft to " + a.icaoHexAddr + " is " + nearestAircraft.toString());
         }
-
-        return aircraftArrayList;
+        return aircraftListToCompare;
     }
-
     public static boolean isRunning() {
         Log.d("TextFileReaderService", "Is this running? " + Boolean.toString(isRunning));
         return isRunning;
@@ -256,5 +262,64 @@ public class TextFileReaderService extends Service {
             }
         }
 
+    }
+    public class readFromTextFileTask extends AsyncTask{
+        private ArrayList<Aircraft> taskAircraftList;
+        private String TAG = "readFromFileTask";
+        @Override
+        protected Object doInBackground(Object[] params) {
+            textFileInputStream = getApplicationContext().getResources().openRawResource(R.raw.samplelog);
+            textFileReader = new BufferedReader(new InputStreamReader(textFileInputStream));
+            do {
+                int count = 0;
+                try {
+                    textFileLine = textFileReader.readLine();
+                } catch (IOException e) {
+                    Log.e(TAG, e.toString());
+                } if(textFileLine != null) {
+                    count++;
+                    lastSentenceRead = count;
+                    final String word = textFileLine; //.trim(); //remove whitespaces from the line being read
+                    String[] splitLine = word.split(","); //split the line from the log using the comma
+                    //24 Mar: Cut out the Integer.toString() calls to cut down on processing overhead
+                    Log.d(TAG, "Line #" + count + " from sample log = " + word +
+                            ", has " + splitLine.length + " elements.");
+                    //This prevents messages without the requisite amount of fields getting parsed and screwing things up.
+                    if (splitLine.length == 22) {
+                        if (lastSentenceReadBeforeUnbinding <= count) {
+                            sendMessageToClients(word);
+                        }
+                        Aircraft newAircraft = sbsDecoder.parseSBSMessage(splitLine);
+                        if (newAircraft.latitude != null && newAircraft.longitude != null)
+                            newAircraft.path.add(newAircraft.getPosition());
+                        if (splitLine[7].length() > 6)
+                            delay = Double.parseDouble(splitLine[7].substring(6)) - delay;
+                        Log.d(TAG, "Aircraft status = " + newAircraft.toString());
+                        sbsDecoder.searchThroughAircraftList(aircraftArrayList, newAircraft, Integer.parseInt(splitLine[1]));
+                    } else {
+                        Log.d(TAG, "Insufficient amount of fields in message from line #" + count);
+                    }
+                }
+            } while (textFileLine != null);
+            try {
+                textFileInputStream.close();
+            } catch (IOException e) {
+                Log.e(TAG, e.toString());
+            }
+            return aircraftArrayList;
+        }
+        @Override
+        protected void onPostExecute(Object result) {
+            taskAircraftList = new ArrayList<>();
+            if (result instanceof ArrayList<?>){
+                ArrayList<?> resultArrayList = (ArrayList<?>) result;
+                for(Object o : resultArrayList) {
+                    if (o instanceof Aircraft) {
+                        taskAircraftList.add((Aircraft) o);
+                    }
+                }
+                findNearestAircraft(taskAircraftList);
+            }
+        }
     }
 }
