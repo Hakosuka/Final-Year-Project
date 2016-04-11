@@ -14,8 +14,10 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.se415017.maynoothskyradar.R;
+import com.example.se415017.maynoothskyradar.activities.MainActivity;
 import com.example.se415017.maynoothskyradar.helpers.DistanceCalculator;
 import com.example.se415017.maynoothskyradar.helpers.SBSDecoder;
 import com.example.se415017.maynoothskyradar.objects.Aircraft;
@@ -51,6 +53,7 @@ public class TextFileReaderService extends Service {
     public static boolean finishedReading = false; //This stops the text file from being read again upon the Activity re-binding to this Service
     int lastSentenceRead = 0; //The last line of the text file which has been read
     int lastSentenceReadBeforeUnbinding = 0;
+    int count = 0;
 
     Intent bindingIntent;
     //Allows for communication with MainActivity
@@ -115,7 +118,6 @@ public class TextFileReaderService extends Service {
         textFileInputStream = context.getResources().openRawResource(R.raw.samplelog);
         textFileReader = new BufferedReader(new InputStreamReader(textFileInputStream));
         do {
-            int count = 0;
             try {
                 textFileLine = textFileReader.readLine();
             } catch (IOException e) {
@@ -236,7 +238,7 @@ public class TextFileReaderService extends Service {
     }
 
     @SuppressLint("HandlerLeak")
-    class IncomingHandler extends Handler {
+    private class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg){
             Log.d(TAG, "Message = " + msg);
@@ -245,7 +247,13 @@ public class TextFileReaderService extends Service {
                     Log.d(TAG, "Message = " + msg.arg1);
                     long readingStart = SystemClock.currentThreadTimeMillis();
                     if(!finishedReading) {
-                        aircraftArrayList = readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                aircraftArrayList = readFromTextFile(getApplicationContext(), new ArrayList<Aircraft>());
+                            }
+                        }).start();
+                        //new readFromTextFileTask().execute(new ArrayList<Aircraft>());
                     }
                     Log.d(TAG, "Finished reading");
                     finishedReading = true;
@@ -263,11 +271,11 @@ public class TextFileReaderService extends Service {
         }
 
     }
-    public class readFromTextFileTask extends AsyncTask{
+    public class readFromTextFileTask extends AsyncTask<ArrayList<Aircraft>, Void, ArrayList<Aircraft>>{
         private ArrayList<Aircraft> taskAircraftList;
         private String TAG = "readFromFileTask";
         @Override
-        protected Object doInBackground(Object[] params) {
+        protected ArrayList<Aircraft> doInBackground(ArrayList<Aircraft>... params) {
             textFileInputStream = getApplicationContext().getResources().openRawResource(R.raw.samplelog);
             textFileReader = new BufferedReader(new InputStreamReader(textFileInputStream));
             do {
@@ -308,18 +316,11 @@ public class TextFileReaderService extends Service {
             }
             return aircraftArrayList;
         }
+
         @Override
-        protected void onPostExecute(Object result) {
-            taskAircraftList = new ArrayList<>();
-            if (result instanceof ArrayList<?>){
-                ArrayList<?> resultArrayList = (ArrayList<?>) result;
-                for(Object o : resultArrayList) {
-                    if (o instanceof Aircraft) {
-                        taskAircraftList.add((Aircraft) o);
-                    }
-                }
-                findNearestAircraft(taskAircraftList);
-            }
+        protected void onPostExecute(ArrayList<Aircraft> resultingAircrafts){
+            Toast.makeText(getApplicationContext(), "Finished reading text file", Toast.LENGTH_LONG)
+                    .show();
         }
     }
 }
