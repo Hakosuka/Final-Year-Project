@@ -18,9 +18,10 @@
     <FrameLayout
         android:id="@+id/map_bSheet"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="140dp"
         app:behavior_hideable="true"
         app:layout_behavior="android.support.design.widget.BottomSheetBehavior"
+        android:background="#d7d7d7"
         android:visibility="invisible">
         <RelativeLayout
             android:id="@+id/map_bSheet_content"
@@ -31,7 +32,7 @@
                 android:id="@+id/bSheet_hex_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Mode-S hex code"
+                android:text="Mode-S hex code:"
                 android:textStyle="bold"
                 android:textSize="16sp"/>
             <TextView

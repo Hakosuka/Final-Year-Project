@@ -84,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements
     public static final String LON_PREF = "longitude";
     public static final String SBS_MSG = "sbsMessage";
     public static final String TFRS_MSG = "sbsSampleLog";
+    public static final String USER_BEGINS_SETUP = "userBeginsSetup";
     URL url;
 
     public SBSDecoder sbsDecoder;
@@ -183,11 +184,12 @@ public class MainActivity extends AppCompatActivity implements
 
                 //Stops the app from returning to the MainActivity if I press the back button while in the SetUpActivity
                 setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                setUpIntent.putExtra(USER_BEGINS_SETUP, false);
                 startActivity(setUpIntent);
             } else {
                 Log.d(TAG, "User-saved URL detected");
-                //If all else fails, use sbsrv1.cs.nuim.ie as the default string
-                strUrl = sharedPref.getString(SERVER_PREF, "sbsrv1.cs.nuim.ie");
+                //If all else fails, show the MalformedURLDialog
+                strUrl = sharedPref.getString(SERVER_PREF, "");
                 try {
                     url = new URL("http", strUrl, 30003, "");
                     Log.d(TAG, "URL created: " + url.toString());
@@ -241,6 +243,7 @@ public class MainActivity extends AppCompatActivity implements
             }
             Intent setUpIntent = new Intent(this, SetUpActivity.class);
             setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            setUpIntent.putExtra(USER_BEGINS_SETUP, false);
             startActivity(setUpIntent);
         }
 //        if(adapter != null) {
@@ -307,9 +310,14 @@ public class MainActivity extends AppCompatActivity implements
         switch(id){
             case R.id.action_settings:
                 Log.d(TAG, "Settings selected");
-                Intent settingsIntent = new Intent(this, SettingsActivity.class);
                 //TODO: Work on SettingsActivity
-                startActivity(settingsIntent);
+                //Intent settingsIntent = new Intent(this, SettingsActivity.class);
+                //startActivity(settingsIntent);
+                //12 April - I switched to SetUpActivity as that works already
+                Intent setUpIntent = new Intent(this, SetUpActivity.class);
+                setUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                setUpIntent.putExtra(USER_BEGINS_SETUP, "true");
+                startActivity(setUpIntent);
                 return true;
             case R.id.action_about:
                 showAboutDialog();
@@ -572,7 +580,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onListItemSelection(View v, int position){
-        Aircraft selected = aircraftArrayList.get(position);
+        final Aircraft selected = aircraftArrayList.get(position);
 
         if(selected.latitude != null) {
             Log.d(TAG, "Interacted with view @position " + position
@@ -587,6 +595,9 @@ public class MainActivity extends AppCompatActivity implements
                 @Override
                 public void onClick(View v) {
                     Log.d(TAG, "AircraftSelectedSnackbar button clicked");
+                    if(mainPager.getCurrentItem() != 0)
+                        mainPager.setCurrentItem(0); //Switch to MainMapFragment
+                    mainMapFrag.zoomToSelectedAircraft(selected);
                 }
             });
             aircraftSelectedSnackbar.show();

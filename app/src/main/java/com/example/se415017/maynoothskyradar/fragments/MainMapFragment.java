@@ -18,6 +18,8 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.BottomSheetDialog;
+import android.support.design.widget.BottomSheetDialogFragment;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.os.AsyncTaskCompat;
@@ -86,7 +88,8 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
 //    @Bind(R.id.main_mapview)
 //    MapView mapView;
 
-    @Bind(R.id.map_bSheet) FrameLayout bottomSheet;
+    @Bind(R.id.map_bSheet) View bottomSheet;
+    BottomSheetBehavior mBottomSheetBehavior;
     @Bind(R.id.map_bSheet_content) ViewGroup bottomSheetContent;
     @Bind(R.id.bSheet_hex_title) TextView sheetHexTitle;
     @Bind(R.id.bSheet_hex_content) TextView sheetHexContent;
@@ -183,8 +186,8 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
             return null;
         view = inflater.inflate(R.layout.fragment_main_map, container, false);
         ButterKnife.bind(this, view);
-        final BottomSheetBehavior behavior = BottomSheetBehavior.from(bottomSheet);
-        behavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+        mBottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        mBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 Log.d(TAG, "Bottom sheet state changed");
@@ -195,7 +198,7 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
                 Log.d(TAG, "Bottom sheet is sliding");
             }
         });
-        behavior.setPeekHeight(24);
+        mBottomSheetBehavior.setPeekHeight(60);
         mainMapFrag = (SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.main_map);
         mainMapFrag.getMapAsync(this);
 
@@ -362,101 +365,126 @@ public class MainMapFragment extends Fragment implements OnMapReadyCallback {
         googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-            Aircraft selected = null;
-            //Search the HashMap for the Aircraft which corresponds to the clicked Marker
-            for (String aHexCode : aircraftAndMarkers.keySet()) {
-                if (aircraftAndMarkers.get(aHexCode).equals(marker)) {
-                    for (Aircraft a : aircrafts) {
-                        if (a.icaoHexAddr.equalsIgnoreCase(aHexCode)) {
-                            selected = a;
-                            //We've found the right Aircraft, now break out of the loop
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-            final Aircraft aircraftToBeShown = selected;
-            //Sometimes some Markers weren't mapped to an Aircraft object, causing a
-            //NullPointerException - such as the Marker for the server's location.
-            if (selected != null) {
-                Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
-                //Show the Aircraft's location if its Marker is clicked
-                Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
-                        .setAction("OK", new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                //TODO: Show a BottomSheet
-                                Log.d(TAG, "Snackbar button clicked.");
-                                sheetHexContent.setText(aircraftToBeShown.icaoHexAddr);
-                                sheetCallsign.setText(aircraftToBeShown.callsign);
-                                sheetAltContent.setText(aircraftToBeShown.altitude);
-                                sheetLatContent.setText(aircraftToBeShown.latitude);
-                                sheetLonContent.setText(aircraftToBeShown.longitude);
-                                sheetGSpeedContent.setText(aircraftToBeShown.gSpeed);
-                                //Add degree symbol
-                                sheetTrackContent.setText(aircraftToBeShown.track + "\u00B0");
-                                bottomSheet.setVisibility(View.VISIBLE);
+                //Hide the BottomSheet if it's shown
+                if(bottomSheet.isShown())
+                    bottomSheet.setVisibility(View.INVISIBLE);
+                Aircraft selected = null;
+                //Search the HashMap for the Aircraft which corresponds to the clicked Marker
+                for (String aHexCode : aircraftAndMarkers.keySet()) {
+                    if (aircraftAndMarkers.get(aHexCode).equals(marker)) {
+                        for (Aircraft a : aircrafts) {
+                            if (a.icaoHexAddr.equalsIgnoreCase(aHexCode)) {
+                                selected = a;
+                                //We've found the right Aircraft, now break out of the loop
+                                break;
                             }
-                        })
+                        }
+                        break;
+                    }
+                }
+                final Aircraft aircraftToBeShown = selected;
+                //Sometimes some Markers weren't mapped to an Aircraft object, causing a
+                //NullPointerException - such as the Marker for the server's location.
+                if (selected != null) {
+                    Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to "
+                            + selected.icaoHexAddr);
+                    //Show the Aircraft's location if its Marker is clicked
+                    Snackbar.make(view, "Do you want to see more details on this aircraft?",
+                        Snackbar.LENGTH_INDEFINITE).setAction("OK", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    //TODO: Show a BottomSheet
+                                    Log.d(TAG, "Snackbar button clicked.");
+                                    bottomSheet.setVisibility(View.VISIBLE);
+                                    mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                                    showBottomSheetForSelectedAircraft(aircraftToBeShown);
+                                    //bottomSheet.setContentView(bottomSheetContent);
+                                    //bottomSheet.show();
+                                }
+                            })
                         .show();
-                //I need to add this too, otherwise the map won't centre on the Marker's location
-                googleMap.animateCamera(CameraUpdateFactory
-                        .newLatLngZoom(selected.getPosition(), 8.0f));
-            } else {
-                Log.d(TAG, "Marker doesn't correspond to any plane");
-            }
-            //I need to add this, otherwise the InfoWindow won't show
-            marker.showInfoWindow();
-
-            return true;
+                    //I need to add this too, otherwise the map won't centre on the Marker's location
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(selected.getPosition(), 8.0f));
+                } else {
+                    Log.d(TAG, "Marker doesn't correspond to any plane");
+                }
+                //I need to add this, otherwise the InfoWindow won't show
+                marker.showInfoWindow();
+                return true;
             }
         });
         googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-            Aircraft selected = null;
-            for (String aHexCode : aircraftAndMarkers.keySet()) {
-                if (aircraftAndMarkers.get(aHexCode).equals(marker)) {
-                    for (Aircraft a : aircrafts) {
-                        if (a.icaoHexAddr.equalsIgnoreCase(aHexCode)) {
-                            selected = a;
-                            //We've found the right Aircraft, now break out of the loop
-                            break;
+                //Hide the BottomSheet if it's shown
+                if(bottomSheet.isShown())
+                    bottomSheet.setVisibility(View.INVISIBLE);
+                Aircraft selected = null;
+                for (String aHexCode : aircraftAndMarkers.keySet()) {
+                    if (aircraftAndMarkers.get(aHexCode).equals(marker)) {
+                        for (Aircraft a : aircrafts) {
+                            if (a.icaoHexAddr.equalsIgnoreCase(aHexCode)) {
+                                selected = a;
+                                //We've found the right Aircraft, now break out of the loop
+                                break;
+                            }
                         }
+                        break;
                     }
-                    break;
                 }
-            }
-            //Necessary for the SnackBar code below
-            final Aircraft aircraftToBeShown = selected;
-            //Just in case it's the server's Marker
-            if (selected != null) {
-                Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to " + selected.icaoHexAddr);
-                //Show the Aircraft's location if its Marker is clicked
-                Snackbar.make(view, "Do you want to see more details on this aircraft?", Snackbar.LENGTH_INDEFINITE)
-                    .setAction("OK", new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            //TODO: Show the BottomSheet
-                            Log.d(TAG, "Snackbar button clicked.");
-                            sheetHexContent.setText(aircraftToBeShown.icaoHexAddr);
-                            sheetCallsign.setText(aircraftToBeShown.callsign);
-                            sheetAltContent.setText(aircraftToBeShown.altitude);
-                            sheetLatContent.setText(aircraftToBeShown.latitude);
-                            sheetLonContent.setText(aircraftToBeShown.longitude);
-                            sheetGSpeedContent.setText(aircraftToBeShown.gSpeed);
-                            //Add degree symbol
-                            sheetTrackContent.setText(aircraftToBeShown.track + "\u00B0");
-                            bottomSheet.setVisibility(View.VISIBLE);
-                        }
-                    })
-                    .show();
-            }
+                //Necessary for the SnackBar code below
+                final Aircraft aircraftToBeShown = selected;
+                //Just in case it's the server's Marker
+                if (selected != null) {
+                    Log.d(TAG, "Marker ID = " + marker.getId() + " selected, corresponds to "
+                            + selected.icaoHexAddr);
+                    //Show the Aircraft's location if its Marker is clicked
+                    Snackbar.make(view, "Do you want to see more details on this aircraft?",
+                        Snackbar.LENGTH_INDEFINITE).setAction("OK", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                //TODO: Show the BottomSheet
+                                Log.d(TAG, "Snackbar button clicked.");
+                                bottomSheet.setVisibility(View.VISIBLE);
+                                mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                                showBottomSheetForSelectedAircraft(aircraftToBeShown);
+                                //bottomSheet.setContentView(bottomSheetContent);
+                                //bottomSheet.show();
+                            }
+                        }).show();
+                }
             }
         });
 
         Log.d(TAG, "Finished adding markers");
+    }
+
+    /**
+     * Called when the user clicks on a RecyclerView element in the AircraftListFragment
+     * @param selected The Aircraft correspond corresponding to the clicked RecyclerView element
+     */
+    public void zoomToSelectedAircraft(Aircraft selected){
+        if(aircraftAndMarkers.containsKey(selected.icaoHexAddr)){
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(selected.getPosition(), 8.0f));
+        }
+        showBottomSheetForSelectedAircraft(selected);
+    }
+
+    /**
+     * Called when the user clicks the "OK" button in the "Do you want to see more details on this
+     * aircraft" Snackbar.
+     * @param selected The Aircraft object which will have its details shown in the BottomSheet.
+     */
+    public void showBottomSheetForSelectedAircraft(Aircraft selected){
+        sheetHexContent.setText(selected.icaoHexAddr);
+        if(selected.callsign != null)
+            sheetCallsign.setText("(" + selected.callsign + ")");
+        sheetAltContent.setText(selected.altitude);
+        sheetLatContent.setText(selected.latitude);
+        sheetLonContent.setText(selected.longitude);
+        sheetGSpeedContent.setText(selected.gSpeed + "kts");
+        //Add degree symbol
+        sheetTrackContent.setText(selected.track + "\u00B0");
     }
 
     public void onButtonPressed(Uri uri) {

@@ -244,6 +244,7 @@ public class TextFileReaderService extends Service {
             Log.d(TAG, "Message = " + msg);
             switch (msg.what) {
                 case MSG_START_READING:
+                    finishedReading = false;
                     Log.d(TAG, "Message = " + msg.arg1);
                     long readingStart = SystemClock.currentThreadTimeMillis();
                     if(!finishedReading) {
